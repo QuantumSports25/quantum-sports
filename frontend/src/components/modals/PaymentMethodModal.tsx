@@ -14,9 +14,6 @@ import { Facility } from "../../pages/booking/components/BookSlots/FacilitySelec
 import { Slot } from "../../pages/booking/components/BookSlots/SlotSelector";
 import { PaymentMethod } from "../../services/partner-service/paymentService";
 import ModalPortal from "../common/ModalPortal";
-import axiosInstance from "../../services/api";
-import { addMoneyToWallet } from "../../services/partner-service/walletService";
-import { useAuthStore } from "../../store/authStore";
 
 interface PaymentMethodModalProps {
   isOpen: boolean;
@@ -45,10 +42,6 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   gst,
   userWalletBalance = 0,
 }) => {
-  const { user } = useAuthStore();
-  const handleClick = async () => {
-    await addMoneyToWallet(user?.id || "", 100000);
-  };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -261,7 +254,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
               {/* Razorpay Payment */}
               <div
                 className="border-2 border-blue-200 rounded-xl p-4 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-all"
-                onClick={handleClick}
+                onClick={() => onSelectPaymentMethod(PaymentMethod.Razorpay)}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">

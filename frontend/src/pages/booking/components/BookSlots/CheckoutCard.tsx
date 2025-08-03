@@ -40,6 +40,19 @@ interface CheckoutCardProps {
   selectedSlots: Slot[];
 }
 
+export enum LoadingStatus {
+  Validating = "validating",
+  Creating = "creating",
+  Verifying = "verifying",
+  Processing = "processing",
+}
+
+export enum FailedType {
+  Validation = "validation",
+  OrderCreation = "order_creation",
+  PaymentVerification = "payment_verification",
+}
+
 const CheckoutCard: React.FC<CheckoutCardProps> = ({
   refetchSlots,
   venue,
@@ -65,12 +78,8 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const [showFailureModal, setShowFailureModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState<
-    "validating" | "creating" | "verifying" | "processing"
-  >("validating");
-  const [failureType, setFailureType] = useState<
-    "validation" | "order_creation" | "payment_verification"
-  >("validation");
+  const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>(LoadingStatus.Validating);
+  const [failureType, setFailureType] = useState<FailedType>(FailedType.Validation);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isPaymentDeducted, setIsPaymentDeducted] = useState(false);
   const [successBookingDetails, setSuccessBookingDetails] = useState<any>(null);
@@ -120,7 +129,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     onSuccess: (bookingResponse) => {
       setBookingId(bookingResponse);
       setValidating(false);
-      setLoadingStatus("creating");
+      setLoadingStatus(LoadingStatus.Creating);
       setInitiatingPayment(true);
 
       // Proceed to create order
@@ -129,7 +138,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     onError: (error: any) => {
       setValidating(false);
       setShowLoadingModal(false);
-      setFailureType("validation");
+      setFailureType(FailedType.Validation);
       setErrorMessage(error?.message || "Booking validation failed");
       setShowFailureModal(true);
       unlockSlotmutation.mutate();
@@ -150,7 +159,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       // Handle different payment methods
       if (selectedPaymentMethod === PaymentMethod.Wallet) {
         // For wallet payment, directly verify with orderId
-        setLoadingStatus("verifying");
+        setLoadingStatus(LoadingStatus.Verifying);
         setVerifyingPayment(true);
         verifyPaymentMutation.mutate({
           bookingId: bookingId,
@@ -165,7 +174,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     onError: (error: any) => {
       setInitiatingPayment(false);
       setShowLoadingModal(false);
-      setFailureType("order_creation");
+      setFailureType(FailedType.OrderCreation);
       setErrorMessage(error?.message || "Order creation failed");
       setShowFailureModal(true);
       unlockSlotmutation.mutate();
@@ -212,7 +221,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         setShowSuccessModal(true);
         toast.success("🎉 Payment successful! Your slots are booked.");
       } else {
-        setFailureType("payment_verification");
+        setFailureType(FailedType.PaymentVerification);
         setIsPaymentDeducted(true);
         setErrorMessage("Payment verification failed");
         setShowFailureModal(true);
@@ -221,7 +230,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     onError: (error: any) => {
       setVerifyingPayment(false);
       setShowLoadingModal(false);
-      setFailureType("payment_verification");
+      setFailureType(FailedType.PaymentVerification);
       setIsPaymentDeducted(selectedPaymentMethod === PaymentMethod.Razorpay); // Wallet payments are instant
       setErrorMessage(error?.message || "Payment verification failed");
       setShowFailureModal(true);
@@ -235,7 +244,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     setShowPaymentMethodModal(false);
 
     // Start the booking flow with loading modal
-    setLoadingStatus("validating");
+    setLoadingStatus(LoadingStatus.Validating);
     setShowLoadingModal(true);
     setValidating(true);
     validateBookingMutation.mutate();
@@ -280,7 +289,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       // Payment success handler
       handler: async function (response: any) {
         setShowLoadingModal(true);
-        setLoadingStatus("verifying");
+        setLoadingStatus(LoadingStatus.Verifying);
         setVerifyingPayment(true);
 
         const verificationPayload = {

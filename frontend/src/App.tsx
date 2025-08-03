@@ -43,9 +43,6 @@ import AdminLoginPage from "./pages/auth/AdminLoginPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import VenueDetailsPage from "./pages/booking/VenueDetailsPage";
 
-// Import CheckoutPage
-import CheckoutPage from "./pages/booking/CheckoutPage";
-
 // Import new page components
 import ContactPage from "./pages/ContactPage";
 import WalletPage from "./pages/WalletPage";
@@ -124,10 +121,7 @@ function App() {
             {/* Protected User Routes */}
             <Route path="/booking" element={<BookingPage />} />
             <Route path="/booking/:venueId" element={<VenueDetailsPage />} />
-            <Route
-              path="/booking/:venueId/checkout"
-              element={<CheckoutPage />}
-            />
+  
             <Route
               path="/profile"
               element={

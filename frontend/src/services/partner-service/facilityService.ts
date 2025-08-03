@@ -3,6 +3,7 @@ import axiosInstance from "../api";
 export interface Facility {
   id?: string;
   name: string;
+  images: string[];
   activityId: string;
   activityName?: string;
   start_price_per_hour: number;
@@ -16,6 +17,7 @@ export interface Facility {
 
 export interface FacilityFormData {
   name: string;
+  images: string[];
   activityId: string;
   start_price_per_hour: number;
   startTime: string;

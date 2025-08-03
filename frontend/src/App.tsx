@@ -53,6 +53,9 @@ import MyBookingsPage from "./pages/MyBookingsPage";
 import ShopPage from "./pages/ShopPage";
 import ShopCheckoutPage from "./pages/ShopCheckoutPage";
 
+// Import route tracking hook
+import { useRouteTracker } from "./hooks/useRouteTracker";
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +69,9 @@ const queryClient = new QueryClient({
 // Layout component that conditionally renders Header and Footer
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+
+  // Track route changes (except for auth pages)
+  useRouteTracker();
 
   // Define routes where Header and Footer should be hidden
   const dashboardRoutes = ["/admin/dashboard", "/partner/dashboard"];
@@ -118,7 +124,10 @@ function App() {
             {/* Protected User Routes */}
             <Route path="/booking" element={<BookingPage />} />
             <Route path="/booking/:venueId" element={<VenueDetailsPage />} />
-            <Route path="/booking/:venueId/checkout" element={<CheckoutPage />} />
+            <Route
+              path="/booking/:venueId/checkout"
+              element={<CheckoutPage />}
+            />
             <Route
               path="/profile"
               element={
@@ -153,21 +162,21 @@ function App() {
             />
 
             {/* Admin Routes - Protected with admin role */}
-            <Route 
-              path="/admin/dashboard" 
+            <Route
+              path="/admin/dashboard"
               element={
                 <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
                   <AdminDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/dashboard/users" 
+            <Route
+              path="/admin/dashboard/users"
               element={
                 <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
                   <AdminDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route
               path="/admin/dashboard/partners"

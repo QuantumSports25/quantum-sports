@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { MapPin, X, Gift, ArrowRight, Calendar, Clock } from "lucide-react";
+import { MapPin, Gift, ArrowRight, Calendar, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Slot } from "./SlotSelector";
 import { Activity } from "./ActivitySelector";
 import { Facility } from "./FacilitySelector";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createBookingOrder,
   validateAndCreateBooking,
   verifyBookingPayment,
+  PaymentMethod,
 } from "../../../../services/partner-service/paymentService";
 import { useAuthStore } from "../../../../store/authStore";
 import { toast } from "react-hot-toast";
 import { Venue } from "../../VenueDetailsPage";
 import { unlockSlots } from "../../../../services/partner-service/slotService";
+import { getUserWalletBalance } from "../../../../services/partner-service/walletService";
+import PaymentMethodModal from "../../../../components/modals/PaymentMethodModal";
+import PaymentFailureModal from "../../../../components/modals/PaymentFailureModal";
+import PaymentSuccessModal from "../../../../components/modals/PaymentSuccessModal";
+import PaymentLoadingModal from "../../../../components/modals/PaymentLoadingModal";
 
 export enum Currency {
   INR = "INR",
@@ -40,7 +47,8 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   selectedActivity,
   selectedFacility,
 }) => {
-  const { user } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const navigate = useNavigate();
   const subtotal = selectedSlots.reduce((sum, slot) => sum + slot.amount, 0);
   const gst = subtotal * 0.18;
   const total = subtotal + gst;
@@ -49,6 +57,31 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [bookingId, setBookingId] = useState<string>("");
   const [slotIds, setSlotIds] = useState<string[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<PaymentMethod | null>(null);
+
+  // Modal states
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [showFailureModal, setShowFailureModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState<
+    "validating" | "creating" | "verifying" | "processing"
+  >("validating");
+  const [failureType, setFailureType] = useState<
+    "validation" | "order_creation" | "payment_verification"
+  >("validation");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isPaymentDeducted, setIsPaymentDeducted] = useState(false);
+  const [successBookingDetails, setSuccessBookingDetails] = useState<any>(null);
+
+  // User wallet balance query
+  const { data: userWalletBalance = 0 } = useQuery({
+    queryKey: ["walletBalance", user?.id],
+    queryFn: () => getUserWalletBalance(user?.id || ""),
+    enabled: !!user?.id && isAuthenticated,
+    staleTime: 30000, // 30 seconds
+  });
 
   useEffect(() => {
     setSlotIds(
@@ -79,6 +112,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         startTime: selectedSlots[0]?.startTime || "",
         endTime: selectedSlots[selectedSlots.length - 1]?.endTime || "",
         bookedDate: new Date(),
+        paymentMethod: selectedPaymentMethod || PaymentMethod.Razorpay,
       };
 
       return validateAndCreateBooking(bookingData);
@@ -86,14 +120,18 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     onSuccess: (bookingResponse) => {
       setBookingId(bookingResponse);
       setValidating(false);
+      setLoadingStatus("creating");
       setInitiatingPayment(true);
 
       // Proceed to create order
       createOrderMutation.mutate(bookingResponse);
     },
-    onError: (error) => {
-      toast.error("Error validating booking. Please try again.");
+    onError: (error: any) => {
       setValidating(false);
+      setShowLoadingModal(false);
+      setFailureType("validation");
+      setErrorMessage(error?.message || "Booking validation failed");
+      setShowFailureModal(true);
       unlockSlotmutation.mutate();
     },
   });
@@ -108,11 +146,28 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         throw new Error("Failed to create payment order");
       }
       setInitiatingPayment(false);
-      openRazorpayCheckout(orderResponse);
+
+      // Handle different payment methods
+      if (selectedPaymentMethod === PaymentMethod.Wallet) {
+        // For wallet payment, directly verify with orderId
+        setLoadingStatus("verifying");
+        setVerifyingPayment(true);
+        verifyPaymentMutation.mutate({
+          bookingId: bookingId,
+          orderId: orderResponse.id,
+        });
+      } else {
+        // For Razorpay, close loading modal and open checkout
+        setShowLoadingModal(false);
+        openRazorpayCheckout(orderResponse);
+      }
     },
-    onError: (error) => {
-      toast.error("Error creating booking order. Please try again.");
+    onError: (error: any) => {
       setInitiatingPayment(false);
+      setShowLoadingModal(false);
+      setFailureType("order_creation");
+      setErrorMessage(error?.message || "Order creation failed");
+      setShowFailureModal(true);
       unlockSlotmutation.mutate();
     },
   });
@@ -126,34 +181,85 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       signature,
     }: {
       bookingId: string;
-      paymentId: string;
+      paymentId?: string;
       orderId: string;
-      signature: string;
+      signature?: string;
     }) => {
       return verifyBookingPayment({ bookingId, paymentId, orderId, signature });
     },
     onSuccess: (response) => {
+      setVerifyingPayment(false);
+      setShowLoadingModal(false);
+
       // Check if verification was successful
       if (
         response &&
         response.message &&
         response.message.includes("verified")
       ) {
+        // Prepare success modal data
+        setSuccessBookingDetails({
+          bookingId,
+          venue,
+          selectedActivity,
+          selectedFacility,
+          selectedSlots,
+          total,
+          paymentMethod: selectedPaymentMethod,
+          paymentId: response.paymentId,
+          bookedAt: new Date(),
+        });
+        setShowSuccessModal(true);
         toast.success("🎉 Payment successful! Your slots are booked.");
       } else {
-        toast.error("Payment verification failed. Don't worry, if your money has been deducted, our team will contact you shortly.");
+        setFailureType("payment_verification");
+        setIsPaymentDeducted(true);
+        setErrorMessage("Payment verification failed");
+        setShowFailureModal(true);
       }
     },
-    onError: (error) => {
-      toast.error("Payment verification failed. Don't worry, if your money has been deducted, our team will contact you shortly.");
-      unlockSlotmutation.mutate();
-    },
-    onSettled: () => {
+    onError: (error: any) => {
       setVerifyingPayment(false);
+      setShowLoadingModal(false);
+      setFailureType("payment_verification");
+      setIsPaymentDeducted(selectedPaymentMethod === PaymentMethod.Razorpay); // Wallet payments are instant
+      setErrorMessage(error?.message || "Payment verification failed");
+      setShowFailureModal(true);
+      unlockSlotmutation.mutate();
     },
   });
 
-  // Razorpay checkout handler
+  // Payment method selection handler
+  const handlePaymentMethodSelection = (method: PaymentMethod) => {
+    setSelectedPaymentMethod(method);
+    setShowPaymentMethodModal(false);
+
+    // Start the booking flow with loading modal
+    setLoadingStatus("validating");
+    setShowLoadingModal(true);
+    setValidating(true);
+    validateBookingMutation.mutate();
+  };
+
+  // Modal handlers
+  const handleCloseFailureModal = () => {
+    setShowFailureModal(false);
+    setErrorMessage("");
+    setIsPaymentDeducted(false);
+  };
+
+  const handleRetryPayment = () => {
+    setShowFailureModal(false);
+    setShowLoadingModal(false);
+    setShowPaymentMethodModal(true);
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessBookingDetails(null);
+    // Optionally navigate to bookings page or refresh slots
+    refetchSlots();
+  };
   const openRazorpayCheckout = (orderData: any) => {
     // Check if Razorpay is loaded
     if (!window.Razorpay) {
@@ -173,6 +279,8 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
 
       // Payment success handler
       handler: async function (response: any) {
+        setShowLoadingModal(true);
+        setLoadingStatus("verifying");
         setVerifyingPayment(true);
 
         const verificationPayload = {
@@ -188,7 +296,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       prefill: {
         name: user?.name || user?.email?.split("@")[0] || "Customer",
         email: userInfo.email || user?.email || "",
-        contact: userInfo.mobile || "",
+        contact: userInfo.mobile || user?.phone || "",
       },
 
       // Additional booking details
@@ -248,8 +356,23 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
 
   // Main payment initiation handler
   const handleProceed = () => {
-    // Validate required fields
-    if (!userInfo.email && !userInfo.mobile) {
+    // Check authentication first
+    if (!isAuthenticated) {
+      // Navigate to login with payment intent
+      navigate("/login", {
+        state: {
+          intent: "proceed_to_payment",
+          from: { pathname: window.location.pathname },
+        },
+      });
+      return;
+    }
+
+    // Validate required fields - use user data if userInfo is empty
+    const email = userInfo.email || user?.email || "";
+    const mobile = userInfo.mobile || user?.phone || "";
+
+    if (!email && !mobile) {
       toast.error("Please fill in email and mobile number");
       return;
     }
@@ -261,20 +384,39 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       return;
     }
 
-    // Start the booking flow
-    setValidating(true);
-    validateBookingMutation.mutate();
+    // Show payment method selection modal
+    setShowPaymentMethodModal(true);
   };
   const [userInfo, setUserInfo] = useState({
-    email: "",
-    mobile: "",
+    email: user?.email || "",
+    mobile: user?.phone || "",
     dob: "",
   });
+
+  // Update userInfo when user data changes (after login/register)
+  useEffect(() => {
+    if (user) {
+      setUserInfo((prev) => ({
+        email: user.email || prev.email,
+        mobile: user.phone || prev.mobile,
+        dob: prev.dob, // Keep existing dob as it's not in User interface
+      }));
+    }
+  }, [user]);
 
   const [saveToProfile, setSaveToProfile] = useState(true);
   const [whatsappUpdates, setWhatsappUpdates] = useState(true);
   const [showCoupon, setShowCoupon] = useState(false);
   const [couponCode, setCouponCode] = useState("");
+
+  // Check if user info has changed from profile data
+  const hasUserInfoChanged = () => {
+    if (!user) return false;
+    return (
+      userInfo.email !== (user.email || "") ||
+      userInfo.mobile !== (user.phone || "")
+    );
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -293,22 +435,86 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
+  // Show closed state until all selections are made
+  if (!selectedActivity) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit sticky top-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">
+          Booking Summary
+        </h3>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-8 h-8 text-blue-600" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+            Choose an Activity
+          </h4>
+          <p className="text-gray-600 text-sm">
+            Please select an activity to start your booking.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedFacility) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit sticky top-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">
+          Booking Summary
+        </h3>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MapPin className="w-8 h-8 text-green-600" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+            Choose a Facility
+          </h4>
+          <p className="text-gray-600 text-sm">
+            Please select a facility for your chosen activity.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedSlots.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit sticky top-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">
+          Booking Summary
+        </h3>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-8 h-8 text-orange-600" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+            Choose Time Slots
+          </h4>
+          <p className="text-gray-600 text-sm">
+            Please select at least one time slot to proceed.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit sticky top-4">
       <h3 className="text-xl font-bold text-gray-900 mb-6">Booking Summary</h3>
 
       {/* Venue Info */}
       <div className="mb-6">
-        <h4 className="font-semibold text-gray-900 mb-2">Sunset Arena</h4>
+        <h4 className="font-semibold text-gray-900 mb-2">{venue.name}</h4>
         <div className="flex items-center text-sm text-gray-600">
           <MapPin className="w-4 h-4 mr-1" />
-          <span>Mumbai, Maharashtra</span>
+          <span>{venue.location?.city || "Location not available"}</span>
         </div>
       </div>
 
       {/* Selected Slots */}
       {selectedSlots.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 max-h-[300px] overflow-y-auto scrollbar-hide">
           <h5 className="font-medium text-gray-900 mb-3">Selected Slots</h5>
           <div className="space-y-3">
             {selectedSlots.map((slot: Slot) => (
@@ -330,9 +536,6 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
                   <div className="font-semibold text-gray-900">
                     ₹{slot.amount.toFixed(2)}
                   </div>
-                  <button className="text-red-600 text-sm hover:text-red-700">
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             ))}
@@ -342,7 +545,14 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
 
       {/* User Information */}
       <div className="mb-6">
-        <h5 className="font-medium text-gray-900 mb-3">Booking Information</h5>
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="font-medium text-gray-900">Booking Information</h5>
+          {user && (user.email || user.phone) && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+              ✓ Auto-filled from profile
+            </span>
+          )}
+        </div>
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -355,7 +565,9 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 setUserInfo({ ...userInfo, email: e.target.value })
               }
               placeholder="Enter your email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                user?.email ? "bg-green-50" : ""
+              }`}
             />
           </div>
           <div>
@@ -369,7 +581,9 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 setUserInfo({ ...userInfo, mobile: e.target.value })
               }
               placeholder="Enter your mobile number"
-              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                user?.phone ? "bg-green-50" : ""
+              }`}
             />
           </div>
           <div>
@@ -389,6 +603,13 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
 
         {/* Options */}
         <div className="mt-4 space-y-2">
+          {user && hasUserInfoChanged() && (
+            <div className="text-xs bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-2">
+              <span className="text-yellow-700">
+                ℹ️ You've modified your contact information from your profile
+              </span>
+            </div>
+          )}
           <label className="flex items-center">
             <input
               type="checkbox"
@@ -396,7 +617,11 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
               onChange={(e) => setSaveToProfile(e.target.checked)}
               className="mr-2"
             />
-            <span className="text-sm text-gray-700">Save to profile</span>
+            <span className="text-sm text-gray-700">
+              {user
+                ? "Update profile with this information"
+                : "Save to profile"}
+            </span>
           </label>
           <label className="flex items-center">
             <input
@@ -473,6 +698,43 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
           )}
         </button>
       </div>
+
+      {/* Payment Method Selection Modal */}
+      <PaymentMethodModal
+        isOpen={showPaymentMethodModal}
+        onClose={() => setShowPaymentMethodModal(false)}
+        onSelectPaymentMethod={handlePaymentMethodSelection}
+        venue={venue}
+        selectedActivity={selectedActivity!}
+        selectedFacility={selectedFacility!}
+        selectedSlots={selectedSlots}
+        total={total}
+        subtotal={subtotal}
+        gst={gst}
+        userWalletBalance={userWalletBalance}
+      />
+
+      {/* Payment Loading Modal */}
+      <PaymentLoadingModal isOpen={showLoadingModal} status={loadingStatus} />
+
+      {/* Payment Failure Modal */}
+      <PaymentFailureModal
+        isOpen={showFailureModal}
+        onClose={handleCloseFailureModal}
+        onRetry={handleRetryPayment}
+        failureType={failureType}
+        errorMessage={errorMessage}
+        isPaymentDeducted={isPaymentDeducted}
+      />
+
+      {/* Payment Success Modal */}
+      {successBookingDetails && (
+        <PaymentSuccessModal
+          isOpen={showSuccessModal}
+          onClose={handleCloseSuccessModal}
+          bookingDetails={successBookingDetails}
+        />
+      )}
     </div>
   );
 };

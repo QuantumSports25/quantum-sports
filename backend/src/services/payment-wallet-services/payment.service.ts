@@ -34,7 +34,7 @@ export class PaymentService {
         currency: currency,
         receipt: bookingId ?? (membershipId as string),
         notes: {
-          customerId
+          customerId,
         },
       });
 
@@ -115,6 +115,32 @@ export class PaymentService {
       return true;
     } catch (error) {
       console.error("Error verifying payment signature:", error);
+      throw error;
+    }
+  }
+
+  static async getTransactionByOrderId(orderId: string) {
+    try {
+      const transaction = await prisma.transactionHistory.findUnique({
+        where: { orderId },
+      });
+
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+
+      const transactionData: Payment = {
+        orderId: transaction.orderId,
+        paymentAmount: Number(transaction.paymentAmount),
+        paymentCurrency: transaction.paymentCurrency as Currency,
+        paymentMethod: transaction.paymentMethod as PaymentMethod,
+        isRefunded: transaction.isRefunded,
+        paymentDate: transaction.paymentDate,
+      };
+
+      return transactionData;
+    } catch (error) {
+      console.error("Error fetching transaction by order ID:", error);
       throw error;
     }
   }

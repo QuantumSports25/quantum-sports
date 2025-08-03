@@ -48,13 +48,18 @@ export interface customerDetails {
 
 export interface paymentDetails {
   paymentAmount: number;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   paymentDate: Date;
   isRefunded: boolean;
   refundDate?: Date;
   refundTime?: string;
   paymentTransactionTime: string;
   paymentTransactionId: string;
+}
+
+export enum PaymentMethod {
+  Razorpay = "Razorpay",
+  Wallet = "Wallet",
 }
 
 export const validateAndCreateBooking = async ({
@@ -68,6 +73,7 @@ export const validateAndCreateBooking = async ({
   startTime,
   endTime,
   bookedDate,
+  paymentMethod = PaymentMethod.Razorpay
 }: {
   userId: string;
   partnerId: string;
@@ -79,6 +85,7 @@ export const validateAndCreateBooking = async ({
   startTime: string;
   endTime: string;
   bookedDate: Date;
+  paymentMethod: PaymentMethod;
 }) => {
   try {
     const booking = {
@@ -95,7 +102,7 @@ export const validateAndCreateBooking = async ({
     };
 
     const res = await axiosInstance.post(
-      "/booking/create-booking-before-payment",
+      `/booking/create-booking-before-payment/${paymentMethod}`,
       booking
     );
     return res.data.data;
@@ -123,8 +130,8 @@ export const verifyBookingPayment = async (
     orderId
   }: {
     bookingId: string;
-    paymentId: string;
-    signature: string;
+    paymentId?: string;
+    signature?: string;
     orderId: string;
   }
 ) => {

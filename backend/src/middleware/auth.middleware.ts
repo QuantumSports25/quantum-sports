@@ -70,3 +70,14 @@ export const optionalAuthMiddleware = (req: AuthRequest, _res: Response, next: N
     return next();
   }
 }; 
+
+export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user && req.user.role === 'admin') {
+    return next();
+  }
+  
+  return res.status(403).json({ 
+    success: false,
+    message: 'Access denied. Admins only.' 
+  });
+}

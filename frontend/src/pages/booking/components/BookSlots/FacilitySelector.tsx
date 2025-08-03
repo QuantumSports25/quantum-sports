@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ImageIcon } from "lucide-react";
 import { Activity } from "./ActivitySelector";
 import { getFacilitiesByActivity } from "../../../../services/partner-service/facilityService";
 import { useQuery } from "@tanstack/react-query";
@@ -101,20 +101,23 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
 
         <div className="flex-shrink-0 w-80 bg-white rounded-2xl border-2 border-green-500 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01]">
           {/* Image Carousel */}
-          <div className="relative h-full max-h-36 overflow-hidden rounded-t-2xl">
-            <div className="flex transition-transform duration-300 ease-in-out">
-              <img
-                src={
-                  selectedFacility?.images?.[0] ||
-                  "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop"
-                }
-                alt={`${selectedFacility?.name}`}
-                className="w-full h-full object-cover flex-shrink-0"
-              />
+          {selectedFacility.images && selectedFacility.images.length > 0 ? (
+            <div className="relative h-full max-h-36 overflow-hidden rounded-t-2xl">
+              <div className="flex transition-transform duration-300 ease-in-out">
+                <img
+                  src={selectedFacility?.images?.[0] || ""}
+                  alt={`${selectedFacility?.name}`}
+                  className="w-full h-full object-cover flex-shrink-0"
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="relative h-36 rounded-t-2xl bg-gray-200 flex items-center justify-center">
+              <ImageIcon className="h-20 w-12 text-gray-500" />
+            </div>
+          )}
 
-          <div className="p-1 px-3">
+          <div className="p-2 px-3">
             <h4 className="text-lg font-semibold text-gray-900">
               {selectedFacility.name}
             </h4>
@@ -177,20 +180,23 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
               className="flex-shrink-0 w-80 bg-white rounded-2xl border-2 border-gray-200 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
             >
               {/* Image Carousel */}
-              <div className="relative h-full max-h-36 overflow-hidden rounded-t-2xl">
-                <div className="flex transition-transform duration-300 ease-in-out">
-                  <img
-                    src={
-                      facility?.images?.[0] ||
-                      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop"
-                    }
-                    alt={`${facility.name}`}
-                    className="w-full h-full object-cover flex-shrink-0"
-                  />
+              {facility.images && facility.images.length > 0 ? (
+                <div className="relative h-full max-h-36 overflow-hidden rounded-t-2xl">
+                  <div className="flex transition-transform duration-300 ease-in-out">
+                    <img
+                      src={facility?.images?.[0] || ""}
+                      alt={`${facility?.name}`}
+                      className="w-full h-full object-cover flex-shrink-0"
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative h-36 rounded-t-2xl bg-gray-200 flex items-center justify-center">
+                  <ImageIcon className="h-12 w-12 text-gray-500" />
+                </div>
+              )}
 
-              <div className="p-1 px-3">
+              <div className="p-2 px-3">
                 <h4 className="text-lg font-semibold text-gray-900">
                   {facility.name}
                 </h4>

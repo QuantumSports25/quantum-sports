@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
+import { useLastRouteRedirect } from "../../hooks/useRouteTracker";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -12,10 +13,15 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
+  const { getAndClearRoute, getLastRoute } = useLastRouteRedirect();
 
-  // Determine the redirect path from location state
-  const from = location.state?.from?.pathname || "/booking";
+  // Determine the redirect path from location state OR route history
+  const fromLocationState = location.state?.from?.pathname;
   const loginIntent = location.state?.intent;
+  const lastTrackedRoute = getLastRoute();
+
+  // Priority: location state > tracked route > default
+  const redirectPath = fromLocationState || lastTrackedRoute || "/";
 
   // Login mutation
   const loginMutation = useMutation({
@@ -32,16 +38,42 @@ const LoginPage: React.FC = () => {
       if (response.success && response.data) {
         login(response.data.user, response.data.token);
 
-        // Handle different login intents
+        // Determine where to redirect
+        let finalRedirectPath = "/";
+
         switch (loginIntent) {
           case "proceed_to_payment":
-            // Redirect to a payment or checkout page
-            navigate("/booking/checkout", { replace: true });
+            // For payment intent, try to go back to the original route
+            finalRedirectPath = getAndClearRoute() || "/booking";
+            break;
+          case "protected_route_access":
+          case "role_required":
+            // Use the original route or fallback to tracked route
+            finalRedirectPath = fromLocationState || getAndClearRoute() || "/";
             break;
           default:
-            // Default redirect
-            navigate(from, { replace: true });
+            // For normal login, use the best available redirect path
+            finalRedirectPath = redirectPath;
+            // Clear the tracked route since we're using it
+            if (lastTrackedRoute) {
+              getAndClearRoute();
+            }
+            break;
         }
+
+        // Ensure we don't redirect to login pages
+        const authPages = [
+          "/login",
+          "/register",
+          "/login-otp",
+          "/admin/login",
+          "/partner/login",
+        ];
+        if (authPages.includes(finalRedirectPath)) {
+          finalRedirectPath = "/";
+        }
+
+        navigate(finalRedirectPath, { replace: true });
       } else {
         setError(response.message || "Login failed");
       }
@@ -59,13 +91,28 @@ const LoginPage: React.FC = () => {
 
   // Optional: Show a context-aware message based on login intent
   useEffect(() => {
-    if (loginIntent === "proceed_to_payment") {
-      setError("Please log in to proceed with your booking.");
+    switch (loginIntent) {
+      case "proceed_to_payment":
+        setError("Please log in to proceed with your booking.");
+        break;
+      case "protected_route_access":
+        setError("Please log in to access this page.");
+        break;
+      case "role_required":
+        setError(
+          "Please log in with the appropriate account to access this page."
+        );
+        break;
+      default:
+        // Clear any existing error for normal login
+        setError("");
     }
   }, [loginIntent]);
 
   return (
-    <div className="min-h-screen flex pt-16">  {/* Added pt-16 for top padding */}
+    <div className="min-h-screen flex pt-16">
+      {" "}
+      {/* Added pt-16 for top padding */}
       {/* Left Side - Video Background */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
         {/* Sports Video Background - Working Implementation */}
@@ -79,7 +126,7 @@ const LoginPage: React.FC = () => {
             playsInline
             preload="auto"
             onError={(e) => {
-              console.log('Video failed to load:', e);
+              console.log("Video failed to load:", e);
               // Fallback to next video or image
               const video = e.target as HTMLVideoElement;
               const parent = video.parentElement;
@@ -88,19 +135,13 @@ const LoginPage: React.FC = () => {
                   linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(17,24,39,0.9) 100%),
                   url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
                 `;
-                parent.style.backgroundSize = 'cover';
-                parent.style.backgroundPosition = 'center';
+                parent.style.backgroundSize = "cover";
+                parent.style.backgroundPosition = "center";
               }
             }}
           >
-            <source
-              src="/videos/video.mp4"
-              type="video/mp4"
-            />
-            <source
-              src="/videos/video.mp4"
-              type="video/mp4"
-            />
+            <source src="/videos/video.mp4" type="video/mp4" />
+            <source src="/videos/video.mp4" type="video/mp4" />
           </video>
 
           {/* Fallback: Try YouTube embed if video fails */}
@@ -111,14 +152,14 @@ const LoginPage: React.FC = () => {
             frameBorder="0"
             allow="autoplay; encrypted-media"
             allowFullScreen
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             onLoad={(e) => {
               // Show iframe if video fails
               const iframe = e.target as HTMLIFrameElement;
-              const video = iframe.parentElement?.querySelector('video');
+              const video = iframe.parentElement?.querySelector("video");
               if (video && video.readyState === 0) {
-                iframe.style.display = 'block';
-                video.style.display = 'none';
+                iframe.style.display = "block";
+                video.style.display = "none";
               }
             }}
           ></iframe>
@@ -131,7 +172,7 @@ const LoginPage: React.FC = () => {
                 linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(17,24,39,0.8) 100%),
                 url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
               `,
-              zIndex: -1
+              zIndex: -1,
             }}
           ></div>
         </div>
@@ -149,8 +190,8 @@ const LoginPage: React.FC = () => {
               Welcome Back
             </h1>
             <p className="text-xl max-w-md opacity-90 mb-8 leading-relaxed">
-              Sign in to your account and continue your sports journey.
-              Book venues and connect with your community.
+              Sign in to your account and continue your sports journey. Book
+              venues and connect with your community.
             </p>
           </div>
 
@@ -167,7 +208,6 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
-
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-black px-4 py-8">
         <div className="w-full max-w-md">
@@ -184,7 +224,10 @@ const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -200,7 +243,10 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -253,7 +299,10 @@ const LoginPage: React.FC = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-400">
               Don't have an account?{" "}
-              <Link to="/register" className="font-medium text-yellow-400 hover:text-yellow-300">
+              <Link
+                to="/register"
+                className="font-medium text-yellow-400 hover:text-yellow-300"
+              >
                 Sign Up
               </Link>
             </p>

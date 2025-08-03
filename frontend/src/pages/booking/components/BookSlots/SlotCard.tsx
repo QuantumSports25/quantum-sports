@@ -13,7 +13,7 @@ const SlotCard: React.FC<SlotCardProps> = ({
   onClick,
 }) => {
   const getStatusStyles = () => {
-    switch (slot.slotAvailability) {
+    switch (slot.availability) {
       case "available":
         return "bg-green-50 text-green-800 border-green-200 hover:border-green-300";
       case "booked":
@@ -28,9 +28,9 @@ const SlotCard: React.FC<SlotCardProps> = ({
   };
 
   const getStatusText = () => {
-    switch (slot.slotAvailability) {
+    switch (slot.availability) {
       case "available":
-        return slot.slotAvailability || "Available";
+        return slot.availability || "Available";
       case "booked":
         return "Booked";
       case "filling-fast":
@@ -42,7 +42,7 @@ const SlotCard: React.FC<SlotCardProps> = ({
     }
   };
 
-  const isClickable = slot.slotAvailability === "available" || slot.slotAvailability === "filling-fast";
+  const isClickable = slot.availability === "available" || slot.availability === "filling-fast";
 
   return (
     <div
@@ -52,7 +52,7 @@ const SlotCard: React.FC<SlotCardProps> = ({
       } ${isClickable ? "hover:shadow-md" : "cursor-not-allowed"}`}
     >
       <div className="h-full flex flex-col items-center justify-center text-[10px] lg:text-xs p-1">
-        <div className="font-semibold text-[10px] lg:text-sm">₹{slot.slotAmount}</div>
+        <div className="font-semibold text-[10px] lg:text-sm">₹{slot.amount}</div>
         <div className="text-[10px] lg:text-xs opacity-75 mt-1">{getStatusText()}</div>
       </div>
     </div>

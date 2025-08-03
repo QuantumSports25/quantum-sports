@@ -1,4 +1,3 @@
-
 import { PrismaClient } from "@prisma/client";
 import { Slot, SlotAvailability } from "../../models/venue.model";
 
@@ -7,25 +6,34 @@ const prisma = new PrismaClient();
 export class SlotService {
   static async createSlot(slot: Slot) {
     try {
-      console.log('SlotService.createSlot - Input data:', slot);
-      
+      console.log("SlotService.createSlot - Input data:", slot);
+
       // Ensure proper data types for database, similar to updateSlot
       const createData = {
-        date: slot.date instanceof Date ? slot.date : new Date(slot.date + 'T00:00:00.000Z'),
-        amount: typeof slot.amount === 'string' ? parseFloat(slot.amount) : slot.amount,
+        date:
+          slot.date instanceof Date
+            ? slot.date
+            : new Date(slot.date + "T00:00:00.000Z"),
+        amount:
+          typeof slot.amount === "string"
+            ? parseFloat(slot.amount)
+            : slot.amount,
         availability: slot.availability,
         startTime: slot.startTime,
         endTime: slot.endTime,
         facilityId: slot.facilityId,
       };
-      
-      console.log('SlotService.createSlot - Formatted data for database:', createData);
-      
+
+      console.log(
+        "SlotService.createSlot - Formatted data for database:",
+        createData
+      );
+
       const newSlot = await prisma.slot.create({
         data: createData,
       });
-      
-      console.log('SlotService.createSlot - Creation successful:', newSlot);
+
+      console.log("SlotService.createSlot - Creation successful:", newSlot);
       return newSlot;
     } catch (error) {
       console.error("Error creating slot:", error);
@@ -35,9 +43,9 @@ export class SlotService {
 
   static async createMultipleSlots(
     startDate: Date,
-    endDate: Date, 
+    endDate: Date,
     startTime: string, // "09:00"
-    endTime: string,   // "17:00"
+    endTime: string, // "17:00"
     facilityId: string,
     amount: number,
     availability: SlotAvailability = SlotAvailability.Available
@@ -71,7 +79,7 @@ export class SlotService {
     }
   }
 
-  static async getSlotsByFacilityId(facilityId: string) { 
+  static async getSlotsByFacilityId(facilityId: string) {
     try {
       const slots = await prisma.slot.findMany({
         where: { facilityId },
@@ -84,8 +92,8 @@ export class SlotService {
   }
 
   static async getSlotsByDateRangeAndFacilityId(
-    startDate: string, 
-    endDate: string, 
+    startDate: string,
+    endDate: string,
     facilityId: string,
     sortType: "asc" | "desc"
   ) {
@@ -93,15 +101,15 @@ export class SlotService {
       // Convert date strings to Date objects for proper comparison
       const startDateTime = new Date(startDate);
       const endDateTime = new Date(endDate);
-      
+
       // Set end date to end of day to include all slots on the end date
       endDateTime.setHours(23, 59, 59, 999);
-      
-      console.log('Querying slots with:', {
+
+      console.log("Querying slots with:", {
         facilityId,
         startDate: startDateTime.toISOString(),
         endDate: endDateTime.toISOString(),
-        sortType
+        sortType,
       });
 
       const slots = await prisma.slot.findMany({
@@ -116,7 +124,7 @@ export class SlotService {
           date: sortType,
         },
       });
-      
+
       console.log(`Found ${slots.length} slots for facility ${facilityId}`);
       return slots;
     } catch (error) {
@@ -125,20 +133,25 @@ export class SlotService {
     }
   }
 
-  static async getAvailableSlotsByFacilityAndDate(facilityId: string, startDate: string, endDate: string, sortType: "asc" | "desc") {
+  static async getAvailableSlotsByFacilityAndDate(
+    facilityId: string,
+    startDate: string,
+    endDate: string,
+    sortType: "asc" | "desc"
+  ) {
     try {
       // Convert date strings to Date objects for proper comparison
       const startDateTime = new Date(startDate);
       const endDateTime = new Date(endDate);
-      
+
       // Set end date to end of day to include all slots on the end date
       endDateTime.setHours(23, 59, 59, 999);
-      
-      console.log('Querying available slots with:', {
+
+      console.log("Querying available slots with:", {
         facilityId,
         startDate: startDateTime.toISOString(),
         endDate: endDateTime.toISOString(),
-        sortType
+        sortType,
       });
 
       const slots = await prisma.slot.findMany({
@@ -156,36 +169,50 @@ export class SlotService {
         },
       });
 
-      console.log(`Found ${slots.length} available slots for facility ${facilityId}`);
+      console.log(
+        `Found ${slots.length} available slots for facility ${facilityId}`
+      );
       return slots;
     } catch (error) {
-      console.error("Error getting available slots by facility and date:", error);
+      console.error(
+        "Error getting available slots by facility and date:",
+        error
+      );
       throw error;
     }
   }
 
   static async updateSlot(id: string, slot: Slot) {
     try {
-      console.log('SlotService.updateSlot - Input data:', { id, slot });
-      
+      console.log("SlotService.updateSlot - Input data:", { id, slot });
+
       // Ensure proper data types for database
       const updateData = {
-        date: slot.date instanceof Date ? slot.date : new Date(slot.date + 'T00:00:00.000Z'),
-        amount: typeof slot.amount === 'string' ? parseFloat(slot.amount) : slot.amount,
+        date:
+          slot.date instanceof Date
+            ? slot.date
+            : new Date(slot.date + "T00:00:00.000Z"),
+        amount:
+          typeof slot.amount === "string"
+            ? parseFloat(slot.amount)
+            : slot.amount,
         availability: slot.availability,
         startTime: slot.startTime,
         endTime: slot.endTime,
         facilityId: slot.facilityId,
       };
-      
-      console.log('SlotService.updateSlot - Formatted data for database:', updateData);
-      
+
+      console.log(
+        "SlotService.updateSlot - Formatted data for database:",
+        updateData
+      );
+
       const updatedSlot = await prisma.slot.update({
         where: { id },
         data: updateData,
       });
-      
-      console.log('SlotService.updateSlot - Update successful:', updatedSlot);
+
+      console.log("SlotService.updateSlot - Update successful:", updatedSlot);
       return updatedSlot;
     } catch (error) {
       console.error("Error updating slot in service:", error);
@@ -227,11 +254,11 @@ export class SlotService {
       const availableSlots = await prisma.slot.count({
         where: {
           id: {
-            in: slotIds
+            in: slotIds,
           },
-          availability: 'available',
-          bookingId: null
-        }
+          availability: "available",
+          bookingId: null,
+        },
       });
 
       // Return true if all requested slots are available
@@ -241,7 +268,7 @@ export class SlotService {
       throw error;
     }
   }
-  
+
   static async updateSlots(slots: Slot[]) {
     try {
       const updatedSlots = await prisma.slot.updateMany({
@@ -254,4 +281,22 @@ export class SlotService {
     }
   }
 
+  static async unlockSlots(ids: string[]) {
+    try {
+      const unlockedSlots = await prisma.slot.updateMany({
+        where: {
+          id: { in: ids },
+          availability: SlotAvailability.Locked,
+        },
+        data: {
+          availability: SlotAvailability.Available,
+          bookingId: null,
+        },
+      });
+      return unlockedSlots;
+    } catch (error) {
+      console.error("Error unlocking slots:", error);
+      throw error;
+    }
+  }
 }

@@ -51,6 +51,6 @@ export interface paymentDetails {
   isRefunded: boolean;
   refundDate?: Date;
   refundTime?: string;
-  paymentTransactionTime: string;
-  paymentTransactionId: string;
+  paymentTransactionTime?: string;
+  paymentTransactionId?: string;
 }

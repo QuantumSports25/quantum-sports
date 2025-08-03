@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import { Currency, Order, PaymentMethod } from "../../models/payment.model";
-import { PaymentService } from "../../services/booking-services/payment.service";
+import { PaymentService } from "../../services/payment-wallet-services/payment.service";
 import { SeedDataService } from "../../services/membership-services/seedData.service";
 import { AppError } from "../../types";
 import { MembershipService } from "../../services/membership-services/membership.service";
 import { MembershipPlanService } from "../../services/membership-services/membershipPlan.service";
-import { WalletService } from "../../services/wallet-services/wallet.service";
+import { WalletService } from "../../services/payment-wallet-services/wallet.services";
 
 export class MembershipController {
   static async createMembershipBeforePayment(req: Request, res: Response) {

@@ -1,6 +1,31 @@
-import React, { useState } from 'react';
-import {  ChevronDown, Search, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { ChevronDown, Search, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+// List of cities for dropdown
+const CITIES = [
+  "All Cities",
+  "Mumbai",
+  "Delhi",
+  "Bangalore",
+  "Hyderabad",
+  "Chennai",
+  "Kolkata",
+  "Pune",
+  "Ahmedabad",
+  "Jaipur",
+  "Lucknow",
+  "Kanpur",
+  "Nagpur",
+  "Indore",
+  "Thane",
+  "Bhopal",
+  "Visakhapatnam",
+  "Pimpri-Chinchwad",
+  "Patna",
+  "Vadodara",
+  "Ghaziabad",
+];
 
 interface SearchFilters {
   search: string;
@@ -13,26 +38,57 @@ interface SearchFilters {
 //   name: string;
 //   city: string;
 //   sport: string;
-  // Add other venue properties as needed
+// Add other venue properties as needed
 // }
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-    search: '',
-    event: '',
-    city: ''
+    search: "",
+    event: "",
+    city: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [filteredCities, setFilteredCities] = useState(CITIES);
   // const [searchResults, setSearchResults] = useState<Venue[]>([]);
   // const [ setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof SearchFilters, value: string) => {
-    setSearchFilters(prev => ({
+    setSearchFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
+
+  // Filter cities based on input
+  useEffect(() => {
+    if (searchFilters.city === "") {
+      setFilteredCities(CITIES);
+    } else {
+      const filtered = CITIES.filter((cityName) =>
+        cityName.toLowerCase().includes(searchFilters.city.toLowerCase())
+      );
+      setFilteredCities(filtered);
+    }
+  }, [searchFilters.city]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Only close if clicking outside the entire dropdown container
+      if (!target.closest("[data-dropdown-container]")) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isDropdownOpen]);
 
   const handleSearch = async () => {
     setIsLoading(true);
@@ -43,31 +99,32 @@ const HeroSection: React.FC = () => {
       const searchParams = new URLSearchParams();
 
       if (searchFilters.search.trim()) {
-        searchParams.set('search', searchFilters.search.trim());
+        searchParams.set("search", searchFilters.search.trim());
       }
       if (searchFilters.event) {
-        searchParams.set('event', searchFilters.event);
+        searchParams.set("event", searchFilters.event);
       }
-      if (searchFilters.city) {
-        searchParams.set('city', searchFilters.city);
+      if (searchFilters.city && searchFilters.city !== "All Cities") {
+        searchParams.set("city", searchFilters.city);
       }
 
       // Navigate to booking page with search parameters
       const searchQuery = searchParams.toString();
-      const navigationPath = searchQuery ? `/booking?${searchQuery}` : '/booking';
+      const navigationPath = searchQuery
+        ? `/booking?${searchQuery}`
+        : "/booking";
 
       navigate(navigationPath);
-
     } catch (err) {
       // setError(err instanceof Error ? err.message : 'An error occurred while searching');
-      console.error('Search error:', err);
+      console.error("Search error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSearch();
     }
   };
@@ -78,7 +135,8 @@ const HeroSection: React.FC = () => {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('https://images.pexels.com/photos/23848540/pexels-photo-23848540.jpeg')"
+          backgroundImage:
+            "url('https://images.pexels.com/photos/23848540/pexels-photo-23848540.jpeg')",
         }}
       >
         {/* Dark Overlay */}
@@ -103,7 +161,7 @@ const HeroSection: React.FC = () => {
 
           {/* Main Heading */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight px-2 animate-fade-in-up">
-            Book Your Perfect Game,{' '}
+            Book Your Perfect Game,{" "}
             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient-x">
               Anytime, Anywhere
             </span>
@@ -112,68 +170,116 @@ const HeroSection: React.FC = () => {
           {/* Search Form */}
           <div className="max-w-4xl mx-auto px-2 sm:px-0 animate-fade-in-up delay-200">
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 hover:bg-white/10 hover:border-white/20 transition-all duration-500 group">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {/* Venue Name Input */}
-                <div className="sm:col-span-2 lg:col-span-1">
+                <div className="sm:col-span-1">
                   <input
                     type="text"
                     placeholder="Search Venue Name"
                     value={searchFilters.search}
-                    onChange={(e) => handleInputChange('search', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("search", e.target.value)
+                    }
                     onKeyPress={handleKeyPress}
                     className="w-full px-3 py-3 sm:px-4 sm:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg sm:rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/20 transition-all duration-300 text-sm sm:text-base hover:border-white/30"
                   />
-                </div>
-
-                {/* Sport Selection */}
-                <div className="lg:col-span-1">
-                  <select
-                    value={searchFilters.event}
-                    onChange={(e) => handleInputChange('event', e.target.value)}
-                    className="w-full px-3 py-3 sm:px-4 sm:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg sm:rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/20 transition-all duration-300 appearance-none cursor-pointer text-sm sm:text-base hover:border-white/30"
-                  >
-                    <option value="" className="text-white-900 bg-gray-800">Select Sport</option>
-                    <option value="football" className="text-white-900 bg-gray-800">Football</option>
-                    <option value="basketball" className="text-white-900 bg-gray-800">Basketball</option>
-                    <option value="tennis" className="text-white-900 bg-gray-800">Tennis</option>
-                    <option value="badminton" className="text-white-900 bg-gray-800">Badminton</option>
-                    <option value="cricket" className="text-white-900 bg-gray-800">Cricket</option>
-                  </select>
                 </div>
 
                 {/* City Selection with Search */}
-                <div className="lg:col-span-1">
-                  <input
-                    type="text"
-                    list="cities"
-                    placeholder="Select or type city"
-                    value={searchFilters.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="w-full px-3 py-3 sm:px-4 sm:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg sm:rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/20 transition-all duration-300 text-sm sm:text-base hover:border-white/30"
-                  />
-                  <datalist id="cities">
-                    <option value="Mumbai" />
-                    <option value="Delhi" />
-                    <option value="Bangalore" />
-                    <option value="Hyderabad" />
-                    <option value="Pune" />
-                    <option value="Chennai" />
-                    <option value="Kolkata" />
-                    <option value="Ahmedabad" />
-                    <option value="Jaipur" />
-                    <option value="Lucknow" />
-                    <option value="Kanpur" />
-                    <option value="Nagpur" />
-                    <option value="Indore" />
-                    <option value="Thane" />
-                    <option value="Bhopal" />
-                    <option value="Visakhapatnam" />
-                    <option value="Pimpri-Chinchwad" />
-                    <option value="Patna" />
-                    <option value="Vadodara" />
-                    <option value="Ghaziabad" />
-                  </datalist>
+                <div className="sm:col-span-1 relative" data-dropdown-container>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/60 z-10" />
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/60 z-10" />
+                    <input
+                      type="text"
+                      placeholder="Select or type city"
+                      value={searchFilters.city}
+                      onChange={(e) => {
+                        handleInputChange("city", e.target.value);
+                        setIsDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                          setIsDropdownOpen(false);
+                        } else if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (filteredCities.length > 0) {
+                            handleInputChange("city", filteredCities[0]);
+                            setIsDropdownOpen(false);
+                          }
+                        }
+                      }}
+                      onKeyPress={handleKeyPress}
+                      className={`w-full pl-10 pr-10 py-3 sm:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg sm:rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/20 transition-all duration-300 text-sm sm:text-base hover:border-white/30 ${
+                        isDropdownOpen ? "rounded-b-none border-b-0" : ""
+                      }`}
+                    />
+                  </div>
+
+                  {/* Dropdown */}
+                  {isDropdownOpen && (
+                    <div
+                      className={`absolute top-full left-0 right-0 bg-white/95 backdrop-blur-xl border border-white/30 shadow-2xl z-50 max-h-60 overflow-y-auto transition-all duration-200 transform ${
+                        isDropdownOpen
+                          ? "rounded-b-lg sm:rounded-b-xl opacity-100 translate-y-0"
+                          : "rounded-lg sm:rounded-xl mt-1 opacity-0 -translate-y-2"
+                      }`}
+                    >
+                      {filteredCities.length > 0 ? (
+                        <>
+                          {/* Show search results count */}
+                          {searchFilters.city &&
+                            filteredCities.length < CITIES.length && (
+                              <div className="px-4 py-2 text-xs text-gray-600 bg-white/50 border-b border-white/20">
+                                {filteredCities.length}{" "}
+                                {filteredCities.length === 1
+                                  ? "city"
+                                  : "cities"}{" "}
+                                found
+                              </div>
+                            )}
+                          {filteredCities.map((cityName, index) => (
+                            <button
+                              key={cityName}
+                              onClick={() => {
+                                console.log(
+                                  "Button clicked for city:",
+                                  cityName
+                                );
+                                handleInputChange("city", cityName);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-4 py-3 hover:bg-white/80 transition-colors duration-150 flex items-center group ${
+                                index === filteredCities.length - 1
+                                  ? "rounded-b-lg sm:rounded-b-xl"
+                                  : ""
+                              } ${
+                                searchFilters.city === cityName
+                                  ? "bg-white/60 text-blue-700"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              <span className="flex-1">{cityName}</span>
+                              {searchFilters.city === cityName && (
+                                <span className="text-blue-600 font-medium">
+                                  ✓
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="px-4 py-6 text-gray-600 text-center rounded-b-lg sm:rounded-b-xl">
+                          <Search className="w-5 h-5 mx-auto mb-2 opacity-50" />
+                          <div className="text-sm">No cities found</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Try a different search term
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Search Button */}
@@ -188,7 +294,7 @@ const HeroSection: React.FC = () => {
                     ) : (
                       <Search className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
                     )}
-                    <span>{isLoading ? 'Searching...' : 'Search'}</span>
+                    <span>{isLoading ? "Searching..." : "Search"}</span>
                   </button>
                 </div>
               </div>
@@ -197,20 +303,36 @@ const HeroSection: React.FC = () => {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12 animate-fade-in-up delay-400">
               <div className="text-center group hover:scale-105 transition-transform duration-300">
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-blue-400 transition-colors duration-300">1000+</div>
-                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">Venues</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-blue-400 transition-colors duration-300">
+                  1000+
+                </div>
+                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
+                  Venues
+                </div>
               </div>
               <div className="text-center group hover:scale-105 transition-transform duration-300">
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-purple-400 transition-colors duration-300">50K+</div>
-                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">Happy Players</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-purple-400 transition-colors duration-300">
+                  50K+
+                </div>
+                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
+                  Happy Players
+                </div>
               </div>
               <div className="text-center group hover:scale-105 transition-transform duration-300">
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-pink-400 transition-colors duration-300">25+</div>
-                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">Cities</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-pink-400 transition-colors duration-300">
+                  25+
+                </div>
+                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
+                  Cities
+                </div>
               </div>
               <div className="text-center group hover:scale-105 transition-transform duration-300">
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-green-400 transition-colors duration-300">24/7</div>
-                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">Support</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-green-400 transition-colors duration-300">
+                  24/7
+                </div>
+                <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
+                  Support
+                </div>
               </div>
             </div>
           </div>
@@ -223,8 +345,9 @@ const HeroSection: React.FC = () => {
       </div>
 
       {/* Custom CSS for animations */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           @keyframes gradient-x {
             0%, 100% {
               background-size: 200% 200%;
@@ -279,10 +402,11 @@ const HeroSection: React.FC = () => {
           .delay-1000 {
             animation-delay: 1s;
           }
-        `
-      }} />
+        `,
+        }}
+      />
     </section>
   );
 };
 
-export default HeroSection; 
+export default HeroSection;

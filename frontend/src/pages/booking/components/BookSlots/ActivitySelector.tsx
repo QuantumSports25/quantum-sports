@@ -1,27 +1,63 @@
 import React from "react";
 import { ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getActivitiesByVenue } from "../../../../services/partner-service/activityService";
 
 export interface Activity {
-  id: string;
+  id?: string;
   name: string;
-  minPrice: number;
-  features: string[];
+  tags: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  venueId?: string;
+  start_price_per_hour: number;
 }
 
 interface ActivitySelectorProps {
-  activities: Activity[];
+  venueId: string;
   selectedActivity: Activity | null;
   onActivitySelect: (activity: Activity) => void;
-  onResetSelection: () => void;
+  onResetSelection: (refetchActivities: () => void) => void;
 }
 
 const ActivitySelector: React.FC<ActivitySelectorProps> = ({
-  activities,
+  venueId,
   selectedActivity,
   onActivitySelect,
   onResetSelection,
 }) => {
-  // If an activity is selected, show only that card with a change button
+  const { data, isLoading, error, refetch: refetchActivities } = useQuery({
+    queryKey: ["activities", venueId],
+    queryFn: () => getActivitiesByVenue(venueId),
+  });
+
+  // Skeleton component for activity cards
+  const ActivitySkeleton = () => (
+    <div className="flex-shrink-0 w-full max-w-80 bg-white rounded-2xl border-2 border-gray-200 animate-pulse">
+      <div className="flex flex-col p-3 h-full">
+        {/* Activity name skeleton */}
+        <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
+
+        {/* Price skeleton */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-8 bg-gray-200 rounded w-20"></div>
+          <div className="h-4 bg-gray-200 rounded w-16"></div>
+        </div>
+
+        {/* Tags skeleton */}
+        <div className="flex flex-wrap gap-2 mb-2">
+          <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+          <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+        </div>
+
+        {/* Button skeleton */}
+        <div className="mt-auto">
+          <div className="w-full h-10 bg-gray-200 rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+  );
+
   if (selectedActivity) {
     return (
       <div className="space-y-6 bg-white rounded-xl px-2 xl:px-8 py-6">
@@ -30,7 +66,7 @@ const ActivitySelector: React.FC<ActivitySelectorProps> = ({
             Selected Activity
           </h3>
           <button
-            onClick={onResetSelection}
+            onClick={() => onResetSelection(refetchActivities)}
             className="flex items-center text-green-600 hover:text-green-700 text-xs lg:text-sm font-medium transition-colors"
           >
             <ArrowLeft className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
@@ -45,17 +81,17 @@ const ActivitySelector: React.FC<ActivitySelectorProps> = ({
             </h4>
             <div className="flex items-center justify-between mb-4">
               <span className="text-2xl font-bold text-gray-900">
-                ₹{selectedActivity.minPrice}
+                ₹{selectedActivity.start_price_per_hour}
               </span>
               <span className="text-sm text-gray-500">onwards</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-2">
-              {selectedActivity.features.map((feature, index) => (
+              {selectedActivity.tags.map((tag, index) => (
                 <span
                   key={index}
                   className="px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full"
                 >
-                  {feature}
+                  {tag}
                 </span>
               ))}
             </div>
@@ -76,41 +112,62 @@ const ActivitySelector: React.FC<ActivitySelectorProps> = ({
         Choose an Activity
       </h3>
       <div className="flex space-x-4 overflow-x-auto px-1 lg:p-4 scrollbar-hide">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            onClick={() => onActivitySelect(activity)}
-            className="flex-shrink-0 w-full max-w-80 bg-white rounded-2xl border-2 border-green-500 cursor-pointer transition-all duration-300 
-            hover:shadow-xl hover:scale-[1.01]"
-          >
-            <div className="flex flex-col p-3 h-full">
-              <h4 className="text-lg font-semibold text-gray-900">
-                {activity.name}
-              </h4>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl font-bold text-gray-900">
-                  ₹{activity.minPrice}
-                </span>
-                <span className="text-sm text-gray-500">onwards</span>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {activity.features.map((feature, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full"
-                  >
-                    {feature}
+        {isLoading || error ? (
+          <>
+            <ActivitySkeleton />
+            <ActivitySkeleton />
+            <ActivitySkeleton />
+          </>
+        ) : data && data.length > 0 ? (
+          // Show actual activity cards
+          data.map((activity: Activity) => (
+            <div
+              key={activity.id}
+              onClick={() => onActivitySelect(activity)}
+              className="flex-shrink-0 w-full max-w-80 bg-white rounded-2xl border-2 border-green-500 cursor-pointer transition-all duration-300 
+              hover:shadow-xl hover:scale-[1.01]"
+            >
+              <div className="flex flex-col p-3 h-full">
+                <h4 className="text-lg font-semibold text-gray-900">
+                  {activity.name}
+                </h4>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-2xl font-bold text-gray-900">
+                    ₹{activity.start_price_per_hour}
                   </span>
-                ))}
+                  <span className="text-sm text-gray-500">onwards</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {activity.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-auto align-bottom justify-end text-end">
+                  <button className="w-full py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200">
+                    Book Now
+                  </button>
+                </div>
               </div>
-              <div className="mt-auto align-bottom justify-end text-end">
-                <button className="w-full py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200">
-                  Book Now
-                </button>
+            </div>
+          ))
+        ) : (
+          // Show no activities message
+          <div className="flex-shrink-0 w-full max-w-80 bg-gray-50 rounded-2xl border-2 border-gray-200">
+            <div className="flex flex-col p-3 h-full text-center">
+              <div className="text-gray-600 text-lg font-semibold mb-2">
+                No Activities Available
+              </div>
+              <div className="text-gray-500 text-sm">
+                No activities found for this venue.
               </div>
             </div>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

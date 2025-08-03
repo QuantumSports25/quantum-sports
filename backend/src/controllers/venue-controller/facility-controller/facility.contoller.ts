@@ -6,10 +6,14 @@ import { FacilityService } from "../../../services/venue-services/facility.servi
 export class FacilityController {
   static async createFacility(req: Request, res: Response) {
     try {
-        const { name, start_price_per_hour, activityId, startTime, endTime,isAvailable,isFillingFast } = req.body;
+        const { name, start_price_per_hour, activityId, startTime, endTime,isAvailable,isFillingFast,images } = req.body;
 
-        if(!name || !start_price_per_hour || !activityId || !startTime || !endTime || !isAvailable || !isFillingFast) {
+        if(!name || !start_price_per_hour || !activityId || !startTime || !endTime || !isAvailable || !isFillingFast || !images) {
             return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if(!Array.isArray(images) || images.length === 0) {
+            return res.status(400).json({ message: "Images must be an array and cannot be empty" });
         }
 
         const facility: Facility = {
@@ -43,7 +47,19 @@ export class FacilityController {
         return res.status(404).json({ message: "No facilities found" });
       }
 
-      return res.status(200).json({ data: facilities });
+      const formattedFacilities = facilities.map(facility => ({
+        id: facility.id,
+        name: facility.name,
+        images: facility.images ?? [],
+        start_price_per_hour: Number(facility.start_price_per_hour),
+        activityId: facility.activityId,
+        startTime: facility.startTime,
+        endTime: facility.endTime,
+        isAvailable: facility.isAvailable,
+        isFillingFast: facility.isFillingFast,
+      }));
+
+      return res.status(200).json({ data: formattedFacilities });
     } catch (error) {
       return res.status(500).json({ message: "Failed to get facilities by activity" });
     }
@@ -63,7 +79,19 @@ export class FacilityController {
         return res.status(404).json({ message: "Facility not found" });
       }
 
-      return res.status(200).json({ data: facility });
+      const newFacility: Facility = {
+        name: facility.name,
+        images: facility.images ?? [],
+        start_price_per_hour: Number(facility.start_price_per_hour),
+        activityId: facility.activityId,
+        startTime: facility.startTime,
+        endTime: facility.endTime,
+        isAvailable: facility.isAvailable,
+        isFillingFast: facility.isFillingFast,
+      };
+
+
+      return res.status(200).json({ data: newFacility });
     } catch (error) {
       return res.status(500).json({ message: "Failed to get facility by id" });
     }
@@ -85,6 +113,7 @@ export class FacilityController {
 
       const newFacility: Facility = {
         name: req.body.name || facility.name,
+        images: req.body.images || facility.images,
         start_price_per_hour: req.body.start_price_per_hour || facility.start_price_per_hour,
         activityId: req.body.activityId || facility.activityId,
         startTime: req.body.startTime || facility.startTime,

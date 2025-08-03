@@ -37,6 +37,8 @@ export class BookingService {
             paymentStatus: booking.paymentStatus,
             customerDetails:
               booking.customerDetails as unknown as Prisma.InputJsonValue,
+            paymentDetails:
+              booking.paymentDetails as unknown as Prisma.InputJsonValue,
           },
         });
 

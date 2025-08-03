@@ -33,6 +33,7 @@ export class FacilityService {
       const facility = await prisma.facility.findUnique({
         where: { id },
       });
+      
       return facility;
     } catch (error) {
       console.error("Error getting facility by id:", error);

@@ -8,15 +8,20 @@ import {
 import { customerDetails } from "../../models/booking.model";
 import { User } from "../../models/user.model";
 import { Currency, Order, PaymentMethod } from "../../models/payment.model";
-import { PaymentService } from "../../services/booking-services/payment.service";
+import { PaymentService } from "../../services/payment-wallet-services/payment.service";
 import { SlotService } from "../../services/venue-services/slot.service";
 import { AuthService } from "../../services/auth-services/auth.service";
 import { AppError } from "../../types";
+import { timeStringToMinutes } from "../../utils/convertSlotTime";
+import { WalletService } from "../../services/payment-wallet-services/wallet.services";
 
 export class BookingController {
+  // Helper method to convert time string (HH:MM:SS) to minutes
+
   static async createBookingBeforePayment(req: Request, res: Response) {
     try {
       const bookingData = req.body as Booking;
+      const paymentMethod = req.params["paymentMethod"] as PaymentMethod;
 
       // Validate required fields
       if (
@@ -34,14 +39,31 @@ export class BookingController {
         return res.status(400).json({ message: "Required fields are missing" });
       }
 
-      const startTime = Number(bookingData.startTime);
-      const endTime = Number(bookingData.endTime);
-      const duration = endTime - startTime;
+      if (!Object.values(PaymentMethod).includes(paymentMethod)) {
+        return res.status(400).json({ message: "Invalid payment method" });
+      }
 
-      if (isNaN(startTime) || isNaN(endTime)) {
-        return res
-          .status(400)
-          .json({ message: "Invalid startTime, endTime, or duration" });
+      // Validate time format and calculate duration
+      const startTime = bookingData.startTime;
+      const endTime = bookingData.endTime;
+
+      // Validate time string format (HH:MM:SS or HH:MM)
+      const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+      if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+        return res.status(400).json({
+          message: "Invalid time format. Expected HH:MM or HH:MM:SS format",
+        });
+      }
+
+      // Convert time strings to minutes for duration calculation
+      const startMinutes = timeStringToMinutes(startTime);
+      const endMinutes = timeStringToMinutes(endTime);
+      const duration = endMinutes - startMinutes;
+
+      if (isNaN(startMinutes) || isNaN(endMinutes) || duration <= 0) {
+        return res.status(400).json({
+          message: "Invalid time values or end time must be after start time",
+        });
       }
 
       if (duration % 30 !== 0) {
@@ -91,7 +113,7 @@ export class BookingController {
       const customerDetails: customerDetails = {
         customerId: user.id,
         customerName: user.name,
-        customerEmail: user.email,
+        customerEmail: user.email ?? "",
         customerPhone: user.phone ?? "",
       };
 
@@ -106,12 +128,18 @@ export class BookingController {
         amount: bookingData.amount,
         duration: duration,
         numberOfSlots: numberOfSlots,
-        startTime: bookingData.startTime,
-        endTime: bookingData.endTime,
+        startTime: startTime, // Keep as time string
+        endTime: endTime, // Keep as time string
         bookedDate: new Date(bookingData.bookedDate),
         bookingStatus: BookingStatus.Pending,
         paymentStatus: PaymentStatus.Initiated,
         customerDetails: customerDetails,
+        paymentDetails: {
+          paymentAmount: bookingData.amount,
+          paymentMethod: paymentMethod,
+          paymentDate: new Date(),
+          isRefunded: false,
+        },
       };
 
       const createdBooking = await BookingService.createBookingBeforePayment(
@@ -122,7 +150,6 @@ export class BookingController {
         message: "Booking created successfully",
         data: createdBooking.id,
       });
-
     } catch (error: any) {
       console.error("Error creating booking:", error);
       return res.status(500).json({
@@ -148,35 +175,55 @@ export class BookingController {
 
       if (
         booking.paymentStatus !== PaymentStatus.Initiated ||
-        booking.bookingStatus === BookingStatus.Pending
+        booking.bookingStatus !== BookingStatus.Pending
       ) {
         return res.status(400).json({
           message: "Payment has already been initiated for this booking",
         });
       }
 
-      //wallet flow
-      // razorpay flow
-      const order = await PaymentService.createPaymentRazorpay({
-        amount: booking.amount,
-        bookingId: bookingId,
-        venueId: booking.venueId,
-        customerId: booking.customerDetails.customerId,
-        partnerId: booking.partnerId,
-        currency: Currency.INR,
-      });
+      if (!booking.paymentDetails || !booking.paymentDetails.paymentMethod) {
+        return res.status(400).json({ message: "Payment method is required" });
+      }
 
-      const orderData: Order = {
-        id: order.id,
-        receipt: order.receipt as string,
-      };
+      let orderData: Order | null = null;
+      //wallet flow
+      switch (booking.paymentDetails.paymentMethod) {
+        case PaymentMethod.Wallet:
+          await WalletService.deductCredits(booking.userId, booking.amount);
+          orderData = {
+            id: `order-${Math.random()
+              .toString(36)
+              .slice(2)
+              .padEnd(12, "0")
+              .slice(0, 12)}`,
+            receipt: bookingId,
+          };
+          break;
+
+        case PaymentMethod.Razorpay:
+          const order = await PaymentService.createPaymentRazorpay({
+            amount: booking.amount,
+            bookingId: bookingId,
+            venueId: booking.venueId,
+            customerId: booking.customerDetails.customerId,
+            partnerId: booking.partnerId,
+            currency: Currency.INR,
+          });
+
+          orderData = {
+            id: order.id,
+            receipt: order.receipt as string,
+          };
+          break;
+      }
 
       if (!orderData) {
         throw new Error("Failed to create Razorpay order");
       }
 
       const transaction = await PaymentService.createTransaction({
-        orderId: order.id,
+        orderId: orderData.id,
         bookingId: bookingId,
         amount: booking.amount,
         currency: Currency.INR,
@@ -201,36 +248,62 @@ export class BookingController {
   static async verifyPaymentAndBooking(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      let { paymentId } = req.body as {
+        paymentId?: string;
+      };
 
-      const { paymentId, signature, orderId } = req.body as {
-        paymentId: string;
+      const { signature, orderId } = req.body as {
         signature: string;
         orderId: string;
       };
 
-      if (!id) {
-        return res.status(400).json({ message: "Booking ID is required" });
-      }
-
-      if (!paymentId || !signature || !orderId) {
-        return res.status(400).json({ message: "Payment details are missing" });
+      if (!id || !orderId) {
+        return res
+          .status(400)
+          .json({ message: "Booking ID and Order ID are required" });
       }
 
       const booking = await BookingService.getBookingById(id);
 
-      if (
-        !booking ||
-        booking.paymentStatus === PaymentStatus.Initiated ||
-        booking.bookingStatus === BookingStatus.Pending
-      ) {
-        return res.status(400).json({ message: "Payment details are missing" });
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
       }
 
-      const verified = await PaymentService.verifyPaymentSignature({
-        paymentId,
-        signature,
-        orderId,
-      });
+      const paymentMethod =
+        booking.paymentDetails?.paymentMethod || PaymentMethod.Razorpay;
+
+      let verified = false;
+      if (paymentMethod == PaymentMethod.Wallet) {
+        const transaction = await PaymentService.getTransactionByOrderId(
+          orderId
+        );
+
+        if (!transaction) {
+          throw new Error("Payment verification failed");
+        }
+        paymentId = "pay" + transaction.orderId;
+        verified = true;
+      } else {
+        if (!paymentId || !signature || !orderId) {
+          return res
+            .status(400)
+            .json({ message: "Payment details are missing" });
+        }
+
+        if (
+          !booking ||
+          booking.paymentStatus !== PaymentStatus.Initiated ||
+          booking.bookingStatus !== BookingStatus.Pending
+        ) {
+          return res.status(400).json({ message: "Invalid booking state" });
+        }
+
+        verified = await PaymentService.verifyPaymentSignature({
+          paymentId,
+          signature,
+          orderId,
+        });
+      }
 
       if (!verified) {
         BookingService.handleBooking({
@@ -252,7 +325,6 @@ export class BookingController {
       });
 
       return res.status(200).json({ message: "Payment verified successfully" });
-      
     } catch (error) {
       console.error("Error confirming booking:", error);
       const appError = error as AppError;

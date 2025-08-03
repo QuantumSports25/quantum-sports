@@ -55,7 +55,7 @@ export class AuthService {
       // Generate JWT token for the newly registered user
       const token = jwt.sign(
         { userId: user.id, email: user.email },
-        process.env["JWT_SECRET"] || "your-secret-key",
+        process.env["JWT_SECRET"] || "",
         { expiresIn: "24h" }
       );
 

@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Plus, Edit3, Trash2, Settings, Clock, DollarSign, Loader2, Image as ImageIcon } from "lucide-react";
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Settings,
+  Clock,
+  DollarSign,
+  Loader2,
+  Image as ImageIcon,
+} from "lucide-react";
 import { Venue } from "../../../../types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
@@ -24,20 +33,22 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<string>('all');
+  const [selectedActivity, setSelectedActivity] = useState<string>("all");
   const queryClient = useQueryClient();
 
   // Fetch activities from backend API
   const { data: activities = [], isLoading: activitiesLoading } = useQuery({
-    queryKey: ['activities', venue.id],
-    queryFn: () => venue.id ? getActivitiesByVenue(venue.id) : Promise.resolve([]),
+    queryKey: ["activities", venue.id],
+    queryFn: () =>
+      venue.id ? getActivitiesByVenue(venue.id) : Promise.resolve([]),
     enabled: !!venue.id,
   });
 
   // Fetch facilities from backend API
   const { data: facilities = [], isLoading } = useQuery({
-    queryKey: ['facilities', venue.id],
-    queryFn: () => venue.id ? getFacilitiesByVenue(venue.id) : Promise.resolve([]),
+    queryKey: ["facilities", venue.id],
+    queryFn: () =>
+      venue.id ? getFacilitiesByVenue(venue.id) : Promise.resolve([]),
     enabled: !!venue.id,
   });
 
@@ -46,14 +57,16 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
       return createFacility(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities', venue.id] });
+      queryClient.invalidateQueries({ queryKey: ["facilities", venue.id] });
       setIsAddModalOpen(false);
-      toast.success('Facility created successfully!');
+      toast.success("Facility created successfully!");
     },
     onError: (error: any) => {
-      console.error('Error creating facility:', error);
-      toast.error(error?.response?.data?.message || 'Failed to create facility');
-    }
+      console.error("Error creating facility:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to create facility"
+      );
+    },
   });
 
   const updateFacilityMutation = useMutation({
@@ -61,15 +74,17 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
       return updateFacility(data.id, data.facility);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities', venue.id] });
+      queryClient.invalidateQueries({ queryKey: ["facilities", venue.id] });
       setIsEditModalOpen(false);
       setEditingFacility(null);
-      toast.success('Facility updated successfully!');
+      toast.success("Facility updated successfully!");
     },
     onError: (error: any) => {
-      console.error('Error updating facility:', error);
-      toast.error(error?.response?.data?.message || 'Failed to update facility');
-    }
+      console.error("Error updating facility:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to update facility"
+      );
+    },
   });
 
   const deleteFacilityMutation = useMutation({
@@ -77,13 +92,15 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
       return deleteFacility(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities', venue.id] });
-      toast.success('Facility deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ["facilities", venue.id] });
+      toast.success("Facility deleted successfully!");
     },
     onError: (error: any) => {
-      console.error('Error deleting facility:', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete facility');
-    }
+      console.error("Error deleting facility:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to delete facility"
+      );
+    },
   });
 
   const handleCreateFacility = (data: FacilityFormData) => {
@@ -98,14 +115,19 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
 
   const handleDeleteFacility = (id: string | undefined) => {
     if (!id) return;
-    if (window.confirm('Are you sure you want to delete this facility? This will also delete all associated time slots.')) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this facility? This will also delete all associated time slots."
+      )
+    ) {
       deleteFacilityMutation.mutate(id);
     }
   };
 
-  const filteredFacilities = selectedActivity === 'all' 
-    ? facilities 
-    : facilities.filter(f => f.activityId === selectedActivity);
+  const filteredFacilities =
+    selectedActivity === "all"
+      ? facilities
+      : facilities.filter((f) => f.activityId === selectedActivity);
 
   if (isLoading || activitiesLoading) {
     return (
@@ -152,12 +174,16 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
       {filteredFacilities.length === 0 ? (
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
           <Settings className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No Facilities Yet</h3>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            No Facilities Yet
+          </h3>
           <p className="text-gray-400 mb-4">
-                      {selectedActivity === 'all' 
-            ? 'Add facilities like Court 1, Court 2, Cricket Ground, etc.'
-            : `No facilities found for ${activities.find((a: Activity) => a.id === selectedActivity)?.name}`
-          }
+            {selectedActivity === "all"
+              ? "Add facilities like Court 1, Court 2, Cricket Ground, etc."
+              : `No facilities found for ${
+                  activities.find((a: Activity) => a.id === selectedActivity)
+                    ?.name
+                }`}
           </p>
           <button
             onClick={() => setIsAddModalOpen(true)}
@@ -174,19 +200,21 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
               className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-colors"
             >
               {/* Facility Header */}
-              <div className="relative h-48 bg-gray-700 flex items-center justify-center">
-                <ImageIcon className="h-12 w-12 text-gray-500" />
-                {facility.isFillingFast && (
-                  <div className="absolute top-2 right-2 bg-yellow-500 text-black px-2 py-1 rounded-full text-xs font-bold">
-                    Filling Fast
+              {facility.images && facility.images.length > 0 ? (
+                <div className="relative h-full max-h-36 overflow-hidden rounded-t-2xl">
+                  <div className="flex transition-transform duration-300 ease-in-out">
+                    <img
+                      src={facility?.images?.[0] || ""}
+                      alt={`${facility?.name}`}
+                      className="w-full h-full object-cover flex-shrink-0"
+                    />
                   </div>
-                )}
-                {!facility.isAvailable && (
-                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                    Unavailable
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="relative h-48 bg-gray-700 flex items-center justify-center">
+                  <ImageIcon className="h-12 w-12 text-gray-500" />
+                </div>
+              )}
 
               <div className="p-4">
                 <div className="flex items-start justify-between mb-3">
@@ -194,7 +222,9 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
                     <h3 className="text-lg font-semibold text-white mb-1">
                       {facility.name}
                     </h3>
-                    <p className="text-blue-400 text-sm">{facility.activityName}</p>
+                    <p className="text-blue-400 text-sm">
+                      {facility.activityName}
+                    </p>
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -221,18 +251,22 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
                       <DollarSign className="h-4 w-4 mr-1" />
                       <span>₹{facility.start_price_per_hour}/hour</span>
                     </div>
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      facility.isAvailable 
-                        ? 'bg-green-600/20 text-green-400' 
-                        : 'bg-red-600/20 text-red-400'
-                    }`}>
-                      {facility.isAvailable ? 'Available' : 'Unavailable'}
+                    <div
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        facility.isAvailable
+                          ? "bg-green-600/20 text-green-400"
+                          : "bg-red-600/20 text-red-400"
+                      }`}
+                    >
+                      {facility.isAvailable ? "Available" : "Unavailable"}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center text-gray-400 text-sm">
                     <Clock className="h-4 w-4 mr-1" />
-                    <span>{facility.startTime} - {facility.endTime}</span>
+                    <span>
+                      {facility.startTime} - {facility.endTime}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -261,15 +295,20 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
         onSubmit={handleUpdateFacility}
         title="Edit Facility"
         activities={activities}
-        initialData={editingFacility ? {
-          name: editingFacility.name,
-          activityId: editingFacility.activityId,
-          start_price_per_hour: editingFacility.start_price_per_hour,
-          startTime: editingFacility.startTime,
-          endTime: editingFacility.endTime,
-          isAvailable: editingFacility.isAvailable,
-          isFillingFast: editingFacility.isFillingFast,
-        } : undefined}
+        initialData={
+          editingFacility
+            ? {
+                name: editingFacility.name,
+                images: editingFacility.images || [],
+                activityId: editingFacility.activityId,
+                start_price_per_hour: editingFacility.start_price_per_hour,
+                startTime: editingFacility.startTime,
+                endTime: editingFacility.endTime,
+                isAvailable: editingFacility.isAvailable,
+                isFillingFast: editingFacility.isFillingFast,
+              }
+            : undefined
+        }
         isLoading={updateFacilityMutation.isPending}
       />
     </div>
@@ -298,11 +337,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<FacilityFormData>(
     initialData || {
-      name: '',
-      activityId: '',
+      images: [],
+      name: "",
+      activityId: "",
       start_price_per_hour: 0,
-      startTime: '06:00',
-      endTime: '23:00',
+      startTime: "06:00",
+      endTime: "23:00",
       isAvailable: true,
       isFillingFast: false,
     }
@@ -315,7 +355,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.activityId || formData.start_price_per_hour <= 0) return;
+    if (
+      !formData.name ||
+      !formData.activityId ||
+      formData.start_price_per_hour <= 0
+    )
+      return;
     onSubmit(formData);
   };
 
@@ -325,7 +370,7 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto">
         <h3 className="text-xl font-bold text-white mb-6">{title}</h3>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -335,7 +380,9 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 placeholder="e.g., Court 1, Cricket Ground"
                 required
@@ -348,7 +395,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
               </label>
               <select
                 value={formData.activityId}
-                onChange={(e) => setFormData(prev => ({ ...prev, activityId: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    activityId: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               >
@@ -370,7 +422,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
               <input
                 type="number"
                 value={formData.start_price_per_hour}
-                onChange={(e) => setFormData(prev => ({ ...prev, start_price_per_hour: parseInt(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    start_price_per_hour: parseInt(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 placeholder="399"
                 min="1"
@@ -385,7 +442,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
               <input
                 type="time"
                 value={formData.startTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    startTime: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               />
@@ -398,7 +460,9 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
               <input
                 type="time"
                 value={formData.endTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, endTime: e.target.value }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               />
@@ -411,7 +475,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
                 type="checkbox"
                 id="isAvailable"
                 checked={formData.isAvailable}
-                onChange={(e) => setFormData(prev => ({ ...prev, isAvailable: e.target.checked }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isAvailable: e.target.checked,
+                  }))
+                }
                 className="rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="isAvailable" className="text-sm text-gray-300">
@@ -424,7 +493,12 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
                 type="checkbox"
                 id="isFillingFast"
                 checked={formData.isFillingFast}
-                onChange={(e) => setFormData(prev => ({ ...prev, isFillingFast: e.target.checked }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isFillingFast: e.target.checked,
+                  }))
+                }
                 className="rounded bg-gray-700 border-gray-600 text-yellow-600 focus:ring-yellow-500"
               />
               <label htmlFor="isFillingFast" className="text-sm text-gray-300">
@@ -432,8 +506,6 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
               </label>
             </div>
           </div>
-
-
 
           <div className="flex space-x-3 pt-4">
             <button
@@ -447,12 +519,17 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
             <button
               type="submit"
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-              disabled={isLoading || !formData.name || !formData.activityId || formData.start_price_per_hour <= 0}
+              disabled={
+                isLoading ||
+                !formData.name ||
+                !formData.activityId ||
+                formData.start_price_per_hour <= 0
+              }
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                'Save Facility'
+                "Save Facility"
               )}
             </button>
           </div>

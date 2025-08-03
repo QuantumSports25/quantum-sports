@@ -15,7 +15,7 @@ export const createVenue = async (venue: VenueFormData) => {
 export const getVenue = async (id: string) => {
   try {
     const response = await axiosInstance.get(`/venue/get-venue/${id}`);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error("Error getting venue:", error);
     throw error;

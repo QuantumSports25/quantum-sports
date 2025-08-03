@@ -48,6 +48,7 @@ export interface Activity {
 export interface Facility {
   id?: string;
   name: string;
+  images?: string[];
   createdAt?: Date;
   updatedAt?: Date;
   activityId: string;

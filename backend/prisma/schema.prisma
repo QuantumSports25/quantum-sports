@@ -103,7 +103,8 @@ model Activity {
 model Facility {
   id                   String   @id @default(uuid())
   name                 String   @db.VarChar(255)
-  activityId           String
+  activityId           String 
+  images               String[]
   start_price_per_hour Decimal  @db.Decimal(10, 2)
   startTime            String   @db.VarChar(10)
   endTime              String   @db.VarChar(10)

@@ -1,9 +1,24 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "src/api.ts", "use": "@vercel/node" }
-    ],
-    "routes": [
-      { "src": "/(.*)", "dest": "/src/api.ts" }
-    ]
+  "version": 2,
+  "builds": [
+    { 
+      "src": "src/api.ts", 
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["prisma/**/*"]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/src/api.ts" }
+  ],
+  "env": {
+    "PRISMA_QUERY_ENGINE_LIBRARY": "/var/task/node_modules/.prisma/client/libquery_engine-rhel-openssl-1.0.x.so.node",
+    "PRISMA_QUERY_ENGINE_BINARY": "/var/task/node_modules/.prisma/client/query-engine-rhel-openssl-1.0.x"
+  },
+  "functions": {
+    "src/api.ts": {
+      "maxDuration": 30
+    }
   }
+}

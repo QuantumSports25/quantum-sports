@@ -5,17 +5,7 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-// Create Prisma client instance with Vercel-optimized configuration
-const prisma = globalThis.prisma || new PrismaClient({
-  log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  ...(process.env['DATABASE_URL'] && {
-    datasources: {
-      db: {
-        url: process.env['DATABASE_URL'],
-      },
-    },
-  }),
-});
+const prisma = new PrismaClient();
 
 // In development, use global variable to prevent multiple instances
 if (process.env['NODE_ENV'] !== 'production') {

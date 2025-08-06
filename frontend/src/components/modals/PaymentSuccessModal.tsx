@@ -120,7 +120,7 @@ const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
         onClick={handleBackdropClick}
       >
         <div
-          className="bg-white rounded-2xl w-full max-w-2xl min-h-[500px] max-h-[85vh] overflow-y-auto shadow-2xl mt-4"
+          className="bg-white rounded-2xl w-full max-w-2xl min-h-[500px] max-h-[85vh] overflow-y-auto shadow-2xl mt-4 scrollbar-hide"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Success Header */}

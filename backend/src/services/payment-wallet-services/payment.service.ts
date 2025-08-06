@@ -4,8 +4,8 @@ import { PrismaClient } from "@prisma/client";
 import { createHmac } from "crypto";
 
 const prisma = new PrismaClient();
-const razorpayKey = process.env["RAZORPAY_KEY_ID"]!;
-const razorpaySecret = process.env["RAZORPAY_KEY_SECRET"]!;
+const razorpayKey = process.env["RAZORPAY_KEY_ID"];
+const razorpaySecret = process.env["RAZORPAY_KEY_SECRET"];
 
 export class PaymentService {
   static async createPaymentRazorpay({
@@ -24,6 +24,13 @@ export class PaymentService {
     currency: Currency;
   }) {
     try {
+      // Validate Razorpay credentials
+      if (!razorpayKey || !razorpaySecret) {
+        throw new Error(
+          "Razorpay credentials are missing. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables."
+        );
+      }
+
       const razorpay = new Razorpay({
         key_id: razorpayKey,
         key_secret: razorpaySecret,
@@ -103,6 +110,13 @@ export class PaymentService {
     signature: string;
   }) {
     try {
+      // Validate Razorpay secret
+      if (!razorpaySecret) {
+        throw new Error(
+          "Razorpay secret is missing. Please set RAZORPAY_KEY_SECRET in your environment variables."
+        );
+      }
+
       const data = `${orderId}|${paymentId}`;
       const expectedSignature = createHmac("sha256", razorpaySecret)
         .update(data)

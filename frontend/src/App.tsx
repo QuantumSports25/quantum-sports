@@ -48,6 +48,8 @@ import ContactPage from "./pages/ContactPage";
 import WalletPage from "./pages/WalletPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
 import ShopPage from "./pages/ShopPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import ShopCheckoutPage from "./pages/ShopCheckoutPage";
 
 // Import route tracking hook
@@ -113,6 +115,8 @@ function App() {
             <Route path="/shop/checkout" element={<ShopCheckoutPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:eventId" element={<EventDetailsPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
 
             {/* Demo Routes */}
             {/* <Route path="/demo" element={<DashboardDemo />} />

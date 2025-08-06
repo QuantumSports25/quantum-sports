@@ -5,10 +5,7 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-// Create Prisma client instance
-const prisma = globalThis.prisma || new PrismaClient({
-  log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+const prisma = new PrismaClient();
 
 // In development, use global variable to prevent multiple instances
 if (process.env['NODE_ENV'] !== 'production') {

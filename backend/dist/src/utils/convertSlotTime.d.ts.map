@@ -1,1 +1,0 @@
-{"version":3,"file":"convertSlotTime.d.ts","sourceRoot":"","sources":["../../../src/utils/convertSlotTime.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,yBAAyB;IACtC,UAAU,EAAE,MAAM,CAAC;CACtB;AAED,MAAM,WAAW,yBAAyB;IACtC,OAAO,EAAE,MAAM,CAAC;CACnB;AAED,eAAO,MAAM,mBAAmB,GAC5B,YAAY,yBAAyB,CAAC,YAAY,CAAC,KACpD,yBAAyB,CAAC,SAAS,CAqBrC,CAAC"}

@@ -34,6 +34,7 @@ declare global {
 
 interface CheckoutCardProps {
   refetchSlots: () => void;
+  setSelectedSlots: React.Dispatch<React.SetStateAction<Slot[]>>;
   venue: Venue;
   selectedActivity: Activity | null;
   selectedFacility: Facility | null;
@@ -54,6 +55,7 @@ export enum FailedType {
 }
 
 const CheckoutCard: React.FC<CheckoutCardProps> = ({
+  setSelectedSlots,
   refetchSlots,
   venue,
   selectedSlots,
@@ -78,8 +80,12 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const [showFailureModal, setShowFailureModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>(LoadingStatus.Validating);
-  const [failureType, setFailureType] = useState<FailedType>(FailedType.Validation);
+  const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>(
+    LoadingStatus.Validating
+  );
+  const [failureType, setFailureType] = useState<FailedType>(
+    FailedType.Validation
+  );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isPaymentDeducted, setIsPaymentDeducted] = useState(false);
   const [successBookingDetails, setSuccessBookingDetails] = useState<any>(null);
@@ -103,6 +109,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const unlockSlotmutation = useMutation({
     mutationFn: () => unlockSlots(slotIds),
     onSuccess: () => {
+      setSelectedSlots([]);
       refetchSlots();
     },
   });
@@ -218,7 +225,9 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
           paymentId: response.paymentId,
           bookedAt: new Date(),
         });
+
         setShowSuccessModal(true);
+        refetchSlots();
         toast.success("🎉 Payment successful! Your slots are booked.");
       } else {
         setFailureType(FailedType.PaymentVerification);
@@ -264,11 +273,14 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   };
 
   const handleCloseSuccessModal = () => {
-    setShowSuccessModal(false);
-    setSuccessBookingDetails(null);
-    // Optionally navigate to bookings page or refresh slots
-    refetchSlots();
+    Promise.all([
+      setSelectedSlots([]),
+      refetchSlots(),
+      setShowSuccessModal(false),
+      setSuccessBookingDetails(null),
+    ]);
   };
+
   const openRazorpayCheckout = (orderData: any) => {
     // Check if Razorpay is loaded
     if (!window.Razorpay) {

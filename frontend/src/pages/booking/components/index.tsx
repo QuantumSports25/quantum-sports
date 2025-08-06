@@ -94,6 +94,7 @@ const BookSlots: React.FC<{ venue: Venue }> = ({ venue }) => {
         <CheckoutCard
           refetchSlots={refetchSlots}
           venue={venue}
+          setSelectedSlots={setSelectedSlots}
           selectedActivity={selectedActivity}
           selectedFacility={selectedFacility}
           selectedSlots={selectedSlots}

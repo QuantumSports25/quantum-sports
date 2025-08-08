@@ -82,15 +82,7 @@ const Header: React.FC = () => {
               className="flex items-center space-x-2 sm:space-x-3 group flex-shrink-0"
               onClick={closeMenu}
             >
-              <div className="relative">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
-                  <span className="text-white font-bold text-lg sm:text-xl">Q</span>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-              </div>
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Quantum
-              </span>
+              <img src="/with_bg.PNG" className="w-24 h-24 sm:w-24 sm:h-24" alt="Quantum" />
             </Link>
 
             {/* Desktop Navigation */}

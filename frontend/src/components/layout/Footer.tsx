@@ -125,15 +125,8 @@ const Footer: React.FC = () => {
             {/* Brand Section */}
             <div className="lg:col-span-5">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-2xl">Q</span>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-2xl opacity-20 blur-lg"></div>
-                </div>
-                <span className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  Quantum
-                </span>
+
+                <img src="/with_bg.PNG" className="w-24 h-24 sm:w-24 sm:h-24" alt="Quantum" />
               </div>
 
               <p className="text-gray-300 text-lg leading-relaxed mb-8 max-w-lg">

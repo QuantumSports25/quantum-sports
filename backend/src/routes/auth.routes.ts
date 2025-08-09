@@ -10,5 +10,6 @@ router.post('/verify-otp', AuthController.verifyOTP);
 router.post('/register-partner', AuthController.registerPartner);
 router.post('/partner-login', AuthController.partnerLogin);
 router.post('/admin-login', AuthController.adminLogin);
+router.get('/users/:role', AuthController.getAllUsersByRole);
 
 export default router;

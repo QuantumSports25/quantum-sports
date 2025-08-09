@@ -378,6 +378,29 @@ export class BookingController {
     }
   }
 
+  static async getBookingsByPartner(req: Request, res: Response) {
+    try {
+      const { partnerId } = req.params;
+
+      if (!partnerId) {
+        return res.status(400).json({ message: "Partner ID is required" });
+      }
+
+      const bookings = await BookingService.getBookingsByPartnerId(partnerId);
+
+      return res.status(200).json({
+        data: bookings,
+        total: bookings.length,
+      });
+    } catch (error: any) {
+      console.error("Error getting partner bookings:", error);
+      return res.status(500).json({
+        message: "Failed to get partner bookings",
+        error: error.message,
+      });
+    }
+  }
+
   static async cancelBooking(req: Request, res: Response) {
     try {
       const { id } = req.params;

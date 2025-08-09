@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { EmailService } from "./email.service";
-import { User, UserRole } from "../../models/user.model";
+import { User, UserRole} from "../../models/user.model";
 
 const prisma = new PrismaClient();
 
@@ -372,6 +372,33 @@ export class AuthService {
     } catch (error) {
       console.error("Get User By ID Error:", error);
       throw new Error("Failed to retrieve user: " + error);
+    }
+  }
+
+  static async getAllUsers(
+    page: number,
+    offset: number,
+    role?: UserRole
+  ): Promise<User[]> {
+    try {
+      const users = await prisma.user.findMany({
+        skip: offset,
+        take: page,
+        ...(role ? { where: { role } } : {}),
+      });
+
+      const allUsers = users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user?.phone ?? "",
+        role: user.role === "partner" ? UserRole.PARTNER : UserRole.USER,
+      }));
+
+      return allUsers;
+    } catch (error) {
+      console.error("Get All Users Error:", error);
+      throw new Error("Failed to retrieve users: " + error);
     }
   }
 }

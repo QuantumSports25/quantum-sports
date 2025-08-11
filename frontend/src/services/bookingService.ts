@@ -56,6 +56,7 @@ class BookingService {
         paymentId: booking.paymentDetails?.paymentId,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
+        bookedDate: booking.bookedDate,
         // Use actual venue data from backend
         venue: {
           id: booking.venueId,

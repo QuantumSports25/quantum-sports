@@ -127,7 +127,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         amount: total,
         startTime: selectedSlots[0]?.startTime || "",
         endTime: selectedSlots[selectedSlots.length - 1]?.endTime || "",
-        bookedDate: new Date(),
+        bookedDate: new Date(selectedSlots[0]?.date) || new Date(),
         paymentMethod: selectedPaymentMethod || PaymentMethod.Razorpay,
       };
 
@@ -234,6 +234,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         setIsPaymentDeducted(true);
         setErrorMessage("Payment verification failed");
         setShowFailureModal(true);
+        unlockSlotmutation.mutate();
       }
     },
     onError: (error: any) => {
@@ -288,6 +289,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         "Payment system not loaded. Please refresh the page and try again."
       );
       setInitiatingPayment(false);
+      unlockSlotmutation.mutate();
       return;
     }
 
@@ -339,6 +341,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         ondismiss: function () {
           setInitiatingPayment(false);
           setVerifyingPayment(false);
+          unlockSlotmutation.mutate();
           toast.error("Payment cancelled");
         },
       },
@@ -352,6 +355,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       toast.error(`Payment failed: ${response.error.description}`);
       setInitiatingPayment(false);
       setVerifyingPayment(false);
+      unlockSlotmutation.mutate();
     });
 
     razorpay.open();

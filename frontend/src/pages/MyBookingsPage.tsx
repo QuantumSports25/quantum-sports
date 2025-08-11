@@ -1,42 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, MoreHorizontal, Filter, Search, Plus } from 'lucide-react';
+import { Calendar, MapPin, Clock, MoreHorizontal, Filter, Search, Plus, Loader2 } from 'lucide-react';
+import { bookingService } from '../services/bookingService';
+import { useAuth } from '../hooks';
+import { Booking } from '../types';
+import { toast } from 'react-hot-toast';
+
+// Custom date formatting function
+const formatDate = (date: Date | string) => {
+  try {
+    const d = new Date(date);
+    return d.toLocaleDateString('en-IN', { 
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch (err) {
+    return 'Invalid date';
+  }
+};
 
 const MyBookingsPage: React.FC = () => {
-  const [bookings] = useState([
-    {
-      id: 1,
-      venue: 'Grand Conference Hall',
-      date: '2024-02-15',
-      time: '10:00 AM - 2:00 PM',
-      status: 'confirmed',
-      type: 'Conference',
-      location: 'Downtown Business Center',
-      price: '₹15,000',
-      capacity: '200 people'
-    },
-    {
-      id: 2,
-      venue: 'Sunset Ballroom',
-      date: '2024-03-22',
-      time: '6:00 PM - 11:00 PM',
-      status: 'pending',
-      type: 'Wedding Reception',
-      location: 'Riverside Hotel',
-      price: '₹45,000',
-      capacity: '150 people'
-    },
-    {
-      id: 3,
-      venue: 'Tech Innovation Center',
-      date: '2024-01-30',
-      time: '9:00 AM - 5:00 PM',
-      status: 'completed',
-      type: 'Hackathon',
-      location: 'Tech Park Campus',
-      price: '₹25,000',
-      capacity: '300 people'
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        if (!user?.id) {
+          console.log('No user ID found');
+          return;
+        }
+        console.log('Fetching bookings for user:', user.id);
+        const response = await bookingService.getUserBookings(user.id);
+        console.log('Bookings response:', response);
+        
+        if (response.bookings.length > 0) {
+          console.log('Found bookings:', response.bookings);
+          setBookings(response.bookings);
+        } else {
+          console.log('No bookings found');
+        }
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching bookings:', err);
+        setError('Failed to fetch bookings. Please try again later.');
+        toast.error('Failed to fetch bookings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      setIsLoading(true);
+      fetchBookings();
     }
-  ]);
+  }, [user?.id]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -48,9 +68,9 @@ const MyBookingsPage: React.FC = () => {
   }, []);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'confirmed': return 'text-green-400 bg-green-400/20 border-green-400/30';
-      case 'pending': return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
+      case 'cancelled': return 'text-red-400 bg-red-400/20 border-red-400/30';
       case 'completed': return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
       default: return 'text-gray-400 bg-gray-400/20 border-gray-400/30';
     }
@@ -65,11 +85,35 @@ const MyBookingsPage: React.FC = () => {
   //   }
   // };
 
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      await bookingService.cancelBooking(bookingId);
+      // Refresh bookings after cancellation
+      if (user?.id) {
+        const response = await bookingService.getUserBookings(user.id);
+        setBookings(response.bookings);
+      }
+      toast.success('Booking cancelled successfully');
+    } catch (err) {
+      toast.error('Failed to cancel booking');
+    }
+  };
+
+  const formatBookingTime = (startTime: string, endTime: string) => {
+    try {
+      return `${startTime} - ${endTime}`;
+    } catch (err) {
+      return 'Invalid time';
+    }
+  };
+
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = booking.venue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || booking.status === filterStatus;
+    const matchesSearch = (
+      booking.venue?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.venue?.location?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.venue?.location?.city?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const matchesFilter = filterStatus === 'all' || booking.bookingStatus.toLowerCase() === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
@@ -130,59 +174,105 @@ const MyBookingsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          {filteredBookings.map((booking) => (
-            <div
-              key={booking.id}
-              className="bg-gray-800 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-200">{booking.venue}</h2>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium uppercase ${getStatusColor(booking.status)}`}
-                >
-                  {/* {booking.status} */}
-                </span>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-blue-400" />
-                  <span className="text-gray-300">{booking.date}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-blue-400" />
-                  <span className="text-gray-300">{booking.time}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="h-5 w-5 text-blue-400" />
-                  <span className="text-gray-300">{booking.location}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-sm text-gray-400 italic">{booking.type}</span>
-                <button
-                  className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-                  title="More Details"
-                >
-                  <MoreHorizontal className="h-5 w-5 text-gray-400 hover:text-white" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {bookings.length === 0 && (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          </div>
+        ) : error ? (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-400">
-              You haven't made any bookings yet.
-            </p>
+            <p className="text-xl text-red-400">{error}</p>
             <button
+              onClick={() => window.location.reload()}
               className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
-              Book Your First Venue
+              Retry
             </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {filteredBookings.map((booking) => (
+              <div
+                key={booking.id}
+                className="bg-gray-800 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-200">
+                    {booking.venue?.name || 'Unnamed Venue'}
+                  </h2>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium uppercase ${getStatusColor(booking.bookingStatus)}`}
+                  >
+                    {booking.bookingStatus}
+                  </span>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-blue-400" />
+                    <span className="text-gray-300">
+                      {formatDate(booking.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-5 w-5 text-blue-400" />
+                    <span className="text-gray-300">
+                      {formatBookingTime(booking.slot.startTime, booking.slot.endTime)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-blue-400" />
+                    <span className="text-gray-300">
+                      {booking.venue?.location?.address || 'Location not available'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-400 italic">
+                      {booking.venue?.description || 'No description available'}
+                    </span>
+                    <span className="text-sm font-medium text-green-400">
+                      ₹{booking.amountPaid}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {booking.bookingStatus === 'confirmed' && (
+                      <button
+                        onClick={() => handleCancelBooking(booking.id)}
+                        className="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                      title="More Details"
+                    >
+                      <MoreHorizontal className="h-5 w-5 text-gray-400 hover:text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {filteredBookings.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-xl text-gray-400">
+                  {searchTerm || filterStatus !== 'all'
+                    ? 'No bookings match your filters.'
+                    : 'You haven\'t made any bookings yet.'}
+                </p>
+                {!searchTerm && filterStatus === 'all' && (
+                  <button
+                    onClick={() => window.location.href = '/venues'}
+                    className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    Book Your First Venue
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -85,6 +85,7 @@ export interface Booking {
   paymentId?: string;
   createdAt: string;
   updatedAt: string;
+  bookedDate: string;
 }
 
 // Event Types

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Zap, Crown, Gift, } from 'lucide-react';
+import { Check, Star, Zap, Crown, Gift, CheckCircle, XCircle, AlertCircle, Loader2, CreditCard, Shield } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import FaqAndInfo from './membership/components/FaqAndInfo';
@@ -26,6 +26,181 @@ declare global {
   }
 }
 
+// Toast types
+interface Toast {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info' | 'loading';
+  title: string;
+  message: string;
+  duration?: number;
+  icon?: React.ReactNode;
+}
+
+// Toast Component
+const ToastNotification: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+
+    if (toast.duration && toast.duration > 0) {
+      const timer = setTimeout(() => {
+        handleRemove();
+      }, toast.duration);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast.duration, onRemove]);
+
+  const handleRemove = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onRemove(toast.id);
+    }, 300);
+  };
+
+  const getToastStyles = () => {
+    switch (toast.type) {
+      case 'success':
+        return {
+          gradient: 'from-green-500/20 to-emerald-500/20',
+          border: 'border-green-500/30',
+          iconBg: 'from-green-500 to-emerald-500',
+          titleColor: 'text-green-400',
+          shadow: 'shadow-green-500/20'
+        };
+      case 'error':
+        return {
+          gradient: 'from-red-500/20 to-rose-500/20',
+          border: 'border-red-500/30',
+          iconBg: 'from-red-500 to-rose-500',
+          titleColor: 'text-red-400',
+          shadow: 'shadow-red-500/20'
+        };
+      case 'warning':
+        return {
+          gradient: 'from-yellow-500/20 to-orange-500/20',
+          border: 'border-yellow-500/30',
+          iconBg: 'from-yellow-500 to-orange-500',
+          titleColor: 'text-yellow-400',
+          shadow: 'shadow-yellow-500/20'
+        };
+      case 'info':
+        return {
+          gradient: 'from-blue-500/20 to-cyan-500/20',
+          border: 'border-blue-500/30',
+          iconBg: 'from-blue-500 to-cyan-500',
+          titleColor: 'text-blue-400',
+          shadow: 'shadow-blue-500/20'
+        };
+      case 'loading':
+        return {
+          gradient: 'from-purple-500/20 to-indigo-500/20',
+          border: 'border-purple-500/30',
+          iconBg: 'from-purple-500 to-indigo-500',
+          titleColor: 'text-purple-400',
+          shadow: 'shadow-purple-500/20'
+        };
+      default:
+        return {
+          gradient: 'from-gray-500/20 to-gray-600/20',
+          border: 'border-gray-500/30',
+          iconBg: 'from-gray-500 to-gray-600',
+          titleColor: 'text-gray-400',
+          shadow: 'shadow-gray-500/20'
+        };
+    }
+  };
+
+  const styles = getToastStyles();
+
+  const getIcon = () => {
+    if (toast.icon) return toast.icon;
+    
+    switch (toast.type) {
+      case 'success':
+        return <CheckCircle className="h-5 w-5" />;
+      case 'error':
+        return <XCircle className="h-5 w-5" />;
+      case 'warning':
+        return <AlertCircle className="h-5 w-5" />;
+      case 'info':
+        return <Shield className="h-5 w-5" />;
+      case 'loading':
+        return <Loader2 className="h-5 w-5 animate-spin" />;
+      default:
+        return <AlertCircle className="h-5 w-5" />;
+    }
+  };
+
+  return (
+    <div
+      className={`
+        transform transition-all duration-300 ease-out
+        ${isVisible && !isExiting ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-95'}
+        ${isExiting ? 'translate-x-full opacity-0 scale-95' : ''}
+      `}
+    >
+      <div className={`
+        relative overflow-hidden rounded-xl border backdrop-blur-xl
+        bg-gradient-to-br from-gray-800/90 to-gray-900/90
+        ${styles.gradient} ${styles.border} ${styles.shadow}
+        shadow-2xl max-w-sm w-full p-4
+      `}>
+        {/* Background animation */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
+        
+        <div className="relative flex items-start space-x-3">
+          {/* Icon */}
+          <div className={`flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br ${styles.iconBg} flex items-center justify-center shadow-lg`}>
+            <div className="text-white">
+              {getIcon()}
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <h4 className={`text-sm font-semibold ${styles.titleColor} mb-1`}>
+              {toast.title}
+            </h4>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              {toast.message}
+            </p>
+          </div>
+          
+          {/* Close button */}
+          {toast.type !== 'loading' && (
+            <button
+              onClick={handleRemove}
+              className="flex-shrink-0 text-gray-400 hover:text-white transition-colors duration-200 p-1 rounded-lg hover:bg-white/10"
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Toast Container
+const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void }> = ({ toasts, onRemove }) => {
+  if (toasts.length === 0) return null;
+
+  return (
+    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm">
+      {toasts.map((toast) => (
+        <ToastNotification
+          key={toast.id}
+          toast={toast}
+          onRemove={onRemove}
+        />
+      ))}
+    </div>
+  );
+};
+
 const MembershipPage: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
@@ -33,6 +208,7 @@ const MembershipPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [apiPlans, setApiPlans] = useState<APIMembershipPlan[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Load Razorpay script
   useEffect(() => {
@@ -61,6 +237,28 @@ const MembershipPage: React.FC = () => {
 
     fetchPlans();
   }, []);
+
+  // Toast management functions
+  const addToast = (toast: Omit<Toast, 'id'>) => {
+    const id = Date.now().toString();
+    const newToast: Toast = {
+      ...toast,
+      id,
+      duration: toast.duration ?? (toast.type === 'loading' ? 0 : 5000)
+    };
+    setToasts(prev => [...prev, newToast]);
+    return id;
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
+  const updateToast = (id: string, updates: Partial<Toast>) => {
+    setToasts(prev => prev.map(toast => 
+      toast.id === id ? { ...toast, ...updates } : toast
+    ));
+  };
 
   const membershipPlans: MembershipPlan[] = [
     {
@@ -115,12 +313,26 @@ const MembershipPage: React.FC = () => {
 
   const handleRazorpayPayment = async (plan: MembershipPlan, apiPlan?: APIMembershipPlan) => {
     if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        title: 'Authentication Required',
+        message: 'Please login to purchase a membership plan.',
+        icon: <Shield className="h-5 w-5" />
+      });
       navigate('/login');
       return;
     }
 
     setLoading(true);
     setSelectedPlan(plan.id);
+
+    // Show processing toast
+    const processingToastId = addToast({
+      type: 'loading',
+      title: 'Processing Payment',
+      message: `Initiating payment for ${plan.name} membership...`,
+      icon: <CreditCard className="h-5 w-5" />
+    });
 
     // If no API plans loaded, try to fetch them first
     if (apiPlans.length === 0) {
@@ -160,6 +372,13 @@ const MembershipPage: React.FC = () => {
       });
 
       if (!membershipResponse.success) {
+        removeToast(processingToastId);
+        addToast({
+          type: 'error',
+          title: 'Membership Creation Failed',
+          message: 'Unable to create membership record. Please try again.',
+          icon: <XCircle className="h-5 w-5" />
+        });
         throw new Error('Failed to create membership');
       }
 
@@ -173,8 +392,21 @@ const MembershipPage: React.FC = () => {
       });
 
       if (!orderResponse.success) {
+        removeToast(processingToastId);
+        addToast({
+          type: 'error',
+          title: 'Order Creation Failed',
+          message: 'Unable to create payment order. Please try again.',
+          icon: <XCircle className="h-5 w-5" />
+        });
         throw new Error('Failed to create order');
       }
+
+      // Update processing toast
+      updateToast(processingToastId, {
+        title: 'Opening Payment Gateway',
+        message: 'Redirecting to secure payment gateway...'
+      });
 
       // Step 3: Initialize Razorpay payment
       const options = {
@@ -198,15 +430,31 @@ const MembershipPage: React.FC = () => {
             const verificationResponse = await membershipService.verifyMembershipPayment(verificationPayload);
 
             if (verificationResponse.success) {
-              alert('🎉 Payment successful! Your membership has been activated.');
+              removeToast(processingToastId);
+              addToast({
+                type: 'success',
+                title: 'Payment Successful! 🎉',
+                message: `Your ${plan.name} membership has been activated successfully!`,
+                icon: <CheckCircle className="h-5 w-5" />,
+                duration: 8000
+              });
               // You can redirect to a success page or refresh user data here
-              window.location.reload(); // Refresh to update user membership status
+              setTimeout(() => {
+                window.location.reload(); // Refresh to update user membership status
+              }, 2000);
             } else {
               throw new Error('Payment verification failed');
             }
           } catch (error) {
             console.error('Payment verification error:', error);
-            alert('❌ Payment verification failed. Please contact support.');
+            removeToast(processingToastId);
+            addToast({
+              type: 'error',
+              title: 'Payment Verification Failed',
+              message: 'Payment verification failed. Please contact support if amount was deducted.',
+              icon: <XCircle className="h-5 w-5" />,
+              duration: 10000
+            });
           }
         },
         prefill: {
@@ -223,6 +471,13 @@ const MembershipPage: React.FC = () => {
         },
         modal: {
           ondismiss: function () {
+            removeToast(processingToastId);
+            addToast({
+              type: 'warning',
+              title: 'Payment Cancelled',
+              message: 'Payment was cancelled. You can try again anytime.',
+              icon: <AlertCircle className="h-5 w-5" />
+            });
             setLoading(false);
             setSelectedPlan(null);
           }
@@ -233,7 +488,14 @@ const MembershipPage: React.FC = () => {
 
       rzp.on('payment.failed', function (response: any) {
         console.error('Payment failed:', response.error);
-        alert('❌ Payment failed: ' + response.error.description);
+        removeToast(processingToastId);
+        addToast({
+          type: 'error',
+          title: 'Payment Failed',
+          message: `Payment failed: ${response.error.description}`,
+          icon: <XCircle className="h-5 w-5" />,
+          duration: 8000
+        });
         setLoading(false);
         setSelectedPlan(null);
       });
@@ -241,7 +503,14 @@ const MembershipPage: React.FC = () => {
       rzp.open();
     } catch (error) {
       console.error('Error initiating payment:', error);
-      alert('❌ Failed to initiate payment. Please try again.');
+      removeToast(processingToastId);
+      addToast({
+        type: 'error',
+        title: 'Payment Initiation Failed',
+        message: 'Failed to initiate payment. Please check your connection and try again.',
+        icon: <XCircle className="h-5 w-5" />,
+        duration: 8000
+      });
       setLoading(false);
       setSelectedPlan(null);
     }
@@ -272,6 +541,9 @@ const MembershipPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 pt-20 ">
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      
       {/* Hero Section */}
       <HeroSection />
 
@@ -282,10 +554,10 @@ const MembershipPage: React.FC = () => {
             <div
               key={plan.id}
               className={`relative group transition-all duration-500 transform ${hoveredPlan === plan.id
-                  ? 'scale-105 -translate-y-2'
-                  : hoveredPlan && hoveredPlan !== plan.id
-                    ? 'scale-95 opacity-75'
-                    : 'scale-100'
+                ? 'scale-105 -translate-y-2'
+                : hoveredPlan && hoveredPlan !== plan.id
+                  ? 'scale-95 opacity-75'
+                  : 'scale-100'
                 }`}
               onMouseEnter={() => setHoveredPlan(plan.id)}
               onMouseLeave={() => setHoveredPlan(null)}

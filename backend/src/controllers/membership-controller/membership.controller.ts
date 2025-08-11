@@ -77,20 +77,7 @@ export class MembershipController {
         });
       }
 
-      // Try to get plan by ID first, if not found, try by name pattern
-      let membershipPlan;
-      try {
-        membershipPlan = await MembershipPlanService.getMembershipPlanById(planId);
-      } catch (error) {
-        // If not found by ID, try to find by name pattern (for basic/premium)
-        if (planId === 'basic') {
-          membershipPlan = await MembershipPlanService.getMembershipPlanByName('basic');
-        } else if (planId === 'premium') {
-          membershipPlan = await MembershipPlanService.getMembershipPlanByName('premium');
-        } else {
-          throw error;
-        }
-      }
+      const membershipPlan = await MembershipPlanService.getMembershipPlanById(planId);
 
       if (!membershipPlan) {
         return res.status(404).json({ message: "Membership plan not found" });

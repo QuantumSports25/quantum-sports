@@ -43,14 +43,15 @@ const ToastNotification: React.FC<{ toast: Toast; onRemove: (id: string) => void
 
   useEffect(() => {
     setIsVisible(true);
-    
+
     if (toast.duration && toast.duration > 0) {
       const timer = setTimeout(() => {
         handleRemove();
       }, toast.duration);
       return () => clearTimeout(timer);
     }
-  }, [toast.duration]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast.duration, onRemove]);
 
   const handleRemove = () => {
     setIsExiting(true);

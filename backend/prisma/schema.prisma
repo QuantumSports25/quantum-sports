@@ -265,3 +265,38 @@ model Wallet {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model Event {
+  id               String     @id @default(uuid())
+  title            String
+  description      String?
+  date             DateTime
+  time             String
+  location         Json
+  venue            String
+  venueName        String
+  capacity         Int
+  registeredUsers  Int
+  ticketPrice      Float
+  category         Category
+  images           String[]
+  featured         Boolean    @default(false)
+  tags             String[]
+  organizer        String?
+  organizerName    String?
+  mapLocationLink  String?
+  archived         Boolean    @default(false)
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+enum Category {
+  All
+  Gaming
+  Technology
+  Music
+  Business
+  Fitness
+  Art
+}

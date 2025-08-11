@@ -430,4 +430,35 @@ export class BookingService {
       throw error;
     }
   }
+
+  static async getBookingsByPartnerId(partnerId: string) {
+    try {
+      const bookings = await prisma.booking.findMany({
+        where: { partnerId },
+        include: {
+          slots: {
+            select: {
+              id: true,
+              date: true,
+              startTime: true,
+              endTime: true,
+              amount: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (!bookings || bookings.length === 0) {
+        throw new Error("No bookings found for this partner");
+      }
+
+      return bookings;
+    } catch (error) {
+      console.error("Error getting bookings by partner id:", error);
+      throw error;
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {  useState } from 'react';
 import { Search, Clock, DollarSign, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { BookingService, BookingData } from '../../services/booking.service';
@@ -13,9 +13,9 @@ const PartnerBookings: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    fetchBookings();
-  }, [user]);
+  // useEffect(() => {
+  //   fetchBookings();
+  // }, [user]);
 
   const fetchBookings = async () => {
     try {

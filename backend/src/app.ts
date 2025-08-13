@@ -30,6 +30,7 @@ app.use((req, res, next) => {
     "http://localhost:3000",
     "http://localhost:4000",
     "https://quantum-sports.netlify.app",
+    "https://quantumpickleball.in/",
     process.env["FRONTEND_URL"] || "",
   ].filter(Boolean);
 

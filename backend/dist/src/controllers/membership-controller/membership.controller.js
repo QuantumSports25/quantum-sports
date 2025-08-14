@@ -68,21 +68,7 @@ class MembershipController {
                     message: "Missing required fields: amount, userId, planId",
                 });
             }
-            let membershipPlan;
-            try {
-                membershipPlan = await membershipPlan_service_1.MembershipPlanService.getMembershipPlanById(planId);
-            }
-            catch (error) {
-                if (planId === 'basic') {
-                    membershipPlan = await membershipPlan_service_1.MembershipPlanService.getMembershipPlanByName('basic');
-                }
-                else if (planId === 'premium') {
-                    membershipPlan = await membershipPlan_service_1.MembershipPlanService.getMembershipPlanByName('premium');
-                }
-                else {
-                    throw error;
-                }
-            }
+            const membershipPlan = await membershipPlan_service_1.MembershipPlanService.getMembershipPlanById(planId);
             if (!membershipPlan) {
                 return res.status(404).json({ message: "Membership plan not found" });
             }

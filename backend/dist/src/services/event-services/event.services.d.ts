@@ -1,0 +1,90 @@
+import { Prisma } from "@prisma/client";
+import { Event, Category, SortDirection } from "../../models/event.model";
+export declare class EventService {
+    static createEvent(event: Event): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        venue: string;
+        description: string | null;
+        location: Prisma.JsonValue;
+        images: string[];
+        mapLocationLink: string | null;
+        date: Date;
+        tags: string[];
+        title: string;
+        time: string;
+        venueName: string;
+        capacity: number;
+        registeredUsers: number;
+        ticketPrice: number;
+        category: import(".prisma/client").$Enums.Category;
+        featured: boolean;
+        organizer: string | null;
+        organizerName: string | null;
+        archived: boolean;
+    }>;
+    static getEventById(eventId: string): Promise<Event>;
+    static getEventsByCategory({ category, page, limit, sort, date, archived }: {
+        category: Category;
+        page: number;
+        limit: number;
+        sort: SortDirection;
+        date: Date;
+        archived: boolean;
+    }): Promise<Event[]>;
+    static getAllEvents({ page, limit, sort, date, archived, }: {
+        page: number;
+        limit: number;
+        sort: SortDirection;
+        date: Date;
+        archived: boolean;
+    }): Promise<Event[]>;
+    static updateEvent(eventId: string, event: Event): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        venue: string;
+        description: string | null;
+        location: Prisma.JsonValue;
+        images: string[];
+        mapLocationLink: string | null;
+        date: Date;
+        tags: string[];
+        title: string;
+        time: string;
+        venueName: string;
+        capacity: number;
+        registeredUsers: number;
+        ticketPrice: number;
+        category: import(".prisma/client").$Enums.Category;
+        featured: boolean;
+        organizer: string | null;
+        organizerName: string | null;
+        archived: boolean;
+    }>;
+    static archiveEvent(eventId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        venue: string;
+        description: string | null;
+        location: Prisma.JsonValue;
+        images: string[];
+        mapLocationLink: string | null;
+        date: Date;
+        tags: string[];
+        title: string;
+        time: string;
+        venueName: string;
+        capacity: number;
+        registeredUsers: number;
+        ticketPrice: number;
+        category: import(".prisma/client").$Enums.Category;
+        featured: boolean;
+        organizer: string | null;
+        organizerName: string | null;
+        archived: boolean;
+    }>;
+}
+//# sourceMappingURL=event.services.d.ts.map

@@ -1,4 +1,4 @@
-export type AdminTab = 'overview' | 'users' | 'partners' | 'venues' | 'bookings' | 'settings';
+export type AdminTab = 'overview' | 'users' | 'partners' | 'venues' | 'bookings' | 'events' | 'settings';
 
 export type UserStatus = 'active' | 'pending' | 'blocked';
 export type VenueStatus = 'pending' | 'under_review' | 'approved' | 'rejected';

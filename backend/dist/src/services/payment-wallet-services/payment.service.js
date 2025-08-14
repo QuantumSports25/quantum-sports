@@ -14,6 +14,9 @@ const razorpaySecret = process.env["RAZORPAY_KEY_SECRET"];
 class PaymentService {
     static async createPaymentRazorpay({ amount, bookingId, membershipId, customerId, currency = payment_model_1.Currency.INR, }) {
         try {
+            if (!razorpayKey || !razorpaySecret) {
+                throw new Error("Razorpay credentials are missing. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.");
+            }
             const razorpay = new razorpay_1.default({
                 key_id: razorpayKey,
                 key_secret: razorpaySecret,
@@ -64,6 +67,9 @@ class PaymentService {
     }
     static async verifyPaymentSignature({ orderId, paymentId, signature, }) {
         try {
+            if (!razorpaySecret) {
+                throw new Error("Razorpay secret is missing. Please set RAZORPAY_KEY_SECRET in your environment variables.");
+            }
             const data = `${orderId}|${paymentId}`;
             const expectedSignature = (0, crypto_1.createHmac)("sha256", razorpaySecret)
                 .update(data)

@@ -283,6 +283,27 @@ class AuthService {
             throw new Error("Failed to retrieve user: " + error);
         }
     }
+    static async getAllUsers(page, offset, role) {
+        try {
+            const users = await prisma.user.findMany({
+                skip: offset,
+                take: page,
+                ...(role ? { where: { role } } : {}),
+            });
+            const allUsers = users.map((user) => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user?.phone ?? "",
+                role: user.role === "partner" ? user_model_1.UserRole.PARTNER : user_model_1.UserRole.USER,
+            }));
+            return allUsers;
+        }
+        catch (error) {
+            console.error("Get All Users Error:", error);
+            throw new Error("Failed to retrieve users: " + error);
+        }
+    }
 }
 exports.AuthService = AuthService;
 //# sourceMappingURL=auth.service.js.map

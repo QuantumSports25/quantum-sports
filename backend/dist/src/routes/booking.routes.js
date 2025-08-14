@@ -10,5 +10,6 @@ router.post('/verify-payment-and-booking/:id', auth_middleware_1.authMiddleware,
 router.get('/get-booking/:id', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.getBookingById);
 router.get('/get-bookings-by-user/:userId', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.getBookingsByUser);
 router.put('/cancel-booking/:id', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.cancelBooking);
+router.get('/get-bookings-by-partner/:partnerId', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.getBookingsByPartner);
 exports.default = router;
 //# sourceMappingURL=booking.routes.js.map

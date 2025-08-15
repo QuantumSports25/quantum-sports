@@ -1,7 +1,7 @@
 import { Location } from "./venue.model";
 
 export interface Event {
-  id?: string | undefined;
+  id?: string;
   title: string;
   description?: string | undefined;
   date: Date;

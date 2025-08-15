@@ -163,10 +163,8 @@ model Slot {
 model Booking {
   id              String        @id @default(uuid())
   userId          String
-  partnerId       String
-  venueId         String
-  activityId      String
-  facilityId      String
+  type            String?
+  bookingData     Json?
   amount          Decimal       @db.Decimal(10, 2)
   duration        Int
   startTime       String        @db.VarChar(10)

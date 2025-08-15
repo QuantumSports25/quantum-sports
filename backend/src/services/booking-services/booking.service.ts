@@ -2,18 +2,21 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import {
   Booking,
   BookingStatus,
+  BookingType,
   customerDetails,
+  EventBooking,
   paymentDetails,
   PaymentStatus,
+  VenueBooking,
 } from "../../models/booking.model";
-import { SlotAvailability } from "../../models/venue.model";
+import { Slot, SlotAvailability } from "../../models/venue.model";
 import { PaymentMethod } from "../../models/payment.model";
 import { withRetries } from "../../utils/retryFunction";
 
 const prisma = new PrismaClient();
 
 export class BookingService {
-  static async createBookingBeforePayment(booking: Booking) {
+  static async createVenueBookingBeforePayment(booking: Booking) {
     try {
       // Create booking using transaction to ensure data consistency
       const result = await prisma.$transaction(async (tx) => {
@@ -21,10 +24,8 @@ export class BookingService {
         const newBooking = await tx.booking.create({
           data: {
             userId: booking.userId,
-            partnerId: booking.partnerId,
-            venueId: booking.venueId,
-            activityId: booking.activityId,
-            facilityId: booking.facilityId,
+            type: booking.type,
+            bookingData: booking.bookingData as unknown as Prisma.InputJsonValue,
             amount: booking.amount,
             duration: booking.duration, // Note: matches schema typo "duaration"
             startTime: booking.startTime,
@@ -46,7 +47,7 @@ export class BookingService {
         await tx.slot.updateMany({
           where: {
             id: {
-              in: booking.slotIds,
+              in: (booking.bookingData as VenueBooking).slotIds,
             },
           },
           data: {
@@ -87,14 +88,31 @@ export class BookingService {
         throw new Error("booking not found");
       }
 
-      const bookingData: Booking = {
+      let bookingData: EventBooking | VenueBooking;
+
+    if (booking.type === BookingType.Event) {
+      const eventBookingData = booking.bookingData as unknown as EventBooking;
+      bookingData = {
+        type: BookingType.Event,
+        eventId: eventBookingData?.eventId ?? "",
+      };
+    } else {
+      const venueBookingData = booking.bookingData as unknown as VenueBooking;
+      bookingData = {
+        type: BookingType.Venue,
+        venueId: venueBookingData?.venueId ?? "",
+        partnerId: venueBookingData?.partnerId ?? "",
+        facilityId: venueBookingData?.facilityId ?? "",
+        slotIds: venueBookingData?.slotIds,
+        activityId: venueBookingData?.activityId ?? "",
+      };
+    }
+
+      const newBooking: Booking = {
         id: booking.id,
         userId: booking.userId,
-        partnerId: booking.partnerId,
-        venueId: booking.venueId,
-        facilityId: booking.facilityId,
-        slotIds: booking.slots.map((slot) => slot.id),
-        activityId: booking.activityId,
+        type: booking.type as BookingType,
+        bookingData: bookingData,
         amount: Number(booking.amount),
         duration: booking.duration,
         startTime: booking.startTime,
@@ -110,7 +128,8 @@ export class BookingService {
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
       };
-      return bookingData;
+
+      return newBooking;
     } catch (error) {
       console.error("Error getting booking by id:", error);
       throw error;
@@ -182,12 +201,14 @@ export class BookingService {
     amount,
     orderId,
     paymentId,
+    paymentMethod
   }: {
     success: boolean;
     bookingId: string;
     amount: number;
     orderId: string;
     paymentId: string;
+    paymentMethod: PaymentMethod;
   }) {
     try {
       // Step 1: Try transactional logic (retry 3 times)
@@ -213,7 +234,7 @@ export class BookingService {
                   paymentStatus: PaymentStatus.Paid,
                   paymentDetails: {
                     paymentAmount: amount,
-                    paymentMethod: PaymentMethod.Razorpay,
+                    paymentMethod: paymentMethod,
                     paymentDate: new Date(),
                     isRefunded: false,
                     razorpayOrderId: orderId,
@@ -245,7 +266,7 @@ export class BookingService {
                   bookingStatus: BookingStatus.Failed,
                   paymentDetails: {
                     paymentAmount: amount,
-                    paymentMethod: PaymentMethod.Razorpay,
+                    paymentMethod: paymentMethod,
                     paymentDate: new Date(),
                     isRefunded: false,
                     razorpayOrderId: orderId,
@@ -292,7 +313,8 @@ export class BookingService {
                 success,
                 amount,
                 orderId,
-                paymentId
+                paymentId,
+                paymentMethod
               )
             );
           }
@@ -303,7 +325,7 @@ export class BookingService {
 
           if (!fallbackStatus.transactionStatus) {
             fallbackTasks.push(
-              this.handleTransactionAfterBooking(orderId, paymentId, success)
+              this.handleTransactionAfterBooking(orderId, paymentId, success, paymentMethod)
             );
           }
 
@@ -356,7 +378,8 @@ export class BookingService {
   static async handleTransactionAfterBooking(
     orderId: string,
     paymentId: string,
-    success: boolean
+    success: boolean,
+    paymentMethod: PaymentMethod
   ) {
     try {
       if (success) {
@@ -366,6 +389,7 @@ export class BookingService {
             captured: true,
             capturedAt: new Date(),
             razorpayPaymentId: paymentId,
+            paymentMethod: paymentMethod,
             isRefunded: false,
           },
         });
@@ -375,6 +399,7 @@ export class BookingService {
           data: {
             captured: false,
             isRefunded: false,
+            paymentMethod: paymentMethod,
           },
         });
       }
@@ -389,7 +414,8 @@ export class BookingService {
     success: boolean,
     amount: number,
     orderId: string,
-    paymentId: string
+    paymentId: string,
+    paymentMethod: PaymentMethod
   ) {
     try {
       if (success) {
@@ -401,7 +427,7 @@ export class BookingService {
             paymentStatus: PaymentStatus.Paid,
             paymentDetails: {
               paymentAmount: amount,
-              paymentMethod: PaymentMethod.Razorpay,
+              paymentMethod: paymentMethod,
               paymentDate: new Date(),
               isRefunded: false,
               razorpayOrderId: orderId,
@@ -417,7 +443,7 @@ export class BookingService {
             bookingStatus: BookingStatus.Failed,
             paymentDetails: {
               paymentAmount: amount,
-              paymentMethod: PaymentMethod.Razorpay,
+              paymentMethod: paymentMethod,
               paymentDate: new Date(),
               isRefunded: false,
               razorpayOrderId: orderId,
@@ -434,7 +460,12 @@ export class BookingService {
   static async getBookingsByPartnerId(partnerId: string) {
     try {
       const bookings = await prisma.booking.findMany({
-        where: { partnerId },
+        where: {
+          bookingData: {
+            path: ['partnerId'],
+            equals: partnerId,
+          },
+        },
         include: {
           slots: {
             select: {

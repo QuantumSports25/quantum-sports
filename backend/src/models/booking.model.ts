@@ -1,11 +1,8 @@
 export interface Booking {
   id?: string;
   userId: string;
-  partnerId: string;
-  venueId: string;
-  facilityId: string;
-  slotIds: string[];
-  activityId: string;
+  type: BookingType;
+  bookingData: EventBooking | VenueBooking;
   amount: number;
   duration: number;
   startTime: string;
@@ -20,6 +17,25 @@ export interface Booking {
   paymentDetails?: paymentDetails;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export enum BookingType {
+  Event = "event",
+  Venue = "venue"
+}
+
+export interface EventBooking {
+  type: BookingType.Event;
+  eventId: string;
+}
+
+export interface VenueBooking {
+  type: BookingType.Venue;
+  venueId: string;
+  partnerId: string;
+  facilityId: string;
+  slotIds: string[];
+  activityId: string;
 }
 
 export enum BookingStatus {

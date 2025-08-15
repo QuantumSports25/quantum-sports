@@ -220,4 +220,6 @@ export class EventController {
         .json({ error: "Internal server error", details: error.message });
     }
   }
+
+
 }

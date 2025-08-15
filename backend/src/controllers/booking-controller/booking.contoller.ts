@@ -4,7 +4,9 @@ import {
   Booking,
   BookingStatus,
   BookingType,
-  PaymentStatus
+  EventBooking,
+  PaymentStatus,
+  VenueBooking,
 } from "../../models/booking.model";
 import { customerDetails } from "../../models/booking.model";
 import { Currency, Order, PaymentMethod } from "../../models/payment.model";
@@ -14,6 +16,8 @@ import { AuthService } from "../../services/auth-services/auth.service";
 import { AppError } from "../../types";
 import { timeStringToMinutes } from "../../utils/convertSlotTime";
 import { WalletService } from "../../services/payment-wallet-services/wallet.services";
+import { VenueService } from "../../services/venue-services/venue.service";
+import { EventService } from "../../services/event-services/event.services";
 
 export class BookingController {
   // Helper method to convert time string (HH:MM:SS) to minutes
@@ -163,10 +167,6 @@ export class BookingController {
 
       const booking = await BookingService.getBookingById(bookingId);
 
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
       if (
         booking.paymentStatus !== PaymentStatus.Initiated ||
         booking.bookingStatus !== BookingStatus.Pending
@@ -307,7 +307,7 @@ export class BookingController {
           orderId,
           paymentId,
           paymentMethod,
-          type: booking.type
+          type: booking.type,
         });
         throw new Error("Payment verification failed");
       }
@@ -319,7 +319,7 @@ export class BookingController {
         orderId,
         paymentId,
         paymentMethod,
-        type: booking.type
+        type: booking.type,
       });
 
       return res.status(200).json({ message: "Payment verified successfully" });
@@ -362,6 +362,24 @@ export class BookingController {
       }
 
       const bookings = await BookingService.getBookingsByUserId(userId);
+
+      await Promise.all(
+        bookings.map(async (booking: any) => {
+          let venue = null;
+          let event = null;
+
+          if (booking.type === BookingType.Venue) {
+            venue = await VenueService.getVenue(
+              (booking.bookingData as unknown as VenueBooking).venueId
+            );
+            booking.venue = venue;
+          } else if (booking.type === BookingType.Event) {
+            const eventId = (booking.bookingData as unknown as EventBooking).eventId;
+            event = await EventService.getEventById(eventId);
+            booking.event = event;
+          }
+        })
+      );
 
       return res.status(200).json({
         data: bookings,

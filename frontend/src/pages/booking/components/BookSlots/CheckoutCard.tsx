@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Slot } from "./SlotSelector";
 import { Activity } from "./ActivitySelector";
 import { Facility } from "./FacilitySelector";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   createBookingOrder,
   validateAndCreateBooking,
@@ -15,7 +15,6 @@ import { useAuthStore } from "../../../../store/authStore";
 import { toast } from "react-hot-toast";
 import { Venue } from "../../VenueDetailsPage";
 import { unlockSlots } from "../../../../services/partner-service/slotService";
-import { getUserWalletBalance } from "../../../../services/partner-service/walletService";
 import PaymentMethodModal from "../../../../components/modals/PaymentMethodModal";
 import PaymentFailureModal from "../../../../components/modals/PaymentFailureModal";
 import PaymentSuccessModal from "../../../../components/modals/PaymentSuccessModal";
@@ -90,14 +89,6 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const [isPaymentDeducted, setIsPaymentDeducted] = useState(false);
   const [successBookingDetails, setSuccessBookingDetails] = useState<any>(null);
 
-  // User wallet balance query
-  const { data: userWalletBalance = 0 } = useQuery({
-    queryKey: ["walletBalance", user?.id],
-    queryFn: () => getUserWalletBalance(user?.id || ""),
-    enabled: !!user?.id && isAuthenticated,
-    staleTime: 30000, // 30 seconds
-  });
-
   useEffect(() => {
     setSlotIds(
       selectedSlots
@@ -138,8 +129,6 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       setValidating(false);
       setLoadingStatus(LoadingStatus.Creating);
       setInitiatingPayment(true);
-
-      // Proceed to create order
       createOrderMutation.mutate(bookingResponse);
     },
     onError: (error: any) => {
@@ -736,7 +725,6 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         total={total}
         subtotal={subtotal}
         gst={gst}
-        userWalletBalance={userWalletBalance}
       />
 
       {/* Payment Loading Modal */}

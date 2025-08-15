@@ -1,6 +1,9 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { Event, Category, SortDirection } from "../../models/event.model";
 import { Location } from "../../models/venue.model";
+import { Booking, EventBooking } from "../../models/booking.model";
+import { BookingService } from "../booking-services/booking.service";
+
 const prisma = new PrismaClient();
 
 export class EventService {
@@ -16,7 +19,8 @@ export class EventService {
           venue: event.venue,
           venueName: event.venueName,
           capacity: event.capacity,
-          registeredUsers: 0,
+          bookedSeats: event.bookedSeats ?? 0,
+          registeredUsers: event.registeredUsers ?? [],
           ticketPrice: event.ticketPrice,
           category: event.category as Category,
           images: event.images,
@@ -55,6 +59,7 @@ export class EventService {
         venue: event.venue,
         venueName: event.venueName,
         capacity: event.capacity,
+        bookedSeats: event.bookedSeats,
         registeredUsers: event.registeredUsers,
         ticketPrice: event.ticketPrice,
         category: event.category as unknown as Category,
@@ -80,7 +85,7 @@ export class EventService {
     limit,
     sort,
     date,
-    archived
+    archived,
   }: {
     category: Category;
     page: number;
@@ -109,6 +114,7 @@ export class EventService {
         venue: event.venue,
         venueName: event.venueName,
         capacity: event.capacity,
+        bookedSeats: event.bookedSeats,
         registeredUsers: event.registeredUsers,
         ticketPrice: event.ticketPrice,
         category: event.category as unknown as Category,
@@ -147,7 +153,7 @@ export class EventService {
           date: {
             gte: date,
           },
-          archived: archived,   
+          archived: archived,
         },
         orderBy: {
           date: sort,
@@ -164,6 +170,7 @@ export class EventService {
         venue: event.venue,
         venueName: event.venueName,
         capacity: event.capacity,
+        bookedSeats: event.bookedSeats,
         registeredUsers: event.registeredUsers,
         ticketPrice: event.ticketPrice,
         category: event.category as unknown as Category,
@@ -194,7 +201,8 @@ export class EventService {
           venue: event.venue,
           venueName: event.venueName,
           capacity: event.capacity,
-          registeredUsers: 0,
+          bookedSeats: event.bookedSeats,
+          registeredUsers: event.registeredUsers,
           ticketPrice: event.ticketPrice,
           category: event.category as Category,
           images: event.images,
@@ -231,6 +239,64 @@ export class EventService {
       return archivedEvent;
     } catch (error) {
       console.error("Error archiving event:", error);
+      throw error;
+    }
+  }
+
+  static async createEventBeforePayment(booking: Booking, capacity: number) {
+    try {
+      const res = await prisma.$transaction(async (tx) => {
+        const newBooking = await tx.booking.create({
+          data: BookingService.createBooking(booking),
+        });
+
+        await tx.event.update({
+          where: {
+            id: (booking.bookingData as EventBooking).eventId,
+            bookedSeats: {
+              lte: capacity - (booking.bookingData as EventBooking).seats,
+            },
+          },
+          data: {
+            bookedSeats: {
+              increment: (booking.bookingData as EventBooking).seats,
+            },
+            registeredUsers: {
+              push: booking.userId,
+            },
+          },
+        });
+
+        return newBooking;
+      });
+
+      return res;
+    } catch (error) {
+      console.error("Error creating event booking before payment:", error);
+      throw error;
+    }
+  }
+
+  static async handleEventSeats(bookingId: string) {
+    try {
+      const booking = await BookingService.getBookingById(bookingId);
+
+      if (!booking) {
+        return false;
+      }
+
+      const { eventId, seats } = booking.bookingData as unknown as EventBooking;
+
+      await prisma.$executeRaw`
+        UPDATE "Event"
+        SET "bookedSeats" = "bookedSeats" - ${seats},
+        "registeredUsers" = array_remove("registeredUsers", ${booking.userId})
+        WHERE "id" = ${eventId};
+      `;
+
+      return true;
+    } catch (error) {
+      console.error("Error handling event seats:", error);
       throw error;
     }
   }

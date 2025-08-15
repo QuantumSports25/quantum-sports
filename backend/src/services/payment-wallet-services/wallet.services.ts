@@ -79,10 +79,17 @@ export class WalletService {
     credits: number
   ): Promise<boolean> {
     try {
+      console.log(`🔍 Checking wallet balance for user ${userId}`);
       const wallet = await prisma.wallet.findUnique({
         where: { userId },
       });
 
+      if (!wallet) {
+        console.error(`Wallet not found for user ${userId}`);
+        return false;
+      }
+
+      console.log(`💰 Wallet balance for user ${userId}: ${wallet.balance}`);
       if (!wallet || wallet.balance < credits) {
         console.error(`Insufficient balance for user ${userId}`);
         return false;

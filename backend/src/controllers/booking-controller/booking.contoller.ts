@@ -3,10 +3,10 @@ import { BookingService } from "../../services/booking-services/booking.service"
 import {
   Booking,
   BookingStatus,
-  PaymentStatus,
+  BookingType,
+  PaymentStatus
 } from "../../models/booking.model";
 import { customerDetails } from "../../models/booking.model";
-import { User } from "../../models/user.model";
 import { Currency, Order, PaymentMethod } from "../../models/payment.model";
 import { PaymentService } from "../../services/payment-wallet-services/payment.service";
 import { SlotService } from "../../services/venue-services/slot.service";
@@ -18,22 +18,23 @@ import { WalletService } from "../../services/payment-wallet-services/wallet.ser
 export class BookingController {
   // Helper method to convert time string (HH:MM:SS) to minutes
 
-  static async createBookingBeforePayment(req: Request, res: Response) {
+  static async createVenueBookingBeforePayment(req: Request, res: Response) {
     try {
       const bookingData = req.body as Booking;
+      const data = req.body;
       const paymentMethod = req.params["paymentMethod"] as PaymentMethod;
 
       // Validate required fields
       if (
         !bookingData.userId ||
-        !bookingData.partnerId ||
-        !bookingData.venueId ||
-        !bookingData.facilityId ||
-        !bookingData.slotIds ||
-        !bookingData.activityId ||
+        !data.partnerId ||
+        !data.venueId ||
+        !data.facilityId ||
+        !data.slotIds ||
+        !data.activityId ||
         !bookingData.amount ||
-        !bookingData.startTime ||
-        !bookingData.endTime ||
+        !data.startTime ||
+        !data.endTime ||
         !bookingData.bookedDate
       ) {
         return res.status(400).json({ message: "Required fields are missing" });
@@ -44,8 +45,8 @@ export class BookingController {
       }
 
       // Validate time format and calculate duration
-      const startTime = bookingData.startTime;
-      const endTime = bookingData.endTime;
+      const startTime = data.startTime;
+      const endTime = data.endTime;
 
       // Validate time string format (HH:MM:SS or HH:MM)
       const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
@@ -74,26 +75,16 @@ export class BookingController {
 
       const numberOfSlots = duration / 30;
 
-      if (
-        !Array.isArray(bookingData.slotIds) ||
-        bookingData.slotIds.length === 0
-      ) {
+      if (!Array.isArray(data.slotIds) || data.slotIds.length === 0) {
         return res
           .status(400)
           .json({ message: "slotIds must be a non-empty array" });
       }
 
-      // Check slot availability
-      let allSlotsAvailable = false;
-      let partner: User | null = null;
-      let user: User | null = null;
-
-      await Promise.all([
-        (allSlotsAvailable = await SlotService.areAllSlotsAvailable(
-          bookingData.slotIds
-        )),
-        (partner = await AuthService.getUserById(bookingData.partnerId)),
-        (user = await AuthService.getUserById(bookingData.userId)),
+      const [allSlotsAvailable, partner, user] = await Promise.all([
+        SlotService.areAllSlotsAvailable(data.slotIds),
+        AuthService.getUserById(data.partnerId),
+        AuthService.getUserById(data.userId),
       ]);
 
       if (!allSlotsAvailable) {
@@ -120,16 +111,20 @@ export class BookingController {
       // Create booking object
       const booking: Booking = {
         userId: bookingData.userId,
-        partnerId: bookingData.partnerId,
-        venueId: bookingData.venueId,
-        facilityId: bookingData.facilityId,
-        slotIds: bookingData.slotIds,
-        activityId: bookingData.activityId,
+        type: BookingType.Venue,
+        bookingData: {
+          type: BookingType.Venue,
+          facilityId: data.facilityId,
+          slotIds: data.slotIds,
+          activityId: data.activityId,
+          partnerId: data.partnerId,
+          venueId: data.venueId,
+          duration: duration,
+          numberOfSlots: numberOfSlots,
+          startTime: startTime,
+          endTime: endTime,
+        },
         amount: bookingData.amount,
-        duration: duration,
-        numberOfSlots: numberOfSlots,
-        startTime: startTime, // Keep as time string
-        endTime: endTime, // Keep as time string
         bookedDate: new Date(bookingData.bookedDate),
         bookingStatus: BookingStatus.Pending,
         paymentStatus: PaymentStatus.Initiated,
@@ -142,9 +137,8 @@ export class BookingController {
         },
       };
 
-      const createdBooking = await BookingService.createBookingBeforePayment(
-        booking
-      );
+      const createdBooking =
+        await BookingService.createVenueBookingBeforePayment(booking);
 
       return res.status(201).json({
         message: "Booking created successfully",
@@ -205,9 +199,7 @@ export class BookingController {
           const order = await PaymentService.createPaymentRazorpay({
             amount: booking.amount,
             bookingId: bookingId,
-            venueId: booking.venueId,
             customerId: booking.customerDetails.customerId,
-            partnerId: booking.partnerId,
             currency: Currency.INR,
           });
 
@@ -270,7 +262,9 @@ export class BookingController {
       }
 
       const paymentMethod =
-        booking.paymentDetails?.paymentMethod || PaymentMethod.Razorpay;
+        booking.paymentDetails?.paymentMethod === PaymentMethod.Razorpay
+          ? PaymentMethod.Razorpay
+          : PaymentMethod.Wallet;
 
       let verified = false;
       if (paymentMethod == PaymentMethod.Wallet) {
@@ -312,6 +306,8 @@ export class BookingController {
           amount: booking.amount,
           orderId,
           paymentId,
+          paymentMethod,
+          type: booking.type
         });
         throw new Error("Payment verification failed");
       }
@@ -322,6 +318,8 @@ export class BookingController {
         amount: booking.amount,
         orderId,
         paymentId,
+        paymentMethod,
+        type: booking.type
       });
 
       return res.status(200).json({ message: "Payment verified successfully" });

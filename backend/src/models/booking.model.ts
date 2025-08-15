@@ -1,16 +1,9 @@
 export interface Booking {
   id?: string;
   userId: string;
-  partnerId: string;
-  venueId: string;
-  facilityId: string;
-  slotIds: string[];
-  activityId: string;
+  type: BookingType;
+  bookingData: EventBooking | VenueBooking;
   amount: number;
-  duration: number;
-  startTime: string;
-  endTime: string;
-  numberOfSlots: number;
   bookedDate: Date;
   confirmedAt?: Date | null;
   cancelledAt?: Date | null;
@@ -20,6 +13,30 @@ export interface Booking {
   paymentDetails?: paymentDetails;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export enum BookingType {
+  Event = "event",
+  Venue = "venue",
+}
+
+export interface EventBooking {
+  type: BookingType.Event;
+  eventId: string;
+  seats: number;
+}
+
+export interface VenueBooking {
+  type: BookingType.Venue;
+  venueId: string;
+  partnerId: string;
+  facilityId: string;
+  slotIds: string[];
+  activityId: string;
+  duration: number;
+  startTime: string;
+  endTime: string;
+  numberOfSlots: number;
 }
 
 export enum BookingStatus {

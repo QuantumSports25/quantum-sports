@@ -8,7 +8,8 @@ import {
   PartnerManagement,
   VenueManagement,
   BookingManagement,
-  PlatformSettings
+    PlatformSettings,
+    EventManagement
 } from './components';
 import { mockData } from './data/mockData';
 import { AdminTab } from './types/adminTypes';
@@ -25,6 +26,7 @@ const AdminDashboard: React.FC = () => {
     if (path.includes('/partners')) return 'partners';
     if (path.includes('/venues')) return 'venues';
     if (path.includes('/bookings')) return 'bookings';
+    if (path.includes('/events')) return 'events';
     if (path.includes('/settings')) return 'settings';
     return 'overview';
   };
@@ -38,6 +40,7 @@ const AdminDashboard: React.FC = () => {
       partners: 'Partner Management',
       venues: 'Venue Management',
       bookings: 'Booking Management',
+      events: 'Event Management',
       settings: 'Platform Settings'
     };
     return titles[tab];
@@ -50,6 +53,7 @@ const AdminDashboard: React.FC = () => {
       partners: 'Manage partner applications and accounts',
       venues: 'Approve and manage venue listings',
       bookings: 'Monitor and manage all bookings',
+      events: 'Create and manage events',
       settings: 'Configure platform settings and preferences'
     };
     return descriptions[tab];
@@ -70,6 +74,8 @@ const AdminDashboard: React.FC = () => {
         return <VenueManagement {...commonProps} />;
       case 'bookings':
         return <BookingManagement {...commonProps} />;
+      case 'events':
+        return <EventManagement {...commonProps} />;
       case 'settings':
         return <PlatformSettings />;
       default:

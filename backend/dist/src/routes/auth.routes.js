@@ -10,5 +10,6 @@ router.post('/verify-otp', auth_controller_1.AuthController.verifyOTP);
 router.post('/register-partner', auth_controller_1.AuthController.registerPartner);
 router.post('/partner-login', auth_controller_1.AuthController.partnerLogin);
 router.post('/admin-login', auth_controller_1.AuthController.adminLogin);
+router.get('/users/:role', auth_controller_1.AuthController.getAllUsersByRole);
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map

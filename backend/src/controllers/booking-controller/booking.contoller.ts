@@ -4,11 +4,9 @@ import {
   Booking,
   BookingStatus,
   BookingType,
-  PaymentStatus,
-  VenueBooking,
+  PaymentStatus
 } from "../../models/booking.model";
 import { customerDetails } from "../../models/booking.model";
-import { User } from "../../models/user.model";
 import { Currency, Order, PaymentMethod } from "../../models/payment.model";
 import { PaymentService } from "../../services/payment-wallet-services/payment.service";
 import { SlotService } from "../../services/venue-services/slot.service";
@@ -35,8 +33,8 @@ export class BookingController {
         !data.slotIds ||
         !data.activityId ||
         !bookingData.amount ||
-        !bookingData.startTime ||
-        !bookingData.endTime ||
+        !data.startTime ||
+        !data.endTime ||
         !bookingData.bookedDate
       ) {
         return res.status(400).json({ message: "Required fields are missing" });
@@ -47,8 +45,8 @@ export class BookingController {
       }
 
       // Validate time format and calculate duration
-      const startTime = bookingData.startTime;
-      const endTime = bookingData.endTime;
+      const startTime = data.startTime;
+      const endTime = data.endTime;
 
       // Validate time string format (HH:MM:SS or HH:MM)
       const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
@@ -83,17 +81,10 @@ export class BookingController {
           .json({ message: "slotIds must be a non-empty array" });
       }
 
-      // Check slot availability
-      let allSlotsAvailable = false;
-      let partner: User | null = null;
-      let user: User | null = null;
-
-      await Promise.all([
-        (allSlotsAvailable = await SlotService.areAllSlotsAvailable(
-          data.slotIds
-        )),
-        (partner = await AuthService.getUserById(data.partnerId)),
-        (user = await AuthService.getUserById(data.userId)),
+      const [allSlotsAvailable, partner, user] = await Promise.all([
+        SlotService.areAllSlotsAvailable(data.slotIds),
+        AuthService.getUserById(data.partnerId),
+        AuthService.getUserById(data.userId),
       ]);
 
       if (!allSlotsAvailable) {
@@ -128,12 +119,12 @@ export class BookingController {
           activityId: data.activityId,
           partnerId: data.partnerId,
           venueId: data.venueId,
+          duration: duration,
+          numberOfSlots: numberOfSlots,
+          startTime: startTime,
+          endTime: endTime,
         },
         amount: bookingData.amount,
-        duration: duration,
-        numberOfSlots: numberOfSlots,
-        startTime: startTime, // Keep as time string
-        endTime: endTime, // Keep as time string
         bookedDate: new Date(bookingData.bookedDate),
         bookingStatus: BookingStatus.Pending,
         paymentStatus: PaymentStatus.Initiated,
@@ -208,9 +199,7 @@ export class BookingController {
           const order = await PaymentService.createPaymentRazorpay({
             amount: booking.amount,
             bookingId: bookingId,
-            venueId: (booking.bookingData as VenueBooking).venueId,
             customerId: booking.customerDetails.customerId,
-            partnerId: (booking.bookingData as VenueBooking).partnerId,
             currency: Currency.INR,
           });
 
@@ -318,6 +307,7 @@ export class BookingController {
           orderId,
           paymentId,
           paymentMethod,
+          type: booking.type
         });
         throw new Error("Payment verification failed");
       }
@@ -329,6 +319,7 @@ export class BookingController {
         orderId,
         paymentId,
         paymentMethod,
+        type: booking.type
       });
 
       return res.status(200).json({ message: "Payment verified successfully" });

@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/auth.middleware';
 const router = Router();
 
 // Booking Routes
-router.post('/create-booking-before-payment/:paymentMethod', authMiddleware, BookingController.createBookingBeforePayment);
+router.post('/create-booking-before-payment/:paymentMethod', authMiddleware, BookingController.createVenueBookingBeforePayment);
 router.post('/booking-payment/:bookingId', authMiddleware, BookingController.createBookingPayment);
 router.post('/verify-payment-and-booking/:id', authMiddleware, BookingController.verifyPaymentAndBooking);
 router.get('/get-booking/:id', authMiddleware, BookingController.getBookingById);

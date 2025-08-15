@@ -9,41 +9,40 @@ import {
   PaymentStatus,
   VenueBooking,
 } from "../../models/booking.model";
-import { Slot, SlotAvailability } from "../../models/venue.model";
+import { SlotAvailability } from "../../models/venue.model";
 import { PaymentMethod } from "../../models/payment.model";
 import { withRetries } from "../../utils/retryFunction";
+import { EventService } from "../event-services/event.services";
 
 const prisma = new PrismaClient();
 
 export class BookingService {
+  static createBooking = (booking: Booking) => {
+    return {
+      userId: booking.userId,
+      type: booking.type,
+      bookingData: booking.bookingData as unknown as Prisma.InputJsonValue,
+      amount: booking.amount,
+      bookedDate: booking.bookedDate,
+      confirmedAt: booking.confirmedAt || null,
+      cancelledAt: booking.cancelledAt || null,
+      bookingStatus: booking.bookingStatus,
+      paymentStatus: booking.paymentStatus,
+      customerDetails:
+        booking.customerDetails as unknown as Prisma.InputJsonValue,
+      paymentDetails:
+        booking.paymentDetails as unknown as Prisma.InputJsonValue,
+    };
+  };
+
   static async createVenueBookingBeforePayment(booking: Booking) {
     try {
       // Create booking using transaction to ensure data consistency
       const result = await prisma.$transaction(async (tx) => {
-        // Create the booking
         const newBooking = await tx.booking.create({
-          data: {
-            userId: booking.userId,
-            type: booking.type,
-            bookingData: booking.bookingData as unknown as Prisma.InputJsonValue,
-            amount: booking.amount,
-            duration: booking.duration, // Note: matches schema typo "duaration"
-            startTime: booking.startTime,
-            endTime: booking.endTime,
-            numberOfSlots: booking.numberOfSlots,
-            bookedDate: booking.bookedDate,
-            confirmedAt: booking.confirmedAt || null,
-            cancelledAt: booking.cancelledAt || null,
-            bookingStatus: booking.bookingStatus,
-            paymentStatus: booking.paymentStatus,
-            customerDetails:
-              booking.customerDetails as unknown as Prisma.InputJsonValue,
-            paymentDetails:
-              booking.paymentDetails as unknown as Prisma.InputJsonValue,
-          },
+          data: this.createBooking(booking),
         });
 
-        // Update all slots with the booking ID
         await tx.slot.updateMany({
           where: {
             id: {
@@ -90,23 +89,28 @@ export class BookingService {
 
       let bookingData: EventBooking | VenueBooking;
 
-    if (booking.type === BookingType.Event) {
-      const eventBookingData = booking.bookingData as unknown as EventBooking;
-      bookingData = {
-        type: BookingType.Event,
-        eventId: eventBookingData?.eventId ?? "",
-      };
-    } else {
-      const venueBookingData = booking.bookingData as unknown as VenueBooking;
-      bookingData = {
-        type: BookingType.Venue,
-        venueId: venueBookingData?.venueId ?? "",
-        partnerId: venueBookingData?.partnerId ?? "",
-        facilityId: venueBookingData?.facilityId ?? "",
-        slotIds: venueBookingData?.slotIds,
-        activityId: venueBookingData?.activityId ?? "",
-      };
-    }
+      if (booking.type === BookingType.Event) {
+        const eventBookingData = booking.bookingData as unknown as EventBooking;
+        bookingData = {
+          type: BookingType.Event,
+          eventId: eventBookingData?.eventId ?? "",
+          seats: eventBookingData?.seats ?? 1,
+        };
+      } else {
+        const venueBookingData = booking.bookingData as unknown as VenueBooking;
+        bookingData = {
+          type: BookingType.Venue,
+          venueId: venueBookingData?.venueId ?? "",
+          partnerId: venueBookingData?.partnerId ?? "",
+          facilityId: venueBookingData?.facilityId ?? "",
+          slotIds: venueBookingData?.slotIds,
+          activityId: venueBookingData?.activityId ?? "",
+          duration: venueBookingData?.duration ?? 0,
+          startTime: venueBookingData?.startTime ?? "",
+          endTime: venueBookingData?.endTime ?? "",
+          numberOfSlots: venueBookingData.numberOfSlots ?? 0,
+        };
+      }
 
       const newBooking: Booking = {
         id: booking.id,
@@ -114,10 +118,6 @@ export class BookingService {
         type: booking.type as BookingType,
         bookingData: bookingData,
         amount: Number(booking.amount),
-        duration: booking.duration,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        numberOfSlots: booking.numberOfSlots,
         bookedDate: booking.bookedDate,
         confirmedAt: booking.confirmedAt,
         cancelledAt: booking.cancelledAt,
@@ -201,7 +201,8 @@ export class BookingService {
     amount,
     orderId,
     paymentId,
-    paymentMethod
+    paymentMethod,
+    type,
   }: {
     success: boolean;
     bookingId: string;
@@ -209,6 +210,7 @@ export class BookingService {
     orderId: string;
     paymentId: string;
     paymentMethod: PaymentMethod;
+    type: BookingType;
   }) {
     try {
       // Step 1: Try transactional logic (retry 3 times)
@@ -243,12 +245,14 @@ export class BookingService {
                 },
               });
 
-              await tx.slot.updateMany({
-                where: { bookingId },
-                data: {
-                  availability: SlotAvailability.Booked,
-                },
-              });
+              if (type === BookingType.Venue) {
+                await tx.slot.updateMany({
+                  where: { bookingId },
+                  data: {
+                    availability: SlotAvailability.Booked,
+                  },
+                });
+              }
 
               await tx.transactionHistory.update({
                 where: { orderId },
@@ -274,12 +278,25 @@ export class BookingService {
                 },
               });
 
-              await tx.slot.updateMany({
-                where: { bookingId },
-                data: {
-                  availability: SlotAvailability.Available,
-                },
-              });
+              if (type === BookingType.Venue) {
+                await tx.slot.updateMany({
+                  where: { bookingId },
+                  data: {
+                    availability: SlotAvailability.Available,
+                  },
+                });
+              } else {
+                const { eventId, seats } =
+                  booking.bookingData as unknown as EventBooking;
+                await tx.event.updateMany({
+                  where: { id: eventId },
+                  data: {
+                    bookedSeats: {
+                      decrement: seats,
+                    },
+                  },
+                });
+              }
 
               await tx.transactionHistory.update({
                 where: { orderId },
@@ -299,6 +316,7 @@ export class BookingService {
       const fallbackStatus = {
         bookingStatus: false,
         slotStatus: false,
+        eventStatus: false,
         transactionStatus: false,
       };
 
@@ -319,13 +337,20 @@ export class BookingService {
             );
           }
 
-          if (!fallbackStatus.slotStatus) {
+          if (!fallbackStatus.slotStatus && type === BookingType.Venue) {
             fallbackTasks.push(this.handleSlotAfterBooking(bookingId, success));
+          } else {
+            fallbackTasks.push(EventService.handleEventSeats(bookingId));
           }
 
           if (!fallbackStatus.transactionStatus) {
             fallbackTasks.push(
-              this.handleTransactionAfterBooking(orderId, paymentId, success, paymentMethod)
+              this.handleTransactionAfterBooking(
+                orderId,
+                paymentId,
+                success,
+                paymentMethod
+              )
             );
           }
 
@@ -338,6 +363,7 @@ export class BookingService {
               if (index === 0) fallbackStatus.bookingStatus = true;
               if (index === 1) fallbackStatus.slotStatus = true;
               if (index === 2) fallbackStatus.transactionStatus = true;
+              if (index === 3) fallbackStatus.eventStatus = true;
             } else {
               console.warn(`Fallback step ${index} failed:`, result.reason);
             }
@@ -462,7 +488,7 @@ export class BookingService {
       const bookings = await prisma.booking.findMany({
         where: {
           bookingData: {
-            path: ['partnerId'],
+            path: ["partnerId"],
             equals: partnerId,
           },
         },

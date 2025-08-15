@@ -2,6 +2,15 @@ import { Request, Response } from "express";
 import { Category, Event, SortDirection } from "../../models/event.model";
 import { EventService } from "../../services/event-services/event.services";
 import { merge } from "lodash";
+import { AuthService } from "../../services/auth-services/auth.service";
+import {
+  Booking,
+  BookingStatus,
+  BookingType,
+  customerDetails,
+  PaymentStatus,
+} from "../../models/booking.model";
+import { PaymentMethod } from "../../models/payment.model";
 
 export class EventController {
   static async createEvent(req: Request, res: Response) {
@@ -62,7 +71,8 @@ export class EventController {
         venue: data.venue,
         venueName: data.venueName,
         capacity: data.capacity,
-        registeredUsers: 0,
+        bookedSeats: data.bookedSeats || 0,
+        registeredUsers: data.registeredUsers || [],
         ticketPrice: data.ticketPrice,
         category: data.category,
         images: data.images,
@@ -186,7 +196,7 @@ export class EventController {
         date: parsedDate,
         archived: archived === "true",
       });
-      
+
       return res.status(200).json({ events, total: events.length });
     } catch (error: any) {
       console.error("Error fetching events by category:", error);
@@ -223,5 +233,111 @@ export class EventController {
     }
   }
 
+  static async createEventBookingBeforePayment(req: Request, res: Response) {
+    try {
+      const paymentMethod = req.params["paymentMethod"] as PaymentMethod;
+      const { eventId, seats } = req.body as {
+        eventId: string;
+        seats: number;
+      };
 
+      const bookingData = req.body as Booking;
+
+      if (
+        !eventId ||
+        !seats ||
+        !bookingData.userId ||
+        !bookingData.amount ||
+        !bookingData.bookedDate
+      ) {
+        return res.status(400).json({ error: "Invalid booking data" });
+      }
+
+      if (!Object.values(PaymentMethod).includes(paymentMethod)) {
+        return res.status(400).json({ message: "Invalid payment method" });
+      }
+
+      const [event, user] = await Promise.all([
+        EventService.getEventById(eventId),
+        AuthService.getUserById(bookingData.userId),
+      ]);
+
+      if (!event || event.archived) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (event.bookedSeats + seats > event.capacity) {
+        return res.status(400).json({ error: "Not enough available seats" });
+      }
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const customerDetails: customerDetails = {
+        customerId: user.id,
+        customerName: user.name,
+        customerEmail: user.email ?? "",
+        customerPhone: user.phone ?? "",
+      };
+
+      const booking: Booking = {
+        userId: bookingData.userId,
+        type: BookingType.Event,
+        bookingData: {
+          type: BookingType.Event,
+          eventId,
+          seats,
+        },
+        amount: bookingData.amount,
+        bookedDate: new Date(bookingData.bookedDate),
+        bookingStatus: BookingStatus.Pending,
+        paymentStatus: PaymentStatus.Initiated,
+        customerDetails: customerDetails,
+        paymentDetails: {
+          paymentAmount: bookingData.amount,
+          paymentMethod: paymentMethod,
+          paymentDate: new Date(),
+          isRefunded: false,
+        },
+      };
+
+      const createdBooking = await EventService.createEventBeforePayment(
+        booking,
+        event.capacity
+      );
+
+      return res.status(201).send({
+        message: "Booking created successfully",
+        data: createdBooking.id,
+      });
+    } catch (error: any) {
+      console.error("Error creating event booking:", error);
+      return res
+        .status(500)
+        .json({ error: "Internal server error", details: error.message });
+    }
+  }
+
+  static async freeSeats(req: Request, res: Response) {
+    try {
+      const bookingId = req.params["bookingId"];
+
+      if (!bookingId) {
+        return res.status(400).json({ error: "Invalid booking ID" });
+      }
+
+      const success = await EventService.handleEventSeats(bookingId);
+      if (!success) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      return res.status(200).json({ message: "Seats freed successfully" });
+    } catch (error: any) {
+      console.error("Error freeing seats:", error);
+      return res
+        .status(500)
+        .json({ error: "Internal server error", details: error.message });
+    }
+  } 
 }

@@ -166,10 +166,6 @@ model Booking {
   type            String?
   bookingData     Json?
   amount          Decimal       @db.Decimal(10, 2)
-  duration        Int
-  startTime       String        @db.VarChar(10)
-  endTime         String        @db.VarChar(10)
-  numberOfSlots   Int
   bookedDate      DateTime      @db.Date
   confirmedAt     DateTime?     @db.Date
   cancelledAt     DateTime?     @db.Date
@@ -274,7 +270,8 @@ model Event {
   venue            String
   venueName        String
   capacity         Int
-  registeredUsers  Int
+  bookedSeats      Int        @default(0)
+  registeredUsers  String[]
   ticketPrice      Float
   category         Category
   images           String[]

@@ -10,7 +10,8 @@ export interface Event {
   venue: string;
   venueName: string;
   capacity: number;
-  registeredUsers: number;
+  bookedSeats: number;
+  registeredUsers: string[];
   ticketPrice: number;
   category: Category;
   images: string[];

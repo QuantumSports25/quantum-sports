@@ -8,48 +8,52 @@ import {
   Clock,
   Users,
 } from "lucide-react";
-import { Venue } from "../../pages/booking/VenueDetailsPage";
-import { Activity } from "../../pages/booking/components/BookSlots/ActivitySelector";
-import { Facility } from "../../pages/booking/components/BookSlots/FacilitySelector";
-import { Slot } from "../../pages/booking/components/BookSlots/SlotSelector";
-import { PaymentMethod } from "../../services/partner-service/paymentService";
 import ModalPortal from "../common/ModalPortal";
-import { useQuery } from "@tanstack/react-query";
+import { PaymentMethod } from "../../services/partner-service/paymentService";
+import { Event } from "../../pages/EventsPage";
 import { getUserWalletBalance } from "../../services/partner-service/walletService";
 import { useAuthStore } from "../../store/authStore";
+import { useQuery } from "@tanstack/react-query";
 
-interface PaymentMethodModalProps {
+interface EventPaymentMethodModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectPaymentMethod: (method: PaymentMethod) => void;
-  venue: Venue;
-  selectedActivity: Activity;
-  selectedFacility: Facility;
-  selectedSlots: Slot[];
-  total: number;
+  event: Event;
+  numberOfTickets: number;
+  totalAmount: number;
   subtotal: number;
   gst: number;
 }
 
-const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
+const EventPaymentMethodModal: React.FC<EventPaymentMethodModalProps> = ({
   isOpen,
   onClose,
   onSelectPaymentMethod,
-  venue,
-  selectedActivity,
-  selectedFacility,
-  selectedSlots,
-  total,
+  event,
+  numberOfTickets,
+  totalAmount,
   subtotal,
   gst,
 }) => {
   const { isAuthenticated, user } = useAuthStore();
+  const formatDate = (date: Date | string) => {
+    if (!date) return "";
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   const { data: userWalletBalance = 0, refetch: refetchWalletBalance } =
     useQuery({
       queryKey: ["walletBalance", user?.id],
       queryFn: () => getUserWalletBalance(user?.id || ""),
       enabled: !!user?.id && isAuthenticated,
-      staleTime: 0,
+      staleTime: 0
     });
 
   // Refetch wallet balance whenever modal opens
@@ -59,24 +63,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
     }
   }, [isOpen, user?.id, isAuthenticated, refetchWalletBalance]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
-  const isWalletSufficient = userWalletBalance >= total;
+  const isWalletSufficient = userWalletBalance >= totalAmount;
 
   // Prevent background interaction
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -132,76 +119,82 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
           </div>
 
           <div className="p-6">
-            {/* Booking Summary */}
+            {/* Event Summary */}
             <div className="bg-gray-50 rounded-xl p-4 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Booking Summary
+                Event Registration Summary
               </h3>
 
-              {/* Venue Info */}
-              <div className="flex items-start space-x-3 mb-4">
-                <MapPin className="w-5 h-5 text-blue-600 mt-1" />
+              {/* Event Info */}
+              <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-gray-900">{venue.name}</h4>
-                  <p className="text-sm text-gray-600">
-                    {venue.location?.address || venue.location?.city}
+                  <h4 className="font-semibold text-gray-900 text-xl mb-2">
+                    {event.title}
+                  </h4>
+                  <p className="text-gray-600 text-sm mb-3">
+                    {event.description}
                   </p>
                 </div>
-              </div>
 
-              {/* Activity & Facility */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-green-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Activity</p>
-                    <p className="font-medium text-gray-900">
-                      {selectedActivity.name}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-orange-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Facility</p>
-                    <p className="font-medium text-gray-900">
-                      {selectedFacility.name}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Selected Slots */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                  Selected Time Slots
-                </p>
-                <div className="space-y-2">
-                  {selectedSlots.map((slot, index) => (
-                    <div
-                      key={slot.id || index}
-                      className="flex items-center justify-between text-sm bg-white rounded-lg p-2"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="w-4 h-4 text-blue-500" />
-                        <span>{formatDate(slot?.date?.toString())}</span>
-                        <Clock className="w-4 h-4 text-green-500" />
-                        <span>
-                          {formatTime(slot?.startTime?.toString())} -{" "}
-                          {formatTime(slot?.endTime?.toString())}
-                        </span>
-                      </div>
-                      <span className="font-medium">₹{slot.amount}</span>
+                {/* Event Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Date</p>
+                      <p className="font-medium text-gray-900">
+                        {formatDate(event.date)}
+                      </p>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Time</p>
+                      <p className="font-medium text-gray-900">{event.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="w-5 h-5 text-orange-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Venue</p>
+                      <p className="font-medium text-gray-900">
+                        {event.venueName}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Tickets</p>
+                      <p className="font-medium text-gray-900">
+                        {numberOfTickets} ticket{numberOfTickets > 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="bg-white rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <MapPin className="w-4 h-4 text-blue-500 mt-1" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {event.location?.address}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {event.location?.city}, {event.location?.state}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Price Breakdown */}
-              <div className="border-t border-gray-200 pt-3">
-                <div className="space-y-1 text-sm">
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
+                    <span>Ticket Price × {numberOfTickets}</span>
                     <span>₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
@@ -210,7 +203,7 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
                   </div>
                   <div className="flex justify-between font-semibold text-lg border-t border-gray-200 pt-2">
                     <span>Total Amount</span>
-                    <span>₹{total.toFixed(2)}</span>
+                    <span>₹{totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -262,8 +255,8 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
                 </div>
                 {!isWalletSufficient && (
                   <div className="mt-2 text-xs text-red-500">
-                    You need ₹{(total - userWalletBalance).toFixed(2)} more to
-                    pay via wallet
+                    You need ₹{(totalAmount - userWalletBalance).toFixed(2)}{" "}
+                    more to pay via wallet
                   </div>
                 )}
               </div>
@@ -328,4 +321,4 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   );
 };
 
-export default PaymentMethodModal;
+export default EventPaymentMethodModal;

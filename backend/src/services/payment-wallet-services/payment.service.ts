@@ -18,9 +18,7 @@ export class PaymentService {
     amount: number;
     bookingId?: string;
     membershipId?: string;
-    venueId?: string;
     customerId: string;
-    partnerId?: string;
     currency: Currency;
   }) {
     try {

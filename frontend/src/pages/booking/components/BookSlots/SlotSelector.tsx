@@ -196,6 +196,7 @@ const SlotSelector: React.FC<SlotSelectorProps> = ({
   const numVisibleDates = isMobile ? 3 : 4;
   const visibleDates = Array.from({ length: numVisibleDates }, (_, i) => {
     const dateObj = new Date(selectedDate);
+    dateObj.setHours(12, 0, 0, 0);
     dateObj.setDate(selectedDate.getDate() + i);
     return dateObj.toISOString().split("T")[0];
   });
@@ -210,7 +211,7 @@ const SlotSelector: React.FC<SlotSelectorProps> = ({
 
       <div className="px-2 xl:px-8">
         <DateFilter
-          selectedDate={selectedDate}
+          selectedDate={new Date(visibleDates[0])} 
           onDateChange={setSelectedDate}
           filter={filter}
           onFilterChange={setFilter}

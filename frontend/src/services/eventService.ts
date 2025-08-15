@@ -1,6 +1,13 @@
 import api from './api';
 
-export type EventCategory = 'All' | 'Gaming' | 'Technology' | 'Music' | 'Business' | 'Fitness' | 'Art';
+export type EventCategory =
+  | 'All'
+  | 'Gaming'
+  | 'Technology'
+  | 'Music'
+  | 'Business'
+  | 'Fitness'
+  | 'Art';
 
 export interface CreateEventRequest {
   title: string;
@@ -27,7 +34,7 @@ export interface CreateEventRequest {
   organizerName?: string;
   mapLocationLink: string;
   archived?: boolean;
-  // Redundant fields required by backend validator
+  // redundant fields for backend validator
   city: string;
   state: string;
   country: string;
@@ -37,10 +44,15 @@ export interface CreateEventRequest {
 }
 
 export const eventService = {
-  createEvent: async (payload: CreateEventRequest): Promise<string | undefined> => {
-    const response = await api.post('/events/create-event', payload);
-    return response.data;
+  // Create event
+  createEvent: async (
+    payload: CreateEventRequest
+  ): Promise<string | undefined> => {
+    const { data } = await api.post('/events/create-event', payload);
+    return data;
   },
+
+  // Get all events (minimal GET request)
   getAllEvents: async (params?: {
     page?: number;
     limit?: number;
@@ -48,47 +60,56 @@ export const eventService = {
     date?: string; // ISO string
     archived?: boolean;
   }): Promise<{ events: any[]; total: number }> => {
-    const response = await api.get('/events/get-events', {
+    const { data } = await api.get('/events/get-events', {
       params: {
         page: params?.page ?? 1,
         limit: params?.limit ?? 20,
         sort: params?.sort ?? 'desc',
         date: params?.date ?? '1970-01-01T00:00:00.000Z',
         archived: params?.archived ?? false,
-        _ts: Date.now(),
       },
-      headers: { 'Cache-Control': 'no-cache' },
     });
-    return response.data;
+    return data;
   },
+
+  // Get event by ID
   getEventById: async (id: string): Promise<any> => {
-    const response = await api.get(`/events/get-event/${id}`, { params: { _ts: Date.now() }, headers: { 'Cache-Control': 'no-cache' } });
-    return response.data;
+    const { data } = await api.get(`/events/get-event/${id}`);
+    return data;
   },
-  getEventsByCategory: async (category: EventCategory, params?: {
-    page?: number;
-    limit?: number;
-    sort?: 'asc' | 'desc';
-    date?: string;
-    archived?: boolean;
-  }): Promise<{ events: any[]; total: number }> => {
-    const response = await api.get(`/events/get-events-by-category/${category}`, {
-      params: {
-        page: params?.page ?? 1,
-        limit: params?.limit ?? 20,
-        sort: params?.sort ?? 'desc',
-        date: params?.date ?? '1970-01-01T00:00:00.000Z',
-        archived: params?.archived ?? false,
-        _ts: Date.now(),
-      },
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    return response.data;
+
+  // Get events by category
+  getEventsByCategory: async (
+    category: EventCategory,
+    params?: {
+      page?: number;
+      limit?: number;
+      sort?: 'asc' | 'desc';
+      date?: string;
+      archived?: boolean;
+    }
+  ): Promise<{ events: any[]; total: number }> => {
+    const { data } = await api.get(
+      `/events/get-events-by-category/${category}`,
+      {
+        params: {
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 20,
+          sort: params?.sort ?? 'desc',
+          date: params?.date ?? '1970-01-01T00:00:00.000Z',
+          archived: params?.archived ?? false,
+        },
+      }
+    );
+    return data;
   },
-  updateEvent: async (id: string, payload: CreateEventRequest): Promise<string | undefined> => {
-    const response = await api.put(`/events/update-event/${id}`, payload);
-    return response.data;
+
+  // Update event
+  updateEvent: async (
+    id: string,
+    payload: CreateEventRequest
+  ): Promise<string | undefined> => {
+    const { data } = await api.put(`/events/update-event/${id}`, payload);
+    return data;
   },
 };
-
-

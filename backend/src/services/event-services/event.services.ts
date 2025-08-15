@@ -289,11 +289,10 @@ export class EventService {
 
       await prisma.$executeRaw`
         UPDATE "Event"
-        SET "bookedSeats" = "bookedSeats" - ${seats},
+        SET "bookedSeats" = GREATEST("bookedSeats" - ${seats}, 0),
         "registeredUsers" = array_remove("registeredUsers", ${booking.userId})
         WHERE "id" = ${eventId};
       `;
-
       return true;
     } catch (error) {
       console.error("Error handling event seats:", error);

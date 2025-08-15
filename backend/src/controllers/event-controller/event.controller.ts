@@ -304,7 +304,8 @@ export class EventController {
 
       const createdBooking = await EventService.createEventBeforePayment(
         booking,
-        event.capacity
+        event.capacity,
+        event.registeredUsers || []
       );
 
       return res.status(201).send({

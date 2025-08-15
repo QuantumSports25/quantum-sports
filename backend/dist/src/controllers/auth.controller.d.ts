@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response } from "express";
 export declare class AuthController {
     static register(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static sendLoginOTP(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
@@ -7,5 +7,6 @@ export declare class AuthController {
     static registerPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static partnerLogin(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static adminLogin(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static getAllUsersByRole(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 }
 //# sourceMappingURL=auth.controller.d.ts.map

@@ -204,6 +204,14 @@ function App() {
               path="/admin/dashboard/settings"
               element={<AdminDashboard />}
             />
+            <Route
+              path="/admin/dashboard/events"
+              element={
+                <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Partner Routes - Nested dashboard routes */}
             <Route path="/partner/login" element={<PartnerLoginPage />} />

@@ -1,4 +1,4 @@
-import { User } from "../../models/user.model";
+import { User, UserRole } from "../../models/user.model";
 export declare class AuthService {
     static registerUser(data: {
         name: string;
@@ -144,5 +144,6 @@ export declare class AuthService {
         token?: never;
     }>;
     static getUserById(userId: string): Promise<User | null>;
+    static getAllUsers(page: number, offset: number, role?: UserRole): Promise<User[]>;
 }
 //# sourceMappingURL=auth.service.d.ts.map

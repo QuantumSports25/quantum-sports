@@ -8,39 +8,40 @@ export class EventController {
     try {
       const data = req.body as unknown as Event;
       const { city, state, country, pincode, lat, lang } = req.body as {
-        city: string;
-        state: string;
-        country: string;
-        pincode: string;
-        lat: number;
-        lang: number;
+        city?: string;
+        state?: string;
+        country?: string;
+        pincode?: string;
+        lat?: number;
+        lang?: number;
       };
 
+      // Basic validation without treating valid falsy values (e.g. 0 or false) as missing
       if (
-        !data.title ||
-        !data.date ||
-        !data.venue ||
-        !data.capacity ||
-        !data.ticketPrice ||
-        !data.category ||
-        !data.location ||
-        !data.venueName ||
-        !data.time ||
-        !data.images ||
-        !data.tags ||
-        !data.featured ||
-        !data.mapLocationLink ||
-        !city ||
-        !state ||
-        !country ||
-        !pincode ||
-        !lat ||
-        !lang
+        !data?.title ||
+        !data?.date ||
+        !data?.venue ||
+        typeof data?.capacity !== "number" ||
+        typeof data?.ticketPrice !== "number" ||
+        !data?.category ||
+        !data?.venueName ||
+        !data?.time ||
+        !Array.isArray((data as any).images) ||
+        !Array.isArray((data as any).tags) ||
+        typeof (data as any).featured !== "boolean" ||
+        !data?.mapLocationLink ||
+        city == null ||
+        state == null ||
+        country == null ||
+        pincode == null ||
+        lat == null ||
+        lang == null
       ) {
         return res.status(400).json({ error: "Invalid event data" });
       }
+
       const address = `${city}, ${state}, ${country}, ${pincode}`;
-      const lowercaseCity = city.toLowerCase();
+      const lowercaseCity = (city as string).toLowerCase();
       const location = {
         address,
         city: lowercaseCity,
@@ -74,7 +75,10 @@ export class EventController {
         archived: false,
       };
 
-      return res.status(201).json(newEvent.id);
+      // Persist to DB
+      const createdEvent = await EventService.createEvent(newEvent);
+
+      return res.status(201).json(createdEvent.id);
     } catch (error: any) {
       console.error("Error creating event:", error);
       return res

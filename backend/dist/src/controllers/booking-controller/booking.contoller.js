@@ -294,6 +294,26 @@ class BookingController {
             });
         }
     }
+    static async getBookingsByPartner(req, res) {
+        try {
+            const { partnerId } = req.params;
+            if (!partnerId) {
+                return res.status(400).json({ message: "Partner ID is required" });
+            }
+            const bookings = await booking_service_1.BookingService.getBookingsByPartnerId(partnerId);
+            return res.status(200).json({
+                data: bookings,
+                total: bookings.length,
+            });
+        }
+        catch (error) {
+            console.error("Error getting partner bookings:", error);
+            return res.status(500).json({
+                message: "Failed to get partner bookings",
+                error: error.message,
+            });
+        }
+    }
     static async cancelBooking(req, res) {
         try {
             const { id } = req.params;

@@ -13,9 +13,11 @@ const wallet_routes_1 = __importDefault(require("./routes/wallet.routes"));
 const activity_facility_routes_1 = __importDefault(require("./routes/venue-routes/activity.facility.routes"));
 const slot_routes_1 = __importDefault(require("./routes/venue-routes/slot.routes"));
 const devScriptRoutes_1 = __importDefault(require("./routes/devScriptRoutes"));
+const event_routes_1 = __importDefault(require("./routes/event.routes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
+app.set('etag', false);
 app.use((req, res, next) => {
     console.log("===== CORS Middleware Debug =====");
     console.log("Full Request Headers:", JSON.stringify(req.headers, null, 2));
@@ -27,6 +29,8 @@ app.use((req, res, next) => {
         "http://localhost:3000",
         "http://localhost:4000",
         "https://quantum-sports.netlify.app",
+        "https://quantum-sports.vercel.app",
+        "https://quantumpickleball.in/",
         process.env["FRONTEND_URL"] || "",
     ].filter(Boolean);
     const origin = req.headers.origin;
@@ -44,6 +48,10 @@ app.use((req, res, next) => {
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-client-key, x-client-token, x-client-secret, Authorization");
     res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.header("Pragma", "no-cache");
+    res.header("Expires", "0");
+    res.header("Access-Control-Expose-Headers", "*");
     res.header("Referrer-Policy", "origin-when-cross-origin");
     res.header("X-Content-Type-Options", "nosniff");
     res.header("X-Frame-Options", "SAMEORIGIN");
@@ -63,6 +71,7 @@ app.use("/api/booking", booking_routes_1.default);
 app.use("/api/membership", membership_routes_1.default);
 app.use("/api/wallet", wallet_routes_1.default);
 app.use("/api/devscript", devScriptRoutes_1.default);
+app.use("/api/events", event_routes_1.default);
 app.get("/", (_req, res) => {
     res.send("Backend is running");
 });

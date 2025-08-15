@@ -5,12 +5,13 @@ const createVenue_controller_1 = require("../../controllers/venue-controller/cre
 const getVenue_controller_1 = require("../../controllers/venue-controller/getVenue.controller");
 const updateVenue_controller_1 = require("../../controllers/venue-controller/updateVenue.controller");
 const deleteVenue_controller_1 = require("../../controllers/venue-controller/deleteVenue.controller");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
 const router = (0, express_1.Router)();
-router.post('/create-venue', createVenue_controller_1.CreateVenueController.createVenue);
+router.post('/create-venue', auth_middleware_1.authMiddleware, createVenue_controller_1.CreateVenueController.createVenue);
 router.get('/get-venue/:id', getVenue_controller_1.GetVenueController.getVenue);
 router.get('/get-all-venues-by-partner/', getVenue_controller_1.GetVenueController.getAllVenuesByPartner);
-router.put('/update-venue/:id', updateVenue_controller_1.UpdateVenueController.updateVenue);
-router.delete('/delete-venue/:id', deleteVenue_controller_1.DeleteVenueController.deleteVenue);
+router.put('/update-venue/:id', auth_middleware_1.authMiddleware, updateVenue_controller_1.UpdateVenueController.updateVenue);
+router.delete('/delete-venue/:id', auth_middleware_1.authMiddleware, deleteVenue_controller_1.DeleteVenueController.deleteVenue);
 router.get('/get-all-venues', getVenue_controller_1.GetVenueController.getAllVenues);
 exports.default = router;
 //# sourceMappingURL=venue.routes.js.map

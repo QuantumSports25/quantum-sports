@@ -4,3 +4,4 @@ export { default as PartnerManagement } from './PartnerManagement';
 export { default as VenueManagement } from './VenueManagement';
 export { default as BookingManagement } from './BookingManagement';
 export { default as PlatformSettings } from './PlatformSettings'; 
+export { default as EventManagement } from './EventManagement';

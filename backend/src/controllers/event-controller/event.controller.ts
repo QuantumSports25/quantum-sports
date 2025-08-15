@@ -8,15 +8,14 @@ export class EventController {
     try {
       const data = req.body as unknown as Event;
       const { city, state, country, pincode, lat, lang } = req.body as {
-        city?: string;
-        state?: string;
-        country?: string;
-        pincode?: string;
-        lat?: number;
-        lang?: number;
+        city: string;
+        state: string;
+        country: string;
+        pincode: string;
+        lat: number;
+        lang: number;
       };
 
-      // Basic validation without treating valid falsy values (e.g. 0 or false) as missing
       if (
         !data?.title ||
         !data?.date ||
@@ -30,18 +29,18 @@ export class EventController {
         !Array.isArray((data as any).tags) ||
         typeof (data as any).featured !== "boolean" ||
         !data?.mapLocationLink ||
-        city == null ||
-        state == null ||
-        country == null ||
-        pincode == null ||
-        lat == null ||
-        lang == null
+        !city ||
+        !state ||
+        !country ||
+        !pincode ||
+        !lat ||
+        !lang
       ) {
         return res.status(400).json({ error: "Invalid event data" });
       }
 
       const address = `${city}, ${state}, ${country}, ${pincode}`;
-      const lowercaseCity = (city as string).toLowerCase();
+      const lowercaseCity = city.toLowerCase();
       const location = {
         address,
         city: lowercaseCity,
@@ -75,7 +74,6 @@ export class EventController {
         archived: false,
       };
 
-      // Persist to DB
       const createdEvent = await EventService.createEvent(newEvent);
 
       return res.status(201).json(createdEvent.id);

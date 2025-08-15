@@ -1,31 +1,27 @@
-import { CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
 export const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'active':
+  switch (status.toLowerCase()) {
     case 'confirmed':
-      return 'text-green-400 bg-green-900/20 border-green-800';
+      return 'bg-green-400/10 text-green-400';
     case 'pending':
-      return 'text-yellow-400 bg-yellow-900/20 border-yellow-800';
+      return 'bg-yellow-400/10 text-yellow-400';
     case 'cancelled':
-    case 'inactive':
-      return 'text-red-400 bg-red-900/20 border-red-800';
+      return 'bg-red-400/10 text-red-400';
     default:
-      return 'text-gray-400 bg-gray-900/20 border-gray-800';
+      return 'bg-gray-400/10 text-gray-400';
   }
 };
 
 export const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'active':
+  switch (status.toLowerCase()) {
     case 'confirmed':
       return CheckCircle;
     case 'pending':
       return Clock;
     case 'cancelled':
-    case 'inactive':
       return XCircle;
     default:
-      return AlertCircle;
+      return Clock;
   }
-}; 
+};

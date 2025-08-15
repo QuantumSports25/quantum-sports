@@ -122,6 +122,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         paymentMethod: selectedPaymentMethod || PaymentMethod.Razorpay,
       };
 
+
       return validateAndCreateBooking(bookingData);
     },
     onSuccess: (bookingResponse) => {
@@ -579,9 +580,8 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 setUserInfo({ ...userInfo, email: e.target.value })
               }
               placeholder="Enter your email"
-              className={`w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                user?.email ? "bg-green-50" : ""
-              }`}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${user?.email ? "bg-green-50" : ""
+                }`}
             />
           </div>
           <div>
@@ -595,9 +595,8 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 setUserInfo({ ...userInfo, mobile: e.target.value })
               }
               placeholder="Enter your mobile number"
-              className={`w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                user?.phone ? "bg-green-50" : ""
-              }`}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${user?.phone ? "bg-green-50" : ""
+                }`}
             />
           </div>
           <div>

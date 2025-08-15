@@ -518,11 +518,8 @@ export class BookingService {
         },
       });
 
-      if (!bookings || bookings.length === 0) {
-        throw new Error("No bookings found for this partner");
-      }
-
-      return bookings;
+      // Return empty list if no bookings; let controller respond with 200 and total 0
+      return bookings ?? [];
     } catch (error) {
       console.error("Error getting bookings by partner id:", error);
       throw error;

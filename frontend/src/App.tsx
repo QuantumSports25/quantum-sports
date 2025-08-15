@@ -29,6 +29,7 @@ import EventDetailsPage from "./pages/EventDetailsPage";
 // Partner Pages
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerVenues from "./pages/partner/PartnerVenues";
+import PartnerBookings from "./pages/partner/PartnerBookings";
 import PartnerLoginPage from "./pages/auth/PartnerLoginPage";
 import PartnerRegisterPage from "./pages/auth/PartnerRegisterPage";
 
@@ -219,7 +220,11 @@ function App() {
             <Route path="/partner/dashboard" element={<PartnerDashboard />} />
             <Route
               path="/partner/dashboard/bookings"
-              element={<PartnerDashboard />}
+              element={
+                <ProtectedRoute requiredRole="partner" redirectTo="/partner/login">
+                  <PartnerBookings />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/partner/dashboard/venues"

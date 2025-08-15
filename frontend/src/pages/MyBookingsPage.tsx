@@ -62,6 +62,7 @@ const MyBookingsPage: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed': return 'text-green-400 bg-green-400/20 border-green-400/30';
+      case 'pending': return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
       case 'cancelled': return 'text-red-400 bg-red-400/20 border-red-400/30';
       case 'completed': return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
       default: return 'text-gray-400 bg-gray-400/20 border-gray-400/30';
@@ -81,20 +82,91 @@ const MyBookingsPage: React.FC = () => {
     }
   };
 
-  const formatBookingTime = (startTime: string, endTime: string) => {
+  const formatBookingTime = (startTime?: string, endTime?: string) => {
     try {
-      return `${startTime} - ${endTime}`;
+      const hasStart = Boolean(startTime);
+      const hasEnd = Boolean(endTime);
+      if (hasStart && hasEnd) return `${startTime} - ${endTime}`;
+      if (hasStart) return String(startTime);
+      return 'Time not available';
     } catch {
-      return 'Invalid time';
+      return 'Time not available';
     }
+  };
+
+  // Helpers to adapt to both slot bookings and event bookings from backend
+  const isEventBooking = (booking: Booking) => {
+    const b: any = booking as any;
+    return b?.type === 'event' || b?.bookingData?.type === 'event' || !!b?.event;
+  };
+
+  const getBookingTitle = (booking: Booking) => {
+    const b: any = booking as any;
+    return isEventBooking(booking) ? (b?.event?.title || 'Event') : (booking.venue?.name || 'Venue');
+  };
+
+  const getBookingDate = (booking: Booking) => {
+    const b: any = booking as any;
+    const date = isEventBooking(booking) ? (b?.event?.date || booking.bookedDate) : booking.bookedDate;
+    return formatDate(date);
+  };
+
+  const getBookingTime = (booking: Booking) => {
+    const b: any = booking as any;
+    if (isEventBooking(booking)) {
+      return b?.event?.time || 'Time not available';
+    }
+    const start = b?.slot?.startTime || b?.bookingData?.startTime || b?.startTime;
+    const end = b?.slot?.endTime || b?.bookingData?.endTime || b?.endTime;
+    return formatBookingTime(start, end);
+  };
+
+  const getBookingAddress = (booking: Booking) => {
+    const b: any = booking as any;
+    if (isEventBooking(booking)) {
+      return b?.event?.location?.address || b?.venue?.location?.address || 'Address not available';
+    }
+    return b?.venue?.location?.address || b?.customerDetails?.location || 'Address not available';
+  };
+
+  const getBookingDescription = (booking: Booking) => {
+    const b: any = booking as any;
+    if (isEventBooking(booking)) {
+      return b?.event?.description || 'Event booking';
+    }
+    return booking?.venue?.description || b?.venue?.description || 'Venue booking';
+  };
+
+  const formatCurrencyINR = (amount: number) => {
+    try {
+      return amount.toLocaleString('en-IN');
+    } catch {
+      return String(amount);
+    }
+  };
+
+  const getBookingAmount = (booking: Booking) => {
+    const b: any = booking as any;
+    const rawAmount = b?.paymentDetails?.paymentAmount ?? b?.amount ?? (booking as any)?.amountPaid ?? 0;
+    const numericAmount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : Number(rawAmount || 0);
+    return `₹${formatCurrencyINR(numericAmount)}`;
+  };
+
+  const getTypeBadge = (booking: Booking) => {
+    return isEventBooking(booking) ? 'Event' : 'Venue';
   };
 
   // Filtered bookings before pagination
   const filteredBookings = bookings.filter(booking => {
+    const b: any = booking as any;
+    const searchableTitle = getBookingTitle(booking);
+    const searchableAddress = getBookingAddress(booking);
+    const searchableCity = booking.venue?.location?.city || b?.event?.location?.city || '';
+    
     const matchesSearch =
-      booking.venue?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.venue?.location?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.venue?.location?.city?.toLowerCase().includes(searchTerm.toLowerCase());
+      searchableTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      searchableAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      searchableCity?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || booking.bookingStatus.toLowerCase() === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -175,9 +247,14 @@ const MyBookingsPage: React.FC = () => {
               {currentBookings.map((booking) => (
                 <div key={booking.id} className="bg-gray-800 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-200">
-                      {booking.venue?.name || 'Unnamed Venue'}
-                    </h2>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-xl font-semibold text-gray-200">
+                        {getBookingTitle(booking)}
+                      </h2>
+                      <span className={`px-2 py-0.5 text-xs rounded-full border ${isEventBooking(booking) ? 'text-pink-400 bg-pink-400/10 border-pink-400/30' : 'text-blue-400 bg-blue-400/10 border-blue-400/30'}`}>
+                        {getTypeBadge(booking)}
+                      </span>
+                    </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium uppercase ${getStatusColor(booking.bookingStatus)}`}>
                       {booking.bookingStatus}
                     </span>
@@ -186,26 +263,22 @@ const MyBookingsPage: React.FC = () => {
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-blue-400" />
-                      <span className="text-gray-300">{formatDate(booking.bookedDate)}</span>
+                      <span className="text-gray-300">{getBookingDate(booking)}</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Clock className="h-5 w-5 text-blue-400" />
-                      <span className="text-gray-300">{formatBookingTime(booking.slot.startTime, booking.slot.endTime)}</span>
+                      <span className="text-gray-300">{getBookingTime(booking)}</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <MapPin className="h-5 w-5 text-blue-400" />
-                      <span className="text-gray-300">{booking.venue?.location?.address || 'Location not available'}</span>
+                      <span className="text-gray-300">{getBookingAddress(booking)}</span>
                     </div>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-400 italic">
-                        {booking.venue?.description || 'No description available'}
-                      </span>
-                      <span className="text-sm font-medium text-green-400">
-                        ₹{booking.amountPaid}
-                      </span>
+                      <span className="text-sm text-gray-400 italic">{getBookingDescription(booking)}</span>
+                      <span className="text-sm font-medium text-green-400">{getBookingAmount(booking)}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       {booking.bookingStatus === 'confirmed' && (

@@ -129,7 +129,7 @@ class BookingService {
         // Venue/slot booking - work with existing backend structure
         const slotsArr: any[] = Array.isArray(booking?.slots) ? booking.slots : [];
         const bookingData = booking?.bookingData || {};
-        const customerDetails = booking?.customerDetails || {};
+        // const customerDetails = booking?.customerDetails || {};
         
         // Extract venue information from bookingData and customerDetails
         const venueId = bookingData?.venueId || '';

@@ -4,7 +4,6 @@ import {
   AdminStats, 
   User, 
   Venue, 
-  Booking, 
   ApiResponse, 
   PaginatedResponse 
 } from '../types';
@@ -96,6 +95,58 @@ export const adminService = {
       return [];
     } catch (error) {
       console.error('❌ Failed to fetch venues by partner:', error);
+      return [];
+    }
+  },
+
+  // Booking API functions
+  getAllBookings: async (): Promise<any[]> => {
+    try {
+      console.log('🚀 Fetching all bookings...');
+      // Since there's no admin endpoint for all bookings yet, we'll need to combine user and partner bookings
+      // For now, return empty array - this can be implemented when admin booking endpoint is added
+      console.log('ℹ️ Admin booking endpoint not available yet');
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch all bookings:', error);
+      return [];
+    }
+  },
+
+  getBookingsByUser: async (userId: string): Promise<any[]> => {
+    try {
+      console.log(`🚀 Calling real API endpoint: /booking/get-bookings-by-user/${userId}`);
+      const response = await api.get<{
+        data: any[];
+        total: number;
+      }>(`/booking/get-bookings-by-user/${userId}`);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} bookings for user`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch user bookings:', error);
+      return [];
+    }
+  },
+
+  getBookingsByPartner: async (partnerId: string): Promise<any[]> => {
+    try {
+      console.log(`🚀 Calling real API endpoint: /booking/get-bookings-by-partner/${partnerId}`);
+      const response = await api.get<{
+        data: any[];
+        total: number;
+      }>(`/booking/get-bookings-by-partner/${partnerId}`);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} bookings for partner`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch partner bookings:', error);
       return [];
     }
   },
@@ -193,14 +244,14 @@ export const adminService = {
     status?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<PaginatedResponse<Booking>> => {
-    const response = await api.get<PaginatedResponse<Booking>>('/admin/bookings', { params });
+  }): Promise<PaginatedResponse<any>> => {
+    const response = await api.get<PaginatedResponse<any>>('/admin/bookings', { params });
     return response.data;
   },
 
   // Get recent bookings
-  getRecentBookings: async (limit: number = 10): Promise<Booking[]> => {
-    const response = await api.get<ApiResponse<Booking[]>>(`/admin/bookings/recent?limit=${limit}`);
+  getRecentBookings: async (limit: number = 10): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/admin/bookings/recent?limit=${limit}`);
     return response.data.data;
   },
 

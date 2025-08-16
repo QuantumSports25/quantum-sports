@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Eye, Edit, Trash2, Building, MapPin, Phone, Star, DollarSign } from 'lucide-react';
 import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { Venue } from '../../../types';
 
-const VenueManagement: React.FC<AdminComponentProps> = ({ }) => {
+const VenueManagement: React.FC<AdminComponentProps> = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,16 +15,26 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ }) => {
   const [allPartners, setAllPartners] = useState<any[]>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('all');
 
-  useEffect(() => {
-    fetchVenues();
-  }, [selectedPartnerId]);
-
-  useEffect(() => {
-    // Fetch partners list on component mount for dropdown
-    fetchPartnerDetails();
+  const fetchPartnerDetails = useCallback(async () => {
+    try {
+      console.log('🔄 Fetching partner details...');
+      const partnersData = await adminService.getPartners();
+      
+      // Create a map of partner ID to partner info
+      const partnersMap: {[key: string]: any} = {};
+      partnersData.forEach(partner => {
+        partnersMap[partner.id] = partner;
+      });
+      
+      setPartners(partnersMap);
+      setAllPartners(partnersData);
+      console.log(`✅ Loaded partner details for ${partnersData.length} partners`);
+    } catch (err) {
+      console.error('❌ Failed to fetch partner details:', err);
+    }
   }, []);
 
-  const fetchVenues = async () => {
+  const fetchVenues = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -58,26 +68,16 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPartnerId]);
 
-  const fetchPartnerDetails = async () => {
-    try {
-      console.log('🔄 Fetching partner details...');
-      const partnersData = await adminService.getPartners();
+  useEffect(() => {
+    // Fetch partners list on component mount for dropdown
+    fetchPartnerDetails();
+  }, [fetchPartnerDetails]);
 
-      // Create a map of partner ID to partner info
-      const partnersMap: { [key: string]: any } = {};
-      partnersData.forEach(partner => {
-        partnersMap[partner.id] = partner;
-      });
-
-      setPartners(partnersMap);
-      setAllPartners(partnersData);
-      console.log(`✅ Loaded partner details for ${partnersData.length} partners`);
-    } catch (err) {
-      console.error('❌ Failed to fetch partner details:', err);
-    }
-  };
+  useEffect(() => {
+    fetchVenues();
+  }, [fetchVenues]);
 
   const filteredVenues = venues.filter(venue => {
     const matchesSearch = venue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

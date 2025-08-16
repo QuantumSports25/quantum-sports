@@ -5,7 +5,7 @@ import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { Venue } from '../../../types';
 
-const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
+const VenueManagement: React.FC<AdminComponentProps> = ({ }) => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

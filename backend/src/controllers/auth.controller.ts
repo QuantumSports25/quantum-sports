@@ -479,8 +479,8 @@ export class AuthController {
   static async getAllUsersByRole(req: Request, res: Response) {
     try {
       const role = req.params["role"];
-      const { page = 0, offset = 10 } = req.query as unknown as {
-        page: number;
+      const { limit = 20, offset = 0 } = req.query as unknown as {
+        limit: number;
         offset: number;
       };
 
@@ -496,7 +496,7 @@ export class AuthController {
 
       // Pass role only if present and valid
       const users = await AuthService.getAllUsers(
-        page,
+        limit,
         offset,
         role as UserRole
       );

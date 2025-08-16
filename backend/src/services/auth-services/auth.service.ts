@@ -376,16 +376,19 @@ export class AuthService {
   }
 
   static async getAllUsers(
-    page: number,
+    limit: number,
     offset: number,
     role?: UserRole
   ): Promise<User[]> {
     try {
+     
       const users = await prisma.user.findMany({
         skip: offset,
-        take: page,
+        take: limit,
         ...(role ? { where: { role } } : {}),
       });
+
+      console.log("Retrieved Users:", users);
 
       const allUsers = users.map((user) => ({
         id: user.id,

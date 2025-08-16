@@ -252,6 +252,16 @@ export class BookingService {
                     availability: SlotAvailability.Booked,
                   },
                 });
+              } else {
+                const { eventId, seats } =
+                  booking.bookingData as unknown as EventBooking;
+                await tx.$executeRaw`
+                  UPDATE "Event"
+                  SET "bookedSeats" = "bookedSeats" + ${seats},
+                  "registeredUsers" = array_append("registeredUsers", ${booking.userId})
+                  WHERE "id" = ${eventId}
+                  AND NOT (${booking.userId} = ANY("registeredUsers"));
+                  `;
               }
 
               await tx.transactionHistory.update({

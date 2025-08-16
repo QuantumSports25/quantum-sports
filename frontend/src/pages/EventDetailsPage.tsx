@@ -160,7 +160,7 @@ const EventDetailsPage: React.FC = () => {
     }) => {
       return verifyBookingPayment({ bookingId, paymentId, orderId, signature });
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setShowLoadingModal(false);
       setShowSuccessModal(true);
       setShowSuccessModal(true);

@@ -243,7 +243,7 @@ export class EventService {
     }
   }
 
-  static async createEventBeforePayment(booking: Booking, capacity: number) {
+  static async createEventBeforePayment(booking: Booking, capacity: number, registeredUsers: string[]) {
     try {
       const res = await prisma.$transaction(async (tx) => {
         const newBooking = await tx.booking.create({
@@ -262,7 +262,7 @@ export class EventService {
               increment: (booking.bookingData as EventBooking).seats,
             },
             registeredUsers: {
-              push: booking.userId,
+              set: [...registeredUsers, booking.userId],
             },
           },
         });
@@ -289,9 +289,11 @@ export class EventService {
 
       await prisma.$executeRaw`
         UPDATE "Event"
-        SET "bookedSeats" = "bookedSeats" - ${seats},
+        SET 
+        "bookedSeats" = GREATEST("bookedSeats" - ${seats}, 0),
         "registeredUsers" = array_remove("registeredUsers", ${booking.userId})
-        WHERE "id" = ${eventId};
+        WHERE "id" = ${eventId}
+        AND ${booking.userId} = ANY("registeredUsers");
       `;
 
       return true;

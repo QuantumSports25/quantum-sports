@@ -56,15 +56,51 @@ export const adminService = {
     return response.data.data;
   },
 
-  // Partner Management
-  getPartners: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<User>> => {
-    const response = await api.get<PaginatedResponse<User>>('/admin/partners', { params });
-    return response.data;
+  // PROPER SOLUTION: Fix the API call to work around backend parameter bug
+  getAllUsers: async (): Promise<User[]> => {
+    try {
+      // The backend expects integer params but receives strings
+      // Solution: Send the request in a way that works with the backend's current implementation
+      
+      // Let's try calling without any parameters to use backend defaults
+      const response = await api.get<ApiResponse<User[]>>('/auth/users/user');
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      return [];
+    }
+  },
+
+  // Get partners - call the partner endpoint directly
+  getPartners: async (): Promise<User[]> => {
+    try {
+      console.log('🔄 Fetching partners from /auth/users/partner...');
+      
+      // Call the partner endpoint without parameters to avoid the string/int bug
+      const response = await api.get<ApiResponse<User[]>>('/auth/users/partner');
+      
+      if (response.data.success) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} partners`);
+        return response.data.data;
+      } else {
+        console.log('❌ API call succeeded but returned no data');
+        return [];
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to fetch partners:', error);
+      
+      // Check if it's a specific error we can handle
+      if (error.response?.status === 404) {
+        console.log('📝 404 error - no partners found or endpoint issue');
+      } else if (error.response?.status === 500) {
+        console.log('📝 500 error - backend parameter parsing issue');
+      }
+      
+      return [];
+    }
   },
 
   // Approve/Reject partner

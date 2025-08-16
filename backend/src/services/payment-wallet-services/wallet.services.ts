@@ -149,32 +149,44 @@ export class WalletService {
     createdBefore?: string,
     createdAfter?: string
   ): Promise<IUiTransaction[]> {
-    const capturedAt: any = {};
+    const updatedAt: any = {};
 
     if (createdBefore) {
       const beforeDate = new Date(createdBefore);
       if (!isNaN(beforeDate.getTime())) {
-        capturedAt.lte = beforeDate;
+        updatedAt.lte = beforeDate;
       }
     }
 
     if (createdAfter) {
       const afterDate = new Date(createdAfter);
       if (!isNaN(afterDate.getTime())) {
-        capturedAt.gte = afterDate;
+        updatedAt.gte = afterDate;
       }
     }
+
+    console.log({
+      where: {
+        userId,
+        ...(Object.keys(updatedAt).length > 0 ? { updatedAt } : {}),
+      },
+      skip: Number((page - 1) * pageSize),
+      take: Number(pageSize),
+      orderBy: {
+        updatedAt: sortDirection,
+      },
+    });
 
     try {
       const history = await prisma.transactionHistory.findMany({
         where: {
           userId,
-          ...(Object.keys(capturedAt).length > 0 ? { capturedAt } : {}),
+          ...(Object.keys(updatedAt).length > 0 ? { updatedAt } : {}),
         },
         skip: Number((page - 1) * pageSize),
         take: Number(pageSize),
         orderBy: {
-          capturedAt: sortDirection,
+          updatedAt: sortDirection,
         },
       });
 

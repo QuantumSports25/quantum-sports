@@ -55,7 +55,7 @@ const WalletPage: React.FC = () => {
   } = useQuery<IUiTransaction[]>({
     queryKey: ["transactions", user?.id],
     queryFn: async () => {
-      const result = await walletService.getWalletHistory(user?.id ?? "");
+      const result = await walletService.getWalletHistory();
       // Handle both direct array or response object
       if (Array.isArray(result)) {
         return result;
@@ -386,7 +386,7 @@ const WalletPage: React.FC = () => {
                             className={`font-bold text-sm sm:text-base lg:text-lg transition-all duration-300 ${colors.text}`}
                           >
                             {transaction.captured === false
-                              ? "!"
+                              ? ""
                               : transaction.membershipId &&
                                 transaction.membershipId !== ""
                               ? "+"

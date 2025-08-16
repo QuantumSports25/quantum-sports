@@ -19,12 +19,6 @@ app.use(express.json());
 
 // CORS middleware
 app.use((req, res, next) => {
-  console.log("===== CORS Middleware Debug =====");
-  console.log("Full Request Headers:", JSON.stringify(req.headers, null, 2));
-  console.log("Request Method:", req.method);
-  console.log("Origin:", req.headers.origin);
-  console.log("Referer:", req.headers.referer);
-  console.log("Host:", req.headers.host);
 
   const allowedOrigins = [
     "http://localhost:3000",

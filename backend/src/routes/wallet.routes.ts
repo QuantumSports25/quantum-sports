@@ -9,5 +9,6 @@ router.get('/balance/:userId', authMiddleware, WalletController.getWalletBalance
 router.get('/user/:userId', authMiddleware, WalletController.getUserWallet);
 router.post('/add-credits', authMiddleware, WalletController.addCredits);
 router.post('/deduct-credits', authMiddleware, WalletController.deductCredits);
+router.get('/history', authMiddleware, WalletController.getWalletHistory);
 
 export default router; 

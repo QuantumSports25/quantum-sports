@@ -1,4 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import { SortDirection } from "../../models/event.model";
+import {
+  Currency,
+  IUiTransaction,
+  PaymentMethod,
+} from "../../models/payment.model";
 
 const prisma = new PrismaClient();
 
@@ -131,6 +137,47 @@ export class WalletService {
       return wallet;
     } catch (error) {
       console.error("Error fetching user wallet:", error);
+      throw error;
+    }
+  }
+
+  static async getWalletHistory(
+    userId: string,
+    page: number,
+    pageSize: number,
+    sortDirection: SortDirection = SortDirection.Desc,
+    createdBefore?: string,
+    createdAfter?: string
+  ): Promise<IUiTransaction[]> {
+    try {
+      const history = await prisma.transactionHistory.findMany({
+        where: {
+          userId,
+          ...(createdBefore && { capturedAt: { lte: new Date(createdBefore) } }),
+          ...(createdAfter && { capturedAt: { gte: new Date(createdAfter) } }),
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: {
+          capturedAt: sortDirection,
+        },
+      });
+
+      const data: IUiTransaction[] = history.map((item) => ({
+        id: item.orderId,
+        amount: Number(item.paymentAmount),
+        currency: item.paymentCurrency as unknown as Currency,
+        paymentMethod: item.paymentMethod as unknown as PaymentMethod,
+        bookingId: item.bookingId ?? "",
+        membershipId: item.membershipId ?? "",
+        name: item.name,
+        captured: item.captured ?? false,
+        capturedAt: item.capturedAt ?? new Date(0),
+      }));
+
+      return data;
+    } catch (error) {
+      console.error("Error fetching wallet history:", error);
       throw error;
     }
   }

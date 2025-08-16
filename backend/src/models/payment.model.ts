@@ -1,7 +1,9 @@
 export interface Payment {
   orderId: string;
+  userId: string;
   bookingId?: string;
   membershipId?: string;
+  name?: string;
   paymentAmount: number;
   paymentCurrency: Currency;
   paymentMethod: PaymentMethod;
@@ -49,4 +51,16 @@ export enum OrderStatus {
 export enum PaymentMethod {
   Razorpay = "Razorpay",
   Wallet = "Wallet",
+}
+
+export interface IUiTransaction {
+  id: string;
+  amount: number;
+  currency: Currency;
+  paymentMethod: PaymentMethod;
+  bookingId?: string;
+  membershipId?: string;
+  name: string;
+  captured?: boolean;
+  capturedAt?: Date;
 }

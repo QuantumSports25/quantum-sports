@@ -219,7 +219,8 @@ export class BookingController {
         bookingId: bookingId,
         amount: booking.amount,
         currency: Currency.INR,
-        paymentMethod: PaymentMethod.Razorpay,
+        paymentMethod: booking.paymentDetails.paymentMethod as PaymentMethod,
+        userId: booking.userId,
       });
 
       if (!transaction) {

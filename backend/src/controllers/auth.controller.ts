@@ -478,7 +478,8 @@ export class AuthController {
 
   static async getAllUsersByRole(req: Request, res: Response) {
     try {
-      const role = req.params["role"];
+      const role = req.query["role"];
+      console.log(role);
       const { limit = 20, offset = 0 } = req.query as unknown as {
         limit: number;
         offset: number;

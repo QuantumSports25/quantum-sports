@@ -117,30 +117,32 @@ export class WalletController {
     try {
       const userId = (req as any).user.userId;
       const {
-        createdBefore,
-        createdAfter,
         page = 1,
         pageSize = 10,
         sort,
       } = req.query as unknown as {
-        createdBefore?: string;
-        createdAfter?: string;
         page?: number;
         pageSize?: number;
         sort?: SortDirection;
+      };
+
+      let { createdBefore, createdAfter } = req.query as unknown as {
+        createdBefore?: string;
+        createdAfter?: string;
       };
 
       if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
       }
 
+
       const history = await WalletService.getWalletHistory(
         userId,
         page,
         pageSize,
         sort,
-        createdBefore,
-        createdAfter
+        createdBefore ?? "",
+        createdAfter ?? ""
       );
 
       return res.status(200).json({

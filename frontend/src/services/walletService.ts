@@ -1,4 +1,6 @@
+import { Currency } from "../pages/booking/components/BookSlots/CheckoutCard";
 import api from "./api";
+import { PaymentMethod } from "./partner-service/paymentService";
 
 export interface Wallet {
   id: string;
@@ -10,6 +12,23 @@ export interface Wallet {
     name: string;
     email: string;
   };
+}
+
+export interface IUiTransaction {
+  id: string;
+  amount: number;
+  currency: Currency;
+  paymentMethod: PaymentMethod;
+  bookingId?: string;
+  membershipId?: string;
+  name: string;
+  captured?: boolean;
+  capturedAt?: Date;
+}
+
+export enum SortDirection {
+  Asc = 'asc',
+  Desc = 'desc'
 }
 
 class WalletService {
@@ -59,6 +78,16 @@ class WalletService {
       return response.data;
     } catch (error) {
       console.error('Error deducting credits:', error);
+      throw error;
+    }
+  }
+
+  async getWalletHistory(userId: string, createdBefore?: Date, createdAfter?: Date, page: number = 1, pageSize: number = 10, sort: SortDirection = SortDirection.Desc): Promise<IUiTransaction[]> {
+    try {
+      const response = await api.get(`/wallet/history?createdBefore=${createdBefore?.toISOString()}&createdAfter=${createdAfter?.toISOString()}&page=${page}&pageSize=${pageSize}&sort=${sort}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching wallet history:', error);
       throw error;
     }
   }

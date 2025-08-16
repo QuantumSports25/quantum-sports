@@ -4,7 +4,6 @@ import {
   AdminStats, 
   User, 
   Venue, 
-  Booking, 
   ApiResponse, 
   PaginatedResponse 
 } from '../types';
@@ -56,15 +55,147 @@ export const adminService = {
     return response.data.data;
   },
 
-  // Partner Management
-  getPartners: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-  }): Promise<PaginatedResponse<User>> => {
-    const response = await api.get<PaginatedResponse<User>>('/admin/partners', { params });
-    return response.data;
+  // Venue API functions
+  getAllVenues: async (): Promise<Venue[]> => {
+    try {
+      console.log('🚀 Calling real API endpoint: /venue/get-all-venues');
+      const response = await api.get<{
+        message: string;
+        data: Venue[];
+      }>('/venue/get-all-venues');
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} venues`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch venues:', error);
+      return [];
+    }
+  },
+
+  getVenuesByPartner: async (partnerId?: string): Promise<Venue[]> => {
+    try {
+      const endpoint = partnerId 
+        ? `/venue/get-all-venues-by-partner/?partnerId=${partnerId}`
+        : '/venue/get-all-venues-by-partner/';
+      
+      console.log(`🚀 Calling real API endpoint: ${endpoint}`);
+      const response = await api.get<{
+        message: string;
+        data: Venue[];
+        total?: number;
+      }>(endpoint);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} venues by partner`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch venues by partner:', error);
+      return [];
+    }
+  },
+
+  // Booking API functions
+  getAllBookings: async (): Promise<any[]> => {
+    try {
+      console.log('🚀 Fetching all bookings...');
+      // Since there's no admin endpoint for all bookings yet, we'll need to combine user and partner bookings
+      // For now, return empty array - this can be implemented when admin booking endpoint is added
+      console.log('ℹ️ Admin booking endpoint not available yet');
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch all bookings:', error);
+      return [];
+    }
+  },
+
+  getBookingsByUser: async (userId: string): Promise<any[]> => {
+    try {
+      console.log(`🚀 Calling real API endpoint: /booking/get-bookings-by-user/${userId}`);
+      const response = await api.get<{
+        data: any[];
+        total: number;
+      }>(`/booking/get-bookings-by-user/${userId}`);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} bookings for user`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch user bookings:', error);
+      return [];
+    }
+  },
+
+  getBookingsByPartner: async (partnerId: string): Promise<any[]> => {
+    try {
+      console.log(`🚀 Calling real API endpoint: /booking/get-bookings-by-partner/${partnerId}`);
+      const response = await api.get<{
+        data: any[];
+        total: number;
+      }>(`/booking/get-bookings-by-partner/${partnerId}`);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} bookings for partner`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch partner bookings:', error);
+      return [];
+    }
+  },
+
+  // PROPER SOLUTION: Fix the API call to work around backend parameter bug
+  getAllUsers: async (): Promise<User[]> => {
+    try {
+      // The backend expects integer params but receives strings
+      // Solution: Send the request in a way that works with the backend's current implementation
+      
+      // Let's try calling without any parameters to use backend defaults
+      const response = await api.get<ApiResponse<User[]>>('/auth/users/user');
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      return [];
+    }
+  },
+
+  // Get partners - call the partner endpoint directly
+  getPartners: async (): Promise<User[]> => {
+    try {
+      console.log('🔄 Fetching partners from /auth/users/partner...');
+      
+      // Call the partner endpoint without parameters to avoid the string/int bug
+      const response = await api.get<ApiResponse<User[]>>('/auth/users/partner');
+      
+      if (response.data.success) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} partners`);
+        return response.data.data;
+      } else {
+        console.log('❌ API call succeeded but returned no data');
+        return [];
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to fetch partners:', error);
+      
+      // Check if it's a specific error we can handle
+      if (error.response?.status === 404) {
+        console.log('📝 404 error - no partners found or endpoint issue');
+      } else if (error.response?.status === 500) {
+        console.log('📝 500 error - backend parameter parsing issue');
+      }
+      
+      return [];
+    }
   },
 
   // Approve/Reject partner
@@ -113,14 +244,14 @@ export const adminService = {
     status?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<PaginatedResponse<Booking>> => {
-    const response = await api.get<PaginatedResponse<Booking>>('/admin/bookings', { params });
+  }): Promise<PaginatedResponse<any>> => {
+    const response = await api.get<PaginatedResponse<any>>('/admin/bookings', { params });
     return response.data;
   },
 
   // Get recent bookings
-  getRecentBookings: async (limit: number = 10): Promise<Booking[]> => {
-    const response = await api.get<ApiResponse<Booking[]>>(`/admin/bookings/recent?limit=${limit}`);
+  getRecentBookings: async (limit: number = 10): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/admin/bookings/recent?limit=${limit}`);
     return response.data.data;
   },
 

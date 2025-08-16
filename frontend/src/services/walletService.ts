@@ -82,7 +82,7 @@ class WalletService {
     }
   }
 
-  async getWalletHistory(userId: string, createdBefore?: Date, createdAfter?: Date, page: number = 1, pageSize: number = 10, sort: SortDirection = SortDirection.Desc): Promise<IUiTransaction[]> {
+  async getWalletHistory(createdBefore?: Date, createdAfter?: Date, page: number = 1, pageSize: number = 10, sort: SortDirection = SortDirection.Desc): Promise<IUiTransaction[]> {
     try {
       const response = await api.get(`/wallet/history?createdBefore=${createdBefore?.toISOString()}&createdAfter=${createdAfter?.toISOString()}&page=${page}&pageSize=${pageSize}&sort=${sort}`);
       return response.data;

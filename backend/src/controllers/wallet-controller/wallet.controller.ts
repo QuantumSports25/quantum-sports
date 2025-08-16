@@ -126,6 +126,7 @@ export class WalletController {
         sort?: SortDirection;
       };
 
+      console.log("Fetching wallet history for user:", userId);
       let { createdBefore, createdAfter } = req.query as unknown as {
         createdBefore?: string;
         createdAfter?: string;

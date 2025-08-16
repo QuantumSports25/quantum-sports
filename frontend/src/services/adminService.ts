@@ -151,31 +151,31 @@ export const adminService = {
     }
   },
 
-  // PROPER SOLUTION: Fix the API call to work around backend parameter bug
+  // Get all users - call the users endpoint with role query parameter
   getAllUsers: async (): Promise<User[]> => {
     try {
-      // The backend expects integer params but receives strings
-      // Solution: Send the request in a way that works with the backend's current implementation
+      console.log('🔄 Fetching users from /auth/users?role=user...');
       
-      // Let's try calling without any parameters to use backend defaults
-      const response = await api.get<ApiResponse<User[]>>('/auth/users/user');
+      // Call the users endpoint with role=user query parameter
+      const response = await api.get<ApiResponse<User[]>>('/auth/users?role=user');
       if (response.data.success) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} users`);
         return response.data.data;
       }
       return [];
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      console.error('❌ Failed to fetch users:', error);
       return [];
     }
   },
 
-  // Get partners - call the partner endpoint directly
+  // Get partners - call the users endpoint with role query parameter
   getPartners: async (): Promise<User[]> => {
     try {
-      console.log('🔄 Fetching partners from /auth/users/partner...');
+      console.log('🔄 Fetching partners from /auth/users?role=partner...');
       
-      // Call the partner endpoint without parameters to avoid the string/int bug
-      const response = await api.get<ApiResponse<User[]>>('/auth/users/partner');
+      // Call the users endpoint with role=partner query parameter
+      const response = await api.get<ApiResponse<User[]>>('/auth/users?role=partner');
       
       if (response.data.success) {
         console.log(`✅ Successfully fetched ${response.data.data.length} partners`);

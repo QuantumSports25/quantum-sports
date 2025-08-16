@@ -20,7 +20,7 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
       setLoading(true);
       setError(null);
       
-      console.log('🚀 Calling real API endpoint: /auth/users/partner');
+      console.log('🚀 Calling real API endpoint: /auth/users?role=partner');
       const partnersData = await adminService.getPartners();
       
       if (partnersData.length > 0) {

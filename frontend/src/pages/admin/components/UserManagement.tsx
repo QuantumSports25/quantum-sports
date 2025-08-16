@@ -20,7 +20,7 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
       setLoading(true);
       setError(null);
       
-      console.log('🚀 Calling real API endpoint: /auth/users/user');
+      console.log('🚀 Calling real API endpoint: /auth/users?role=user');
       const usersData = await adminService.getAllUsers();
       
       // Filter only regular users (not partners)

@@ -12,9 +12,16 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'approved' | 'pending'>('all');
   const [partners, setPartners] = useState<{ [key: string]: any }>({});
+  const [allPartners, setAllPartners] = useState<any[]>([]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('all');
 
   useEffect(() => {
     fetchVenues();
+  }, [selectedPartnerId]);
+
+  useEffect(() => {
+    // Fetch partners list on component mount for dropdown
+    fetchPartnerDetails();
   }, []);
 
   const fetchVenues = async () => {
@@ -22,17 +29,26 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
       setLoading(true);
       setError(null);
 
-      console.log('🚀 Calling real API endpoint: /venue/get-all-venues');
-      const venuesData = await adminService.getAllVenues();
+      let venuesData: Venue[] = [];
+
+      if (selectedPartnerId === 'all') {
+        console.log('🚀 Calling real API endpoint: /venue/get-all-venues');
+        venuesData = await adminService.getAllVenues();
+      } else {
+        console.log(`🚀 Calling real API endpoint: /venue/get-all-venues-by-partner/ with partnerId: ${selectedPartnerId}`);
+        venuesData = await adminService.getVenuesByPartner(selectedPartnerId);
+      }
 
       if (venuesData.length > 0) {
         setVenues(venuesData);
         console.log(`✅ Loaded ${venuesData.length} venues from API`);
 
-        // Fetch partner details for all venues
-        await fetchPartnerDetails(venuesData);
+        // Partner details are already fetched in useEffect, no need to fetch again
       } else {
-        setError('No venues found. This could mean: 1) No venues are registered, 2) API endpoint issue, or 3) Database connection problem.');
+        const message = selectedPartnerId === 'all'
+          ? 'No venues found. This could mean: 1) No venues are registered, 2) API endpoint issue, or 3) Database connection problem.'
+          : `No venues found for the selected partner. This partner may not have any venues registered yet.`;
+        setError(message);
         setVenues([]);
       }
     } catch (err) {
@@ -44,7 +60,7 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
     }
   };
 
-  const fetchPartnerDetails = async (venuesData: Venue[]) => {
+  const fetchPartnerDetails = async () => {
     try {
       console.log('🔄 Fetching partner details...');
       const partnersData = await adminService.getPartners();
@@ -56,6 +72,7 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
       });
 
       setPartners(partnersMap);
+      setAllPartners(partnersData);
       console.log(`✅ Loaded partner details for ${partnersData.length} partners`);
     } catch (err) {
       console.error('❌ Failed to fetch partner details:', err);
@@ -117,11 +134,23 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                 />
               </div>
               <select
+                value={selectedPartnerId}
+                onChange={(e) => setSelectedPartnerId(e.target.value)}
+                className="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
+              >
+                <option value="all">All Partners</option>
+                {allPartners.map((partner) => (
+                  <option key={partner.id} value={partner.id}>
+                    {partner.name}
+                  </option>
+                ))}
+              </select>
+              <select
                 value={selectedFilter}
                 onChange={(e) => setSelectedFilter(e.target.value as 'all' | 'approved' | 'pending')}
                 className="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Venues</option>
+                <option value="all">All Status</option>
                 <option value="approved">Approved</option>
                 <option value="pending">Pending</option>
               </select>
@@ -129,7 +158,7 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                 onClick={fetchVenues}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Refresh Venues
+                Refresh
               </button>
             </div>
           </div>
@@ -252,9 +281,14 @@ const VenueManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-400">
                 Showing {filteredVenues.length} venue{filteredVenues.length !== 1 ? 's' : ''} of {venues.length} total
+                {selectedPartnerId !== 'all' && (
+                  <span className="ml-2 px-2 py-1 bg-blue-600 rounded text-xs">
+                    Partner: {partners[selectedPartnerId]?.name || 'Loading...'}
+                  </span>
+                )}
                 {selectedFilter !== 'all' && (
                   <span className="ml-2 px-2 py-1 bg-gray-600 rounded text-xs">
-                    Filter: {selectedFilter}
+                    Status: {selectedFilter}
                   </span>
                 )}
               </div>

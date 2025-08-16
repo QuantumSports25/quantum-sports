@@ -56,6 +56,50 @@ export const adminService = {
     return response.data.data;
   },
 
+  // Venue API functions
+  getAllVenues: async (): Promise<Venue[]> => {
+    try {
+      console.log('🚀 Calling real API endpoint: /venue/get-all-venues');
+      const response = await api.get<{
+        message: string;
+        data: Venue[];
+      }>('/venue/get-all-venues');
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} venues`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch venues:', error);
+      return [];
+    }
+  },
+
+  getVenuesByPartner: async (partnerId?: string): Promise<Venue[]> => {
+    try {
+      const endpoint = partnerId 
+        ? `/venue/get-all-venues-by-partner/?partnerId=${partnerId}`
+        : '/venue/get-all-venues-by-partner/';
+      
+      console.log(`🚀 Calling real API endpoint: ${endpoint}`);
+      const response = await api.get<{
+        message: string;
+        data: Venue[];
+        total?: number;
+      }>(endpoint);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        console.log(`✅ Successfully fetched ${response.data.data.length} venues by partner`);
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to fetch venues by partner:', error);
+      return [];
+    }
+  },
+
   // PROPER SOLUTION: Fix the API call to work around backend parameter bug
   getAllUsers: async (): Promise<User[]> => {
     try {

@@ -113,6 +113,7 @@ export class MembershipController {
         amount: Number(amount),
         currency: Currency.INR,
         paymentMethod: PaymentMethod.Razorpay,
+        userId: membership.userId,
       });
 
       if (!transaction) {

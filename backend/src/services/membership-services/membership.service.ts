@@ -178,6 +178,7 @@ export class MembershipService {
                 capturedAt: new Date(),
                 razorpayPaymentId: paymentId,
                 membershipId: membership.id,
+                name: membershipPlan.name,
               },
             });
           } else {
@@ -197,6 +198,7 @@ export class MembershipService {
               data: {
                 captured: false,
                 capturedAt: null,
+                name: membershipPlan.name
               },
             });
           }

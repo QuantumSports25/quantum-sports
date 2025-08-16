@@ -227,6 +227,28 @@ export class BookingService {
             )
               return;
 
+            let event = null;
+            let venue = null;
+            if (type === BookingType.Event) {
+              event = await tx.event.findUnique({
+                where: {
+                  id: (booking.bookingData as unknown as EventBooking).eventId,
+                },
+                select: {
+                  title: true,
+                },
+              });
+            } else {
+              venue = await tx.venue.findUnique({
+                where: {
+                  id: (booking.bookingData as unknown as VenueBooking).venueId,
+                },
+                select: {
+                  name: true,
+                },
+              });
+            }
+
             if (success) {
               await tx.booking.update({
                 where: { id: bookingId },
@@ -270,6 +292,10 @@ export class BookingService {
                   captured: true,
                   capturedAt: new Date(),
                   razorpayPaymentId: paymentId,
+                  name:
+                    (booking.type === BookingType.Event
+                      ? event?.title
+                      : venue?.name) ?? "unknown",
                 },
               });
             } else {
@@ -313,6 +339,10 @@ export class BookingService {
                 data: {
                   isRefunded: false,
                   captured: false,
+                  name:
+                    (booking.type === BookingType.Event
+                      ? event?.title
+                      : venue?.name) ?? "unknown",
                 },
               });
             }
@@ -356,6 +386,7 @@ export class BookingService {
           if (!fallbackStatus.transactionStatus) {
             fallbackTasks.push(
               this.handleTransactionAfterBooking(
+                bookingId,
                 orderId,
                 paymentId,
                 success,
@@ -412,12 +443,44 @@ export class BookingService {
   }
 
   static async handleTransactionAfterBooking(
+    bookingId: string,
     orderId: string,
     paymentId: string,
     success: boolean,
     paymentMethod: PaymentMethod
   ) {
     try {
+      let event = null;
+      let venue = null;
+
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: {
+          type: true,
+          bookingData: true,
+        },
+      });
+
+      if (booking && booking.type === BookingType.Event) {
+        event = await prisma.event.findUnique({
+          where: {
+            id: (booking.bookingData as unknown as EventBooking).eventId,
+          },
+          select: {
+            title: true,
+          },
+        });
+      } else if (booking && booking.type === BookingType.Venue) {
+        venue = await prisma.venue.findUnique({
+          where: {
+            id: (booking.bookingData as unknown as VenueBooking).venueId,
+          },
+          select: {
+            name: true,
+          },
+        });
+      }
+
       if (success) {
         await prisma.transactionHistory.update({
           where: { orderId },
@@ -427,6 +490,7 @@ export class BookingService {
             razorpayPaymentId: paymentId,
             paymentMethod: paymentMethod,
             isRefunded: false,
+            name: (booking && booking.type === BookingType.Event ? event?.title : venue?.name) ?? "unknown",
           },
         });
       } else {
@@ -436,6 +500,7 @@ export class BookingService {
             captured: false,
             isRefunded: false,
             paymentMethod: paymentMethod,
+            name: (booking && booking.type === BookingType.Event ? event?.title : venue?.name) ?? "unknown",
           },
         });
       }

@@ -176,36 +176,34 @@ model Booking {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  slots       Slot[] // One booking has many slots
-  transaction TransactionHistory?
+  slots       Slot[]
 
   @@map("bookings")
 }
 
 model TransactionHistory {
-  orderId String @id @db.VarChar(255)
+  orderId       String          @id @db.VarChar(255)
+  userId        String          @default("ee25c462-5ca5-4e9e-bb63-a3fc62b07fd5")
+  name          String          @default("unknown")
 
   // Either bookingId or membershipId will be set
-  bookingId    String? @unique
-  membershipId String? @unique
+  bookingId     String?         @unique
+  membershipId  String?         @unique
 
-  paymentAmount   Decimal  @db.Decimal(10, 2)
-  paymentCurrency String   @db.VarChar(3)
-  paymentMethod   String   @db.VarChar(50)
+  paymentAmount   Decimal       @db.Decimal(10, 2)
+  paymentCurrency String        @db.VarChar(3)
+  paymentMethod   String        @db.VarChar(50)
   paymentDate     DateTime
 
-  isRefunded Boolean   @default(false)
-  refundDate DateTime?
+  isRefunded      Boolean       @default(false)
+  refundDate      DateTime?
 
-  captured          Boolean? // e.g., payment successfully captured
-  capturedAt        DateTime?
+  captured        Boolean? // e.g., payment successfully captured
+  capturedAt      DateTime?
   razorpayPaymentId String?   @db.VarChar(255)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@map("transaction_history")
 }

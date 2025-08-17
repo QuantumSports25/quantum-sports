@@ -1,3 +1,5 @@
+import { PaymentMethod } from "./payment.model";
+
 export interface Booking {
   id?: string;
   userId: string;
@@ -63,7 +65,7 @@ export interface customerDetails {
 
 export interface paymentDetails {
   paymentAmount: number;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod
   paymentDate: Date;
   isRefunded: boolean;
   refundDate?: Date;

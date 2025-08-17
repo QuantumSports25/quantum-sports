@@ -9,6 +9,7 @@ import activityFacilityRoutes from "./routes/venue-routes/activity.facility.rout
 import slotRoutes from "./routes/venue-routes/slot.routes";
 import devScriptRoutes from "./routes/devScriptRoutes";
 import eventRoutes from "./routes/event.routes";
+import statsRoutes from "./routes/stats.routes";
 
 // Setup
 
@@ -91,6 +92,7 @@ app.use("/api/membership", membershipRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/devscript", devScriptRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/stats", statsRoutes);
 
 app.get("/", (_req, res) => {
   res.send("Backend is running");

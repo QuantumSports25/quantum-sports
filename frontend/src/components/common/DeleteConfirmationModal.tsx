@@ -8,6 +8,8 @@ interface DeleteConfirmationModalProps {
     title?: string;
     message?: string;
     isLoading?: boolean;
+    confirmLabel?: string;
+    loadingLabel?: string;
 }
 
 const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -17,6 +19,8 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
     title = "Delete Confirmation",
     message = "Are you sure you want to delete this item? This action cannot be undone.",
     isLoading = false,
+    confirmLabel = "Delete",
+    loadingLabel = "Deleting...",
 }) => {
     if (!isOpen) return null;
 
@@ -61,10 +65,10 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                         {isLoading ? (
                             <>
                                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                <span>Deleting...</span>
+                                <span>{loadingLabel}</span>
                             </>
                         ) : (
-                            <span>Delete</span>
+                            <span>{confirmLabel}</span>
                         )}
                     </button>
                 </div>

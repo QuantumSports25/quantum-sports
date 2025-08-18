@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "../../services/authService";
@@ -16,6 +16,11 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const videoSourcesRef = useRef<string[]>(["/videos/sign_up_1.mp4", "/videos/sign_up_2.mp4"]);
+  const [activeSourceIndex, setActiveSourceIndex] = useState(0);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
@@ -77,22 +82,50 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  // 🔥 FIX: Ensure video reloads correctly instead of showing fallback
+  // Lazy-load the video only when visible to reduce initial load cost
   useEffect(() => {
-    const videoEl = document.querySelector("video");
-    if (videoEl) {
-      videoEl.load();
+    const container = videoContainerRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShouldLoadVideo(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(container);
+    // Fallback in case IntersectionObserver never fires (rare)
+    const fallbackTimer = window.setTimeout(() => setShouldLoadVideo(true), 2000);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallbackTimer);
+    };
+  }, []);
+
+  // Attempt to autoplay once the video has a source
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl || !shouldLoadVideo) return;
+    const handleReady = () => {
       videoEl
         .play()
         .catch((err) => console.log("Autoplay blocked:", err));
-    }
-  }, []);
+    };
+    videoEl.addEventListener("canplay", handleReady);
+    videoEl.addEventListener("loadeddata", handleReady);
+    return () => {
+      videoEl.removeEventListener("canplay", handleReady);
+      videoEl.removeEventListener("loadeddata", handleReady);
+    };
+  }, [shouldLoadVideo]);
 
   return (
     <div className="min-h-screen flex pt-16">
       {/* Left Side - Video Background */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <div ref={videoContainerRef} className="absolute inset-0 w-full h-full overflow-hidden">
           {/* Primary Video */}
           <video
             className="absolute inset-0 w-full h-full object-cover"
@@ -100,55 +133,19 @@ const RegisterPage: React.FC = () => {
             loop
             muted
             playsInline
-            preload="auto"
-            onError={(e) => {
-              console.log("Video failed to load:", e);
-              const video = e.target as HTMLVideoElement;
-              const parent = video.parentElement;
-              if (parent) {
-                parent.style.backgroundImage = `
-                  linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(17,24,39,0.9) 100%),
-                  url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
-                `;
-                parent.style.backgroundSize = "cover";
-                parent.style.backgroundPosition = "center";
-              }
+            preload={shouldLoadVideo ? "auto" : "none"}
+            
+            ref={videoRef}
+            src={shouldLoadVideo ? videoSourcesRef.current[activeSourceIndex] : undefined}
+            onError={() => {
+              // Switch to the secondary source if the primary fails
+              setActiveSourceIndex((idx) =>
+                idx + 1 < videoSourcesRef.current.length ? idx + 1 : idx
+              );
             }}
-          >
-            <source src="/videos/sign_up_1.mp4" type="video/mp4" />
-            <source src="/videos/sign_up_2.mp4" type="video/mp4" />
-          </video>
+          />
 
-          {/* Fallback YouTube */}
-          <iframe
-            className="absolute inset-0 w-full h-full"
-            src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playlist=dQw4w9WgXcQ&start=0"
-            title="Sign Up Sports Video"
-            frameBorder="0"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            style={{ display: "none" }}
-            onLoad={(e) => {
-              const iframe = e.target as HTMLIFrameElement;
-              const video = iframe.parentElement?.querySelector("video");
-              if (video && video.readyState === 0) {
-                iframe.style.display = "block";
-                video.style.display = "none";
-              }
-            }}
-          ></iframe>
-
-          {/* Final Fallback: Static Image */}
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage: `
-                linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(17,24,39,0.8) 100%),
-                url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
-              `,
-              zIndex: -1,
-            }}
-          ></div>
+        
         </div>
 
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>

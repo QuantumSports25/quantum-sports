@@ -5,7 +5,7 @@ import {
   Trash2,
   Settings,
   Clock,
-  DollarSign,
+  // DollarSign,
   Loader2,
   Image as ImageIcon,
 } from "lucide-react";
@@ -247,7 +247,7 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-gray-400 text-sm">
-                      <DollarSign className="h-4 w-4 mr-1" />
+                      {/* <DollarSign className="h-4 w-4 mr-1" /> */}
                       <span>₹{facility.start_price_per_hour}/hour</span>
                     </div>
                     <div

@@ -441,7 +441,7 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
               const isCollapsed = collapsedSections.has(date);
               return (
                 <div key={date} className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-                  <div 
+                  <div
                     className="p-6 pb-4 flex items-center justify-between cursor-pointer hover:bg-gray-700/50 transition-colors border-b border-gray-700/50"
                     onClick={() => toggleSectionCollapse(date)}
                   >
@@ -471,54 +471,54 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
                         {dateSlots
                           .sort((a: Slot, b: Slot) => a.startTime.localeCompare(b.startTime))
                           .map((slot: Slot) => (
-                      <div
-                        key={slot.id}
-                        className="bg-gray-700 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="text-white font-medium">
-                              {convertTimeToHHMM(slot.startTime)} - {convertTimeToHHMM(slot.endTime)}
-                            </div>
-                            <div className="text-blue-400 text-sm">
-                              {slot.facilityName}
-                            </div>
-                            <div className="text-gray-400 text-xs">
-                              {slot.activityName}
-                            </div>
-                          </div>
-                          <div className="flex space-x-1">
-                            <button
-                              onClick={() => {
-                                setEditingSlot(slot);
-                                setIsEditModalOpen(true);
-                              }}
-                              className="text-gray-400 hover:text-blue-400 transition-colors p-1"
+                            <div
+                              key={slot.id}
+                              className="bg-gray-700 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors"
                             >
-                              <Edit3 className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSlot(slot.id)}
-                              className="text-gray-400 hover:text-red-400 transition-colors p-1"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="text-white font-medium">
+                                    {convertTimeToHHMM(slot.startTime)} - {convertTimeToHHMM(slot.endTime)}
+                                  </div>
+                                  <div className="text-blue-400 text-sm">
+                                    {slot.facilityName}
+                                  </div>
+                                  <div className="text-gray-400 text-xs">
+                                    {slot.activityName}
+                                  </div>
+                                </div>
+                                <div className="flex space-x-1">
+                                  <button
+                                    onClick={() => {
+                                      setEditingSlot(slot);
+                                      setIsEditModalOpen(true);
+                                    }}
+                                    className="text-gray-400 hover:text-blue-400 transition-colors p-1"
+                                  >
+                                    <Edit3 className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSlot(slot.id)}
+                                    className="text-gray-400 hover:text-red-400 transition-colors p-1"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
 
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center text-gray-400 text-sm">
-                              <DollarSign className="h-3 w-3 mr-1" />
-                              <span>₹{slot.amount}</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center text-gray-400 text-sm">
+                                    <DollarSign className="h-3 w-3 mr-1" />
+                                    <span>₹{slot.amount}</span>
+                                  </div>
+                                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(slot.availability)}`}>
+                                    {getAvailabilityText(slot.availability)}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(slot.availability)}`}>
-                              {getAvailabilityText(slot.availability)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                          ))}
                       </div>
                     </div>
                   )}
@@ -679,8 +679,8 @@ const SlotModal: React.FC<SlotModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 ">
+      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 overflow-y-auto max-h-[90vh] scrollbar-hide">
         <h3 className="text-xl font-bold text-white mb-6">{title}</h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">

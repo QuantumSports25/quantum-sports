@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "../../services/authService";
@@ -21,9 +21,9 @@ const RegisterPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -41,7 +41,7 @@ const RegisterPage: React.FC = () => {
     },
     onError: (error: any) => {
       setError(error.response?.data?.message || "Registration failed");
-    }
+    },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,16 +72,26 @@ const RegisterPage: React.FC = () => {
     try {
       registerMutation.mutate(userData);
     } catch (error) {
-      console.error('Registration error:', error);
-      setError(error instanceof Error ? error.message : 'Registration failed');
+      console.error("Registration error:", error);
+      setError(error instanceof Error ? error.message : "Registration failed");
     }
   };
 
+  // 🔥 FIX: Ensure video reloads correctly instead of showing fallback
+  useEffect(() => {
+    const videoEl = document.querySelector("video");
+    if (videoEl) {
+      videoEl.load();
+      videoEl
+        .play()
+        .catch((err) => console.log("Autoplay blocked:", err));
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen flex pt-16">  {/* Added pt-16 for top padding */}
+    <div className="min-h-screen flex pt-16">
       {/* Left Side - Video Background */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        {/* Sports Video Background - Working Implementation */}
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           {/* Primary Video */}
           <video
@@ -92,8 +102,7 @@ const RegisterPage: React.FC = () => {
             playsInline
             preload="auto"
             onError={(e) => {
-              console.log('Video failed to load:', e);
-              // Fallback to next video or image
+              console.log("Video failed to load:", e);
               const video = e.target as HTMLVideoElement;
               const parent = video.parentElement;
               if (parent) {
@@ -101,22 +110,16 @@ const RegisterPage: React.FC = () => {
                   linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(17,24,39,0.9) 100%),
                   url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
                 `;
-                parent.style.backgroundSize = 'cover';
-                parent.style.backgroundPosition = 'center';
+                parent.style.backgroundSize = "cover";
+                parent.style.backgroundPosition = "center";
               }
             }}
           >
-            <source
-              src="/videos/sign_up_1.mp4"
-              type="video/mp4"
-            />
-            <source
-              src="/videos/sign_up_2.mp4"
-              type="video/mp4"
-            />
+            <source src="/videos/sign_up_1.mp4" type="video/mp4" />
+            <source src="/videos/sign_up_2.mp4" type="video/mp4" />
           </video>
 
-          {/* Fallback: Try YouTube embed if video fails */}
+          {/* Fallback YouTube */}
           <iframe
             className="absolute inset-0 w-full h-full"
             src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playlist=dQw4w9WgXcQ&start=0"
@@ -124,19 +127,18 @@ const RegisterPage: React.FC = () => {
             frameBorder="0"
             allow="autoplay; encrypted-media"
             allowFullScreen
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             onLoad={(e) => {
-              // Show iframe if video fails
               const iframe = e.target as HTMLIFrameElement;
-              const video = iframe.parentElement?.querySelector('video');
+              const video = iframe.parentElement?.querySelector("video");
               if (video && video.readyState === 0) {
-                iframe.style.display = 'block';
-                video.style.display = 'none';
+                iframe.style.display = "block";
+                video.style.display = "none";
               }
             }}
           ></iframe>
 
-          {/* Final Fallback: Static Sports Image */}
+          {/* Final Fallback: Static Image */}
           <div
             className="absolute inset-0 w-full h-full bg-cover bg-center"
             style={{
@@ -144,18 +146,15 @@ const RegisterPage: React.FC = () => {
                 linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(17,24,39,0.8) 100%),
                 url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
               `,
-              zIndex: -1
+              zIndex: -1,
             }}
           ></div>
         </div>
 
-        {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
-
-        {/* Interactive gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 via-blue-900/30 to-green-900/40 mix-blend-multiply"></div>
 
-        {/* Content */}
+        {/* Left-side Content */}
         <div className="absolute top-[320px] inset-0 flex flex-col justify-center items-start p-16 text-white z-10 mt-auto">
           <div className="transform hover:scale-105 transition-transform duration-300">
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
@@ -167,7 +166,6 @@ const RegisterPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Interactive Stats */}
           <div className="grid grid-cols-2 gap-6 mt-8">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
               <div className="text-3xl font-bold text-yellow-400">500+</div>
@@ -224,12 +222,13 @@ const RegisterPage: React.FC = () => {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
-                Phone Number (Optional)
+                Phone Number
               </label>
               <input
                 id="phone"
                 name="phone"
                 type="tel"
+                required
                 value={formData.phone}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"

@@ -605,23 +605,43 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
             </div>
             <div className="mt-3">
               <div className="flex items-center gap-3">
+                {/* Hidden file input */}
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handleFilesSelected}
                   ref={fileInputRef}
-                  className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600"
+                  className="hidden"
                   disabled={isLoading || isProcessingImages}
                 />
+
+                {/* Custom button instead of "No file chosen" */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
+                  disabled={isLoading || isProcessingImages}
+                >
+                  Choose Files
+                </button>
+
                 {isProcessingImages && (
                   <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
                 )}
               </div>
+
+              {/* Show count of chosen files */}
+              {formData.images.length > 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {formData.images.length} image{formData.images.length > 1 ? "s" : ""} selected
+                </p>
+              )}
               <p className="text-xs text-gray-400 mt-1">
                 You can either paste image URLs or upload from your device. We compress uploads to stay under 50KB each.
               </p>
             </div>
+
             {formData.images.length === 0 ? (
               <p className="text-sm text-red-400 mt-2">
                 At least one image URL is required.

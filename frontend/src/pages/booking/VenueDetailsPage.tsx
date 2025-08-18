@@ -7,7 +7,7 @@ import {
   Bookmark,
   Share2,
   Calendar,
-  Award,
+  // Award,
 } from "lucide-react";
 import { getVenue } from "../../services/partner-service/venue-service/venueService";
 import { useQuery } from "@tanstack/react-query";
@@ -108,9 +108,8 @@ const VenueMedia: React.FC<{ venue: Venue }> = ({ venue }) => {
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentSlide ? "bg-white" : "bg-white/50"
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? "bg-white" : "bg-white/50"
+                    }`}
                 />
               ))}
             </div>
@@ -264,11 +263,10 @@ const VenueDetails: React.FC<{ venue: Venue, error: Error | null, isLoading: boo
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`w-5 h-5 ${
-                  i < Math.floor(venue.rating || 0)
+                className={`w-5 h-5 ${i < Math.floor(venue.rating || 0)
                     ? "text-yellow-400 fill-current"
                     : "text-gray-300"
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -344,22 +342,20 @@ const VenueDetails: React.FC<{ venue: Venue, error: Error | null, isLoading: boo
       <div className="flex space-x-3">
         <button
           onClick={() => setIsLiked(!isLiked)}
-          className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border transition-all duration-200 ${
-            isLiked
+          className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border transition-all duration-200 ${isLiked
               ? "bg-red-50 border-red-200 text-red-600"
               : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-          }`}
+            }`}
         >
           <Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
           <span className="font-medium">Like</span>
         </button>
         <button
           onClick={() => setIsSaved(!isSaved)}
-          className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border transition-all duration-200 ${
-            isSaved
+          className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl border transition-all duration-200 ${isSaved
               ? "bg-blue-50 border-blue-200 text-blue-600"
               : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-          }`}
+            }`}
         >
           <Bookmark className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
           <span className="font-medium">Save</span>
@@ -384,11 +380,10 @@ const Tab: React.FC<{
 }> = ({ isActive, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`px-2 md:px-4 text-sm lg:text-2xl py-2 font-medium lg:font-bold transition-all duration-200 ${
-      isActive
+    className={`px-2 md:px-4 text-sm lg:text-2xl py-2 font-medium lg:font-bold transition-all duration-200 ${isActive
         ? "text-green-500 border-b-2 border-green-500"
         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-    }`}
+      }`}
   >
     {children}
   </button>
@@ -420,20 +415,20 @@ const BookSlots: React.FC<{ venue: Venue }> = ({ venue }) => {
 };
 
 // Membership Plans Tab Component
-const MembershipPlans: React.FC = () => (
-  <div className="space-y-6">
-    <div className="text-center py-12">
-      <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-        Membership Plans
-      </h3>
-      <p className="text-gray-600 max-w-md mx-auto">
-        Explore our membership plans for exclusive benefits and discounts. Plans
-        will be displayed here.
-      </p>
-    </div>
-  </div>
-);
+// const MembershipPlans: React.FC = () => (
+//   <div className="space-y-6">
+//     <div className="text-center py-12">
+//       <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+//       <h3 className="text-xl font-semibold text-gray-900 mb-2">
+//         Membership Plans
+//       </h3>
+//       <p className="text-gray-600 max-w-md mx-auto">
+//         Explore our membership plans for exclusive benefits and discounts. Plans
+//         will be displayed here.
+//       </p>
+//     </div>
+//   </div>
+// );
 
 // Details Tab Component
 const Details: React.FC<{ venue: Venue }> = ({ venue }) => (
@@ -518,9 +513,9 @@ const VenueInfoTabs: React.FC<{ venue: Venue }> = ({ venue }) => {
 
   const tabs = [
     { id: 0, name: "Book Slots", component: <BookSlots venue={venue} /> },
-    { id: 1, name: "Membership Plans", component: <MembershipPlans /> },
+    // { id: 1, name: "Membership Plans", component: <MembershipPlans /> },
     {
-      id: 2,
+      id: 1,
       name: "Details",
       component: venue ? (
         <Details venue={venue} />

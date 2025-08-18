@@ -180,10 +180,9 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
           <p className="text-gray-400 mb-4">
             {selectedActivity === "all"
               ? "Add facilities like Court 1, Court 2, Cricket Ground, etc."
-              : `No facilities found for ${
-                  activities.find((a: Activity) => a.id === selectedActivity)
-                    ?.name
-                }`}
+              : `No facilities found for ${activities.find((a: Activity) => a.id === selectedActivity)
+                ?.name
+              }`}
           </p>
           <button
             onClick={() => setIsAddModalOpen(true)}
@@ -252,11 +251,10 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
                       <span>₹{facility.start_price_per_hour}/hour</span>
                     </div>
                     <div
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        facility.isAvailable
-                          ? "bg-green-600/20 text-green-400"
-                          : "bg-red-600/20 text-red-400"
-                      }`}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${facility.isAvailable
+                        ? "bg-green-600/20 text-green-400"
+                        : "bg-red-600/20 text-red-400"
+                        }`}
                     >
                       {facility.isAvailable ? "Available" : "Unavailable"}
                     </div>
@@ -298,15 +296,15 @@ const FacilityManagement: React.FC<FacilityManagementProps> = ({ venue }) => {
         initialData={
           editingFacility
             ? {
-                name: editingFacility.name,
-                images: editingFacility.images || [],
-                activityId: editingFacility.activityId,
-                start_price_per_hour: editingFacility.start_price_per_hour,
-                startTime: editingFacility.startTime,
-                endTime: editingFacility.endTime,
-                isAvailable: editingFacility.isAvailable,
-                isFillingFast: editingFacility.isFillingFast,
-              }
+              name: editingFacility.name,
+              images: editingFacility.images || [],
+              activityId: editingFacility.activityId,
+              start_price_per_hour: editingFacility.start_price_per_hour,
+              startTime: editingFacility.startTime,
+              endTime: editingFacility.endTime,
+              isAvailable: editingFacility.isAvailable,
+              isFillingFast: editingFacility.isFillingFast,
+            }
             : undefined
         }
         isLoading={updateFacilityMutation.isPending}
@@ -347,18 +345,133 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
       isFillingFast: false,
     }
   );
+  const [newImageUrl, setNewImageUrl] = useState<string>("");
+  const [isProcessingImages, setIsProcessingImages] = useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   React.useEffect(() => {
     if (initialData) {
       setFormData(initialData);
     }
   }, [initialData]);
 
+  const getBase64SizeInBytes = (dataUrl: string) => {
+    const base64 = dataUrl.split(",")[1] || "";
+    return Math.ceil((base64.length * 3) / 4);
+  };
+
+  const compressImageToTarget = (file: File, targetKB = 50): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Canvas not supported"));
+            return;
+          }
+
+          let scale = 1;
+          const maxInitialDimension = 1024;
+          const maxDim = Math.max(img.width, img.height);
+          if (maxDim > maxInitialDimension) {
+            scale = maxInitialDimension / maxDim;
+          }
+
+          let currentQuality = 0.8;
+          let attempts = 0;
+          const maxAttempts = 10;
+
+          const attempt = () => {
+            const width = Math.round(img.width * scale);
+            const height = Math.round(img.height * scale);
+            canvas.width = width;
+            canvas.height = height;
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL("image/jpeg", currentQuality);
+            const bytes = getBase64SizeInBytes(dataUrl);
+            if (bytes <= targetKB * 1024) {
+              resolve(dataUrl);
+              return;
+            }
+            attempts += 1;
+            if (attempts >= maxAttempts) {
+              reject(new Error("Could not compress image under target size"));
+              return;
+            }
+            if (currentQuality > 0.45) {
+              currentQuality -= 0.1;
+            } else {
+              scale *= 0.8;
+              currentQuality = 0.75;
+            }
+            requestAnimationFrame(attempt);
+          };
+
+          attempt();
+        };
+        img.onerror = () => reject(new Error("Invalid image file"));
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsProcessingImages(true);
+    try {
+      const addedImages: string[] = [];
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`Unsupported file type: ${file.name}`);
+          continue;
+        }
+        // Aim for <= 50KB per requirement
+        try {
+          const dataUrl = await compressImageToTarget(file, 50);
+          addedImages.push(dataUrl);
+        } catch (err) {
+          toast.error(`Could not compress ${file.name} under 50KB`);
+        }
+      }
+      if (addedImages.length > 0) {
+        setFormData((prev) => ({ ...prev, images: [...prev.images, ...addedImages] }));
+      }
+    } finally {
+      setIsProcessingImages(false);
+      // Reset the input so same file can be re-selected if needed
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleAddImage = () => {
+    const url = newImageUrl.trim();
+    if (!url) return;
+    setFormData((prev) => ({ ...prev, images: [...prev.images, url] }));
+    setNewImageUrl("");
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (
       !formData.name ||
       !formData.activityId ||
-      formData.start_price_per_hour <= 0
+      formData.start_price_per_hour <= 0 ||
+      formData.images.length === 0
     )
       return;
     onSubmit(formData);
@@ -469,6 +582,73 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Images
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                placeholder="https://example.com/image.jpg"
+              />
+              <button
+                type="button"
+                onClick={handleAddImage}
+                className="px-3 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
+                disabled={isLoading || newImageUrl.trim().length === 0}
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFilesSelected}
+                  ref={fileInputRef}
+                  className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600"
+                  disabled={isLoading || isProcessingImages}
+                />
+                {isProcessingImages && (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                You can either paste image URLs or upload from your device. We compress uploads to stay under 50KB each.
+              </p>
+            </div>
+            {formData.images.length === 0 ? (
+              <p className="text-sm text-red-400 mt-2">
+                At least one image URL is required.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                {formData.images.map((url, idx) => (
+                  <div key={idx} className="relative">
+                    <img
+                      src={url}
+                      alt={`Facility ${idx + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border border-gray-700"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="absolute top-1 right-1 text-xs px-2 py-1 bg-red-600 text-white rounded"
+                      disabled={isLoading}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center space-x-2">
               <input
@@ -523,7 +703,8 @@ const FacilityModal: React.FC<FacilityModalProps> = ({
                 isLoading ||
                 !formData.name ||
                 !formData.activityId ||
-                formData.start_price_per_hour <= 0
+                formData.start_price_per_hour <= 0 ||
+                formData.images.length === 0
               }
             >
               {isLoading ? (

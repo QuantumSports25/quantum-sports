@@ -75,72 +75,71 @@ const SearchBar: React.FC<{
   onCityChange,
   isSearching = false,
 }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [filteredCities, setFilteredCities] = useState(CITIES);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [filteredCities, setFilteredCities] = useState(CITIES);
 
-  // Filter cities based on input
-  useEffect(() => {
-    if (city === "") {
-      setFilteredCities(CITIES);
-    } else {
-      const filtered = CITIES.filter((cityName) =>
-        cityName.toLowerCase().includes(city.toLowerCase())
-      );
-      setFilteredCities(filtered);
-    }
-  }, [city]);
-
-  const handleCitySelect = (selectedCity: string) => {
-    onCityChange(selectedCity === "All Cities" ? "" : selectedCity);
-    setIsDropdownOpen(false);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      // Only close if clicking outside the entire dropdown container
-      if (!target.closest("[data-dropdown-container]")) {
-        setIsDropdownOpen(false);
+    // Filter cities based on input
+    useEffect(() => {
+      if (city === "") {
+        setFilteredCities(CITIES);
+      } else {
+        const filtered = CITIES.filter((cityName) =>
+          cityName.toLowerCase().includes(city.toLowerCase())
+        );
+        setFilteredCities(filtered);
       }
+    }, [city]);
+
+    const handleCitySelect = (selectedCity: string) => {
+      onCityChange(selectedCity === "All Cities" ? "" : selectedCity);
+      setIsDropdownOpen(false);
     };
 
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isDropdownOpen]);
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-          Find Your Perfect Venue
-        </h2>
-        {isSearching && (
-          <div className="flex items-center text-sm text-blue-600">
-            <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
-            Searching...
-          </div>
-        )}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Venue Name Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by venue name"
-            value={venueName}
-            onChange={(e) => onVenueNameChange(e.target.value)}
-            className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-              isSearching ? "border-blue-300 bg-blue-50/30" : "border-gray-300"
-            }`}
-          />
-        </div>
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as Element;
+        // Only close if clicking outside the entire dropdown container
+        if (!target.closest("[data-dropdown-container]")) {
+          setIsDropdownOpen(false);
+        }
+      };
 
-        {/* Sport Search */}
-        {/* <div className="relative">
+      if (isDropdownOpen) {
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+          document.removeEventListener("mousedown", handleClickOutside);
+      }
+    }, [isDropdownOpen]);
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Find Your Perfect Venue
+          </h2>
+          {isSearching && (
+            <div className="flex items-center text-sm text-blue-600">
+              <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+              Searching...
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Venue Name Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by venue name"
+              value={venueName}
+              onChange={(e) => onVenueNameChange(e.target.value)}
+              className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${isSearching ? "border-blue-300 bg-blue-50/30" : "border-gray-300"
+                }`}
+            />
+          </div>
+
+          {/* Sport Search */}
+          {/* <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -153,101 +152,97 @@ const SearchBar: React.FC<{
           />
         </div> */}
 
-        {/* City Search */}
-        <div className="relative" data-dropdown-container>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
-            <input
-              type="text"
-              placeholder="Search by city"
-              value={city}
-              onChange={(e) => {
-                onCityChange(e.target.value);
-                setIsDropdownOpen(true);
-              }}
-              onFocus={() => setIsDropdownOpen(true)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setIsDropdownOpen(false);
-                } else if (e.key === "Enter") {
-                  e.preventDefault();
-                  if (filteredCities.length > 0) {
-                    handleCitySelect(filteredCities[0]);
+          {/* City Search */}
+          <div className="relative" data-dropdown-container>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+              <input
+                type="text"
+                placeholder="Search by city"
+                value={city}
+                onChange={(e) => {
+                  onCityChange(e.target.value);
+                  setIsDropdownOpen(true);
+                }}
+                onFocus={() => setIsDropdownOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setIsDropdownOpen(false);
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (filteredCities.length > 0) {
+                      handleCitySelect(filteredCities[0]);
+                    }
                   }
-                }
-              }}
-              className={`w-full pl-10 pr-10 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                isSearching
-                  ? "border-blue-300 bg-blue-50/30"
-                  : "border-gray-300"
-              } ${isDropdownOpen ? "rounded-b-none border-b-0" : ""}`}
-            />
-          </div>
-
-          {/* Dropdown */}
-          {isDropdownOpen && (
-            <div
-              className={`absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-lg z-20 max-h-60 overflow-y-auto transition-all duration-200 transform ${
-                isDropdownOpen
-                  ? "rounded-b-xl border-t-0 opacity-100 translate-y-0"
-                  : "rounded-xl mt-1 opacity-0 -translate-y-2"
-              }`}
-            >
-              {filteredCities.length > 0 ? (
-                <>
-                  {/* Show search results count */}
-                  {city && filteredCities.length < CITIES.length && (
-                    <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
-                      {filteredCities.length}{" "}
-                      {filteredCities.length === 1 ? "city" : "cities"} found
-                    </div>
-                  )}
-                  {filteredCities.map((cityName, index) => (
-                    <button
-                      key={cityName}
-                      onClick={() => {
-                        console.log(
-                          "BookingPage: Button clicked for city:",
-                          cityName
-                        );
-                        handleCitySelect(cityName);
-                      }}
-                      className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors duration-150 flex items-center group ${
-                        index === filteredCities.length - 1
-                          ? "rounded-b-xl"
-                          : ""
-                      } ${
-                        city === cityName ||
-                        (city === "" && cityName === "All Cities")
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      <span className="flex-1">{cityName}</span>
-                      {(city === cityName ||
-                        (city === "" && cityName === "All Cities")) && (
-                        <span className="text-blue-600 font-medium">✓</span>
-                      )}
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <div className="px-4 py-6 text-gray-500 text-center rounded-b-xl">
-                  <Search className="w-5 h-5 mx-auto mb-2 opacity-50" />
-                  <div className="text-sm">No cities found</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    Try a different search term
-                  </div>
-                </div>
-              )}
+                }}
+                className={`w-full pl-10 pr-10 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${isSearching
+                    ? "border-blue-300 bg-blue-50/30"
+                    : "border-gray-300"
+                  } ${isDropdownOpen ? "rounded-b-none border-b-0" : ""}`}
+              />
             </div>
-          )}
+
+            {/* Dropdown */}
+            {isDropdownOpen && (
+              <div
+                className={`absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-lg z-20 max-h-60 overflow-y-auto transition-all duration-200 transform ${isDropdownOpen
+                    ? "rounded-b-xl border-t-0 opacity-100 translate-y-0"
+                    : "rounded-xl mt-1 opacity-0 -translate-y-2"
+                  }`}
+              >
+                {filteredCities.length > 0 ? (
+                  <>
+                    {/* Show search results count */}
+                    {city && filteredCities.length < CITIES.length && (
+                      <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
+                        {filteredCities.length}{" "}
+                        {filteredCities.length === 1 ? "city" : "cities"} found
+                      </div>
+                    )}
+                    {filteredCities.map((cityName, index) => (
+                      <button
+                        key={cityName}
+                        onClick={() => {
+                          console.log(
+                            "BookingPage: Button clicked for city:",
+                            cityName
+                          );
+                          handleCitySelect(cityName);
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors duration-150 flex items-center group ${index === filteredCities.length - 1
+                            ? "rounded-b-xl"
+                            : ""
+                          } ${city === cityName ||
+                            (city === "" && cityName === "All Cities")
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-900"
+                          }`}
+                      >
+                        <span className="flex-1">{cityName}</span>
+                        {(city === cityName ||
+                          (city === "" && cityName === "All Cities")) && (
+                            <span className="text-blue-600 font-medium">✓</span>
+                          )}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div className="px-4 py-6 text-gray-500 text-center rounded-b-xl">
+                    <Search className="w-5 h-5 mx-auto mb-2 opacity-50" />
+                    <div className="text-sm">No cities found</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Try a different search term
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 // Main BookingPage Component
 const BookingPage: React.FC = () => {

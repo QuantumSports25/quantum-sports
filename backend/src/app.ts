@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes";
+import adminRoutes from "./routes/admin.routes";
 import venueRoutes from "./routes/venue-routes/venue.routes";
 import bookingRoutes from "./routes/booking.routes";
 import membershipRoutes from "./routes/membership/membership.routes";
@@ -83,6 +84,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/venue", venueRoutes);
 app.use("/api/venue/activity-facility", activityFacilityRoutes);
 app.use("/api/venue/slot", slotRoutes);

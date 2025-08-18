@@ -4,12 +4,16 @@ import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { User } from '../../../types';
+import { toast } from 'react-hot-toast';
+import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 
 const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -64,6 +68,21 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
       </div>
     );
   }
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setDeletingId(userId);
+      await adminService.deleteUser(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      toast.success('User deleted successfully');
+    } catch (err: any) {
+      console.error('Failed to delete user:', err);
+      toast.error(err?.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -149,8 +168,17 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                           <button className="p-1 text-green-400 hover:text-green-300">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button className="p-1 text-red-400 hover:text-red-300">
-                            <Trash2 className="h-4 w-4" />
+                          <button
+                            onClick={() => setConfirmDelete({ id: user.id, name: user.name })}
+                            disabled={deletingId === user.id}
+                            className="p-1 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete user"
+                          >
+                            {deletingId === user.id ? (
+                              <span className="text-xs text-gray-400">Deleting...</span>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -180,6 +208,14 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && handleDeleteUser(confirmDelete.id)}
+        title="Delete User"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This action cannot be undone.`}
+        isLoading={!!deletingId}
+      />
     </div>
   );
 };

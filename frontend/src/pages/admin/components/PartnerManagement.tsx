@@ -4,12 +4,16 @@ import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { User } from '../../../types';
+import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
+import { toast } from 'react-hot-toast';
 
 const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [partners, setPartners] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchPartners();
@@ -61,6 +65,21 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
       </div>
     );
   }
+
+  const handleDeletePartner = async (partnerId: string) => {
+    try {
+      setDeletingId(partnerId);
+      await adminService.deleteUser(partnerId);
+      setPartners(prev => prev.filter(p => p.id !== partnerId));
+      toast.success('Partner deleted successfully');
+    } catch (err: any) {
+      console.error('Failed to delete partner:', err);
+      toast.error(err?.response?.data?.message || 'Failed to delete partner');
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -171,8 +190,17 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                           <button className="p-1 text-green-400 hover:text-green-300">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button className="p-1 text-red-400 hover:text-red-300">
-                            <Trash2 className="h-4 w-4" />
+                          <button
+                            onClick={() => setConfirmDelete({ id: partner.id, name: partner.name })}
+                            disabled={deletingId === partner.id}
+                            className="p-1 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete partner"
+                          >
+                            {deletingId === partner.id ? (
+                              <span className="text-xs text-gray-400">Deleting...</span>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -202,6 +230,14 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && handleDeletePartner(confirmDelete.id)}
+        title="Delete Partner"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This will remove their account and related data.`}
+        isLoading={!!deletingId}
+      />
     </div>
   );
 };

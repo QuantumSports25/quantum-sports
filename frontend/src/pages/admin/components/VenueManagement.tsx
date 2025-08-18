@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Eye, Edit, Trash2, Building, MapPin, Phone, Star, DollarSign } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Building, MapPin, Phone, Star,  } from 'lucide-react';
 import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
@@ -212,7 +212,7 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-300">
+                        <div className="text-sm text-gray-300 space-y-1">
                           {partner ? (
                             <div>
                               <div className="font-medium text-white">{partner.name}</div>
@@ -223,6 +223,13 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
                               <div>Partner ID: {venue.partnerId}</div>
                               <div className="text-xs">Details loading...</div>
                             </div>
+                          )}
+                          {venue.membership ? (
+                            <div className="text-xs text-blue-300">
+                              <span className="text-gray-400">Membership:</span> {venue.membership.planName}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-500">Membership: None</div>
                           )}
                         </div>
                       </td>
@@ -239,7 +246,7 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center text-sm text-gray-300">
-                          <DollarSign className="h-4 w-4 mr-1" />
+                          {/* <DollarSign className="h-4 w-4 mr-1" /> */}
                           {formatPrice(venue.start_price_per_hour)}
                         </div>
                       </td>

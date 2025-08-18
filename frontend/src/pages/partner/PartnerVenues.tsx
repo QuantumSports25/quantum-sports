@@ -45,6 +45,7 @@ const PartnerVenues: React.FC = () => {
   const [selectedVenueForDetails, setSelectedVenueForDetails] = useState<Venue | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isPurchasingPlan, setIsPurchasingPlan] = useState(false);
+  const [selectedMembershipId, setSelectedMembershipId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
@@ -67,6 +68,7 @@ const PartnerVenues: React.FC = () => {
       const dataWithPartnerId = {
         ...venueData,
         partnerId,
+        ...(selectedMembershipId ? { membershipId: selectedMembershipId } : {}),
       };
       return createVenue(dataWithPartnerId);
     },
@@ -196,6 +198,7 @@ const PartnerVenues: React.FC = () => {
               membershipId: membershipResp.id,
             });
             if (!verifyResp.success) throw new Error("Verification failed");
+            setSelectedMembershipId(membershipResp.id);
             toast.success("Plan activated. You can now add a venue.");
             setIsAddCartOpen(true);
           } catch (err: any) {
@@ -261,7 +264,9 @@ const PartnerVenues: React.FC = () => {
         throw new Error("Failed to create revenue share membership");
       }
 
-      toast.success("Revenue Share model selected. Our team will contact you soon.");
+      setSelectedMembershipId(membershipResp.id);
+      toast.success("Revenue Share model selected. You can now add a venue.");
+      setIsAddCartOpen(true);
     } catch (error: any) {
       console.error(error);
       toast.error(error?.message || "Failed to set Revenue Share plan");

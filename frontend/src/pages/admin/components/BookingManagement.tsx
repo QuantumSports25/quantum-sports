@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Eye, Edit, Calendar, CreditCard, Building, Clock, DollarSign } from 'lucide-react';
+import { Search, Eye, Edit, Calendar, CreditCard, Building, Clock,  } from 'lucide-react';
 import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
@@ -283,7 +283,7 @@ const BookingManagement: React.FC<AdminComponentProps> = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center text-sm text-gray-300">
-                          <DollarSign className="h-4 w-4 mr-1" />
+                          {/* <DollarSign className="h-4 w-4 mr-1" /> */}
                           {formatPrice(booking.amount)}
                         </div>
                       </td>

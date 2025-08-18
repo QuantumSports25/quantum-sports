@@ -231,10 +231,43 @@ const PartnerVenues: React.FC = () => {
     }
   };
 
-  const handleSelectRevenueShare = () => {
-    setIsPlanModalOpen(false);
-    // Open mailto to connect with sales team
-    window.location.href = "mailto:sales@quantumsports.com?subject=Revenue%20Share%20Inquiry&body=Hi%20Quantum%20Sports%20Team,%0D%0A%0D%0AI'd%20like%20to%20discuss%20the%20revenue%20share%20plan%20for%20adding%20my%20venue.%20Please%20reach%20out%20to%20me.%0D%0A%0D%0AThanks,";
+  const handleSelectRevenueShare = async () => {
+    try {
+      if (!user?.id) {
+        toast.error("Please login to continue.");
+        return;
+      }
+      setIsPlanModalOpen(false);
+      setIsPurchasingPlan(true);
+
+      // Fetch plans and find Revenue Share
+      const plansResp = await membershipService.getMembershipPlans();
+      if (!plansResp.success || !Array.isArray(plansResp.data)) {
+        throw new Error("Unable to fetch plans");
+      }
+      const revenuePlan =
+        plansResp.data.find((p) => p.name.toLowerCase() === "revenue share") ||
+        plansResp.data.find((p) => p.name.toLowerCase().includes("revenue"));
+      if (!revenuePlan) {
+        throw new Error("Revenue Share plan not found");
+      }
+
+      // Create membership record for Revenue Share (no payment/order)
+      const membershipResp = await membershipService.createMembership({
+        userId: user.id,
+        planId: revenuePlan.id,
+      });
+      if (!membershipResp.success || !membershipResp.id) {
+        throw new Error("Failed to create revenue share membership");
+      }
+
+      toast.success("Revenue Share model selected. Our team will contact you soon.");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || "Failed to set Revenue Share plan");
+    } finally {
+      setIsPurchasingPlan(false);
+    }
   };
 
   const handleEditVenue = (venue: Venue) => {
@@ -295,16 +328,16 @@ const PartnerVenues: React.FC = () => {
           <div className="flex items-center space-x-4">
             <button
               onClick={handleOpenAddCart}
-              disabled={createVenueMutation.isPending}
+              disabled={createVenueMutation.isPending || isPurchasingPlan}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {createVenueMutation.isPending ? (
+              {createVenueMutation.isPending || isPurchasingPlan ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Plus className="h-4 w-4" />
               )}
               <span>
-                {createVenueMutation.isPending ? "Creating..." : "Add Venue"}
+                {createVenueMutation.isPending || isPurchasingPlan ? "Processing..." : "Add Venue"}
               </span>
             </button>
           </div>

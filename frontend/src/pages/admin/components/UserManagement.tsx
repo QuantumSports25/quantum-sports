@@ -19,13 +19,13 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('🚀 Calling real API endpoint: /auth/users?role=user');
       const usersData = await adminService.getAllUsers();
-      
+
       // Filter only regular users (not partners)
       const regularUsers = usersData.filter(user => user.role === 'user');
-      
+
       if (regularUsers.length > 0) {
         setUsers(regularUsers);
         console.log(`✅ Loaded ${regularUsers.length} users from API`);
@@ -82,7 +82,7 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                   className="bg-gray-700 text-white placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <button 
+              <button
                 onClick={fetchUsers}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >

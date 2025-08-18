@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Edit3, Trash2, Users, Tag, DollarSign, Loader2 } from "lucide-react";
+import { Plus, Edit3, Trash2, Users, Tag,  Loader2 } from "lucide-react";
 import { Venue } from "../../../../types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";

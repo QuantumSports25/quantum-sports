@@ -271,12 +271,12 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <Link
+              {/* <Link
                 to="/login-otp"
                 className="text-yellow-400 hover:text-yellow-300 text-sm"
               >
                 Login with OTP
-              </Link>
+              </Link> */}
               <Link
                 to="/forgot-password"
                 className="text-yellow-400 hover:text-yellow-300 text-sm"

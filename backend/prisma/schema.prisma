@@ -25,6 +25,8 @@ model User {
   partnerDetails PartnerDetails?
   wallet         Wallet?
 
+  MembershipPlan MembershipPlan[]
+
   @@map("users")
 }
 

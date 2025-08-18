@@ -16,6 +16,8 @@ import AddCart, { VenueFormData } from "./components/venue/AddCart";
 import { useAuthStore } from "../../store/authStore";
 import DeleteConfirmationModal from "../../components/common/DeleteConfirmationModal";
 import VenueDetailsManagement from "./components/venue/VenueDetailsManagement";
+import { VenuePlanModal } from "../../components/modals";
+import membershipService, { MembershipPlan as APIMembershipPlan } from "../../services/membershipService";
 
 const UnauthorizedView: React.FC = () => (
   <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
@@ -41,6 +43,8 @@ const PartnerVenues: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingVenue, setDeletingVenue] = useState<{ id: string; name: string } | null>(null);
   const [selectedVenueForDetails, setSelectedVenueForDetails] = useState<Venue | null>(null);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isPurchasingPlan, setIsPurchasingPlan] = useState(false);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
@@ -113,11 +117,124 @@ const PartnerVenues: React.FC = () => {
   };
 
   const handleOpenAddCart = () => {
-    setIsAddCartOpen(true);
+    setIsPlanModalOpen(true);
   };
 
   const handleCloseAddCart = () => {
     setIsAddCartOpen(false);
+  };
+
+  const handleSelectMonthlyPlan = async () => {
+    try {
+      if (!user?.id) {
+        toast.error("Please login to continue.");
+        return;
+      }
+      setIsPurchasingPlan(true);
+      setIsPlanModalOpen(false);
+
+      // 1) Fetch active membership plans and find partner membership
+      const plansResp = await membershipService.getMembershipPlans();
+      if (!plansResp.success || !Array.isArray(plansResp.data)) {
+        throw new Error("Unable to fetch plans");
+      }
+      const partnerPlan: APIMembershipPlan | undefined =
+        plansResp.data.find((p) => p.name.toLowerCase() === "partner membership") ||
+        plansResp.data.find((p) => p.name.toLowerCase().includes("partner"));
+      if (!partnerPlan) {
+        throw new Error("Partner membership plan not found");
+      }
+
+      // 2) Create membership record
+      const membershipResp = await membershipService.createMembership({
+        userId: user.id,
+        planId: partnerPlan.id,
+      });
+      if (!membershipResp.success || !membershipResp.id) {
+        throw new Error("Failed to create membership record");
+      }
+
+      // 3) Create Razorpay order
+      const orderResp = await membershipService.createMembershipOrder(membershipResp.id, {
+        amount: partnerPlan.amount,
+        userId: user.id,
+        planId: partnerPlan.id,
+      });
+      if (!orderResp.success || !orderResp.data?.id) {
+        throw new Error("Failed to create payment order");
+      }
+
+      // 4) Ensure Razorpay is loaded
+      const ensureRazorpay = () => new Promise<void>((resolve, reject) => {
+        if ((window as any).Razorpay) return resolve();
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Razorpay"));
+        document.body.appendChild(script);
+      });
+      await ensureRazorpay();
+
+      const keyId = process.env.REACT_APP_RAZORPAY_KEY_ID;
+      if (!keyId) throw new Error("Razorpay key not configured");
+
+      // 5) Open Razorpay
+      const options = {
+        key: keyId,
+        amount: partnerPlan.amount * 100,
+        currency: "INR",
+        name: "Quantum Sports",
+        description: `${partnerPlan.name}`,
+        order_id: orderResp.data.id,
+        handler: async (response: any) => {
+          try {
+            const verifyResp = await membershipService.verifyMembershipPayment({
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              orderId: response.razorpay_order_id,
+              membershipId: membershipResp.id,
+            });
+            if (!verifyResp.success) throw new Error("Verification failed");
+            toast.success("Plan activated. You can now add a venue.");
+            setIsAddCartOpen(true);
+          } catch (err: any) {
+            toast.error(err?.message || "Payment verification failed");
+          } finally {
+            setIsPurchasingPlan(false);
+          }
+        },
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        theme: { color: "#2563eb" },
+        modal: {
+          ondismiss: function () {
+            toast("Payment cancelled");
+            setIsPurchasingPlan(false);
+          },
+        },
+      } as any;
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function (resp: any) {
+        toast.error(`Payment failed: ${resp?.error?.description || "Unknown error"}`);
+        setIsPurchasingPlan(false);
+      });
+      rzp.open();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || "Failed to start payment");
+      setIsPurchasingPlan(false);
+    }
+  };
+
+  const handleSelectRevenueShare = () => {
+    setIsPlanModalOpen(false);
+    // Open mailto to connect with sales team
+    window.location.href = "mailto:sales@quantumsports.com?subject=Revenue%20Share%20Inquiry&body=Hi%20Quantum%20Sports%20Team,%0D%0A%0D%0AI'd%20like%20to%20discuss%20the%20revenue%20share%20plan%20for%20adding%20my%20venue.%20Please%20reach%20out%20to%20me.%0D%0A%0D%0AThanks,";
   };
 
   const handleEditVenue = (venue: Venue) => {
@@ -270,6 +387,13 @@ const PartnerVenues: React.FC = () => {
         )}
 
         {/* Add Venue Modal */}
+        <VenuePlanModal
+          isOpen={isPlanModalOpen}
+          onClose={() => setIsPlanModalOpen(false)}
+          onSelectMonthly={handleSelectMonthlyPlan}
+          onSelectRevenueShare={handleSelectRevenueShare}
+        />
+
         <AddCart
           isOpen={isAddCartOpen}
           onClose={handleCloseAddCart}

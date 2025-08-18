@@ -396,6 +396,7 @@ export class AuthService {
         email: user.email,
         phone: user?.phone ?? "",
         role: user.role === "partner" ? UserRole.PARTNER : UserRole.USER,
+        
       }));
 
       return allUsers;

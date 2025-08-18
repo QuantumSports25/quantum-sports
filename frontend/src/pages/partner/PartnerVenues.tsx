@@ -155,7 +155,7 @@ const PartnerVenues: React.FC = () => {
   if (selectedVenueForDetails) {
     return (
       <DashboardLayout userRole="partner">
-        <VenueDetailsManagement 
+        <VenueDetailsManagement
           venue={selectedVenueForDetails}
           onBack={handleCloseVenueDetails}
         />
@@ -227,9 +227,9 @@ const PartnerVenues: React.FC = () => {
         {!isLoading && !error && venues && venues.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {venues.map((venue: Venue) => (
-              <VenueCard 
-                key={venue.id} 
-                venue={venue} 
+              <VenueCard
+                key={venue.id}
+                venue={venue}
                 onEdit={() => handleEditVenue(venue)}
                 onDelete={() => venue.id && setDeletingVenue({ id: venue.id, name: venue.name })}
                 onView={() => handleViewVenueDetails(venue)}

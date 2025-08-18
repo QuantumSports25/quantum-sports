@@ -679,8 +679,8 @@ const SlotModal: React.FC<SlotModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 ">
+      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 overflow-y-auto max-h-[90vh] scrollbar-hide">
         <h3 className="text-xl font-bold text-white mb-6">{title}</h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">

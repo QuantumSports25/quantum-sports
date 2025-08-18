@@ -153,7 +153,7 @@ const ActivityManagement: React.FC<ActivityManagementProps> = ({ venue }) => {
                     {activity.name}
                   </h3>
                   <div className="flex items-center text-gray-400 text-sm">
-                    <DollarSign className="h-4 w-4 mr-1" />
+                    {/* <DollarSign className="h-4 w-4 mr-1" /> */}
                     <span>₹{activity.start_price_per_hour}/hour</span>
                   </div>
                 </div>

@@ -24,6 +24,7 @@ export class CreateVenueController {
         mapLocationLink,
         lat,
         lang,
+        membershipId,
       } = req.body as {
         name: string;
         highlight: string;
@@ -38,6 +39,7 @@ export class CreateVenueController {
         mapLocationLink: string;
         lat: number;
         lang: number;
+        membershipId?: string;
       };
 
       if (
@@ -100,6 +102,32 @@ export class CreateVenueController {
             createdVenue.id,
             tx
           );
+
+          // 3. If membershipId is provided, link this venue to that membership (store in paymentDetails JSON)
+          if (membershipId) {
+            const membership = await tx.membership.findUnique({ where: { id: membershipId } });
+            if (!membership) {
+              throw new Error("Membership not found for provided membershipId");
+            }
+            // Optional guard: ensure membership belongs to this partner (user)
+            if (membership.userId !== partnerId) {
+              throw new Error("Membership does not belong to this partner");
+            }
+
+            const existingDetails: any = (membership as any).paymentDetails || {};
+            const updatedDetails = {
+              ...existingDetails,
+              usedVenueId: createdVenue.id,
+              usedAt: new Date().toISOString(),
+            };
+
+            await tx.membership.update({
+              where: { id: membershipId },
+              data: {
+                paymentDetails: updatedDetails as unknown as Prisma.InputJsonValue,
+              },
+            });
+          }
 
           return { createdVenue, mapping };
         }

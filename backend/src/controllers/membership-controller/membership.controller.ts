@@ -48,10 +48,19 @@ export class MembershipController {
           : null,
       });
 
+      // Auto-activate free/zero-amount plans (e.g., Revenue Share)
+      if (membershipPlan.amount === 0) {
+        await MembershipService.activateFreeMembership({
+          membershipId: membership,
+          planId: membershipPlan.id,
+        });
+      }
+
       return res.status(201).json({
         success: true,
         message: "Membership created successfully",
         id: membership,
+        activated: membershipPlan.amount === 0,
       });
     } catch (error: any) {
       console.error("Error creating membership before payment:", error);

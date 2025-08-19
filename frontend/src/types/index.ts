@@ -12,6 +12,16 @@ export interface User {
     gstNumber?: string;
     websiteUrl?: string;
   };
+  membership?: {
+    id: string;
+    planId: string;
+    planName: string;
+    amount: number;
+    credits: number;
+    startedAt: string;
+    expiresAt: string | null;
+    isActive: boolean;
+  } | null;
 }
 
 export interface AuthState {

@@ -285,6 +285,26 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                     )}
                   </div>
                 )}
+                {typeof viewPartner.membership !== 'undefined' && viewPartner.membership !== null && (
+                  <div className="mt-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-1 text-gray-800">
+                      <Building className="h-4 w-4" />
+                      <span className="text-sm font-semibold">Membership</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                      <div><span className="font-semibold">Plan:</span> {viewPartner.membership.planName}</div>
+                      <div><span className="font-semibold">Amount:</span> ₹{viewPartner.membership.amount}</div>
+                      <div><span className="font-semibold">Credits:</span> {viewPartner.membership.credits}</div>
+                      <div><span className="font-semibold">Started:</span> {new Date(viewPartner.membership.startedAt).toLocaleString()}</div>
+                      <div><span className="font-semibold">Expires:</span> {viewPartner.membership.expiresAt ? new Date(viewPartner.membership.expiresAt).toLocaleString() : 'N/A'}</div>
+                      <div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${viewPartner.membership.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {viewPartner.membership.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="mt-6 flex justify-end">
                 <button onClick={() => setViewPartner(null)} className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-900">Close</button>

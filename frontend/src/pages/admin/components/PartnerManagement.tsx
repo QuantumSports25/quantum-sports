@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Edit, Trash2, Building2 } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Building2, X, Phone, Mail, Building } from 'lucide-react';
 import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { User } from '../../../types';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import { toast } from 'react-hot-toast';
+import ModalPortal from '../../../components/common/ModalPortal';
 
 const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [partners, setPartners] = useState<User[]>([]);
@@ -14,6 +15,7 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [viewPartner, setViewPartner] = useState<User | null>(null);
 
   useEffect(() => {
     fetchPartners();
@@ -184,7 +186,7 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button className="p-1 text-blue-400 hover:text-blue-300">
+                          <button className="p-1 text-blue-400 hover:text-blue-300" onClick={() => setViewPartner(partner)}>
                             <Eye className="h-4 w-4" />
                           </button>
                           <button className="p-1 text-green-400 hover:text-green-300">
@@ -238,6 +240,59 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
         message={`Are you sure you want to delete "${confirmDelete?.name}"? This will remove their account and related data.`}
         isLoading={!!deletingId}
       />
+      {viewPartner && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setViewPartner(null); }}>
+            <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+              <button onClick={() => setViewPartner(null)} aria-label="Close" className="absolute right-3 top-3 rounded-full p-1 text-gray-500 hover:bg-gray-100">
+                <X className="h-5 w-5" />
+              </button>
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Partner Details</h3>
+                <p className="text-sm text-gray-600">Full information about the selected partner</p>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-gray-900">{viewPartner.name}</div>
+                    <div className="text-xs text-gray-500 capitalize">Role: {viewPartner.role}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Mail className="h-4 w-4" />
+                  <span className="text-sm">{viewPartner.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Phone className="h-4 w-4" />
+                  <span className="text-sm">{viewPartner.phone || 'Not provided'}</span>
+                </div>
+                {viewPartner.partnerDetails && (
+                  <div className="mt-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-1 text-gray-800">
+                      <Building className="h-4 w-4" />
+                      <span className="text-sm font-semibold">Company</span>
+                    </div>
+                    <div className="text-sm text-gray-700">Name: {viewPartner.partnerDetails.companyName}</div>
+                    <div className="text-sm text-gray-700">Subscription: {viewPartner.partnerDetails.subscriptionType}</div>
+                    {viewPartner.partnerDetails.gstNumber && (
+                      <div className="text-sm text-gray-700">GST: {viewPartner.partnerDetails.gstNumber}</div>
+                    )}
+                    {viewPartner.partnerDetails.websiteUrl && (
+                      <div className="text-sm text-blue-600"><a href={viewPartner.partnerDetails.websiteUrl} target="_blank" rel="noreferrer">{viewPartner.partnerDetails.websiteUrl}</a></div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button onClick={() => setViewPartner(null)} className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-900">Close</button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 };

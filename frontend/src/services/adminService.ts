@@ -234,7 +234,7 @@ export const adminService = {
 
   // Delete venue
   deleteVenue: async (venueId: string): Promise<void> => {
-    await api.delete(`/admin/venues/${venueId}`);
+    await api.delete(`/venue/delete-venue/${venueId}`);
   },
 
   // Booking Management

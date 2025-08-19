@@ -209,4 +209,42 @@ export class MembershipService {
       throw error;
     }
   }
+
+  static async activateFreeMembership({
+    membershipId,
+    planId,
+  }: {
+    membershipId: string;
+    planId: string;
+  }): Promise<void> {
+    try {
+      await withRetries(async () => {
+        await prisma.$transaction(async (tx) => {
+          const membership = await tx.membership.findUnique({ where: { id: membershipId } });
+          const membershipPlan = await tx.membershipPlan.findUnique({ where: { id: planId } });
+
+          if (!membership || !membershipPlan) {
+            throw new Error("Membership or membership plan not found");
+          }
+
+          await tx.membership.update({
+            where: { id: membershipId },
+            data: {
+              isActive: true,
+              startedAt: new Date(),
+              expiresAt: membership.expiresAt || null,
+              paymentDetails: {
+                paymentMethod: "Free",
+                paymentDate: new Date(),
+                isRefunded: false,
+              },
+            },
+          });
+        });
+      }, 3);
+    } catch (error) {
+      console.error("Error activating free membership:", error);
+      throw error;
+    }
+  }
 }

@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { EmailService } from "./email.service";
-import { User, UserRole} from "../../models/user.model";
+import { User, UserRole, MembershipSummary } from "../../models/user.model";
 
 const prisma = new PrismaClient();
 
@@ -381,22 +381,58 @@ export class AuthService {
     role?: UserRole
   ): Promise<User[]> {
     try {
-     
       const users = await prisma.user.findMany({
         skip: offset,
         take: limit,
         ...(role ? { where: { role } } : {}),
       });
 
+      const userIds = users.map((u) => u.id);
+      const memberships = userIds.length
+        ? await prisma.membership.findMany({
+            where: {
+              isActive: true,
+              userId: { in: userIds },
+            },
+            orderBy: { createdAt: "desc" },
+            include: { plan: true },
+          })
+        : [];
+
+      const latestMembershipByUserId = new Map<string, any>();
+      for (const m of memberships) {
+        if (!latestMembershipByUserId.has(m.userId)) {
+          latestMembershipByUserId.set(m.userId, m);
+        }
+      }
+
       console.log("Retrieved Users:", users);
 
-      const allUsers = users.map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user?.phone ?? "",
-        role: user.role === "partner" ? UserRole.PARTNER : UserRole.USER,
-      }));
+      const allUsers = users.map((user: any) => {
+        let membership: MembershipSummary | undefined;
+        const latestActive = latestMembershipByUserId.get(user.id);
+        if (latestActive) {
+          membership = {
+            id: latestActive.id,
+            planId: latestActive.planId,
+            planName: latestActive.plan?.name || "unknown",
+            amount: latestActive.plan?.amount ?? 0,
+            credits: latestActive.plan?.credits ?? 0,
+            startedAt: latestActive.startedAt,
+            expiresAt: latestActive.expiresAt,
+            isActive: latestActive.isActive,
+          };
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user?.phone ?? "",
+          role: user.role === "partner" ? UserRole.PARTNER : UserRole.USER,
+          membership,
+        } as User;
+      });
 
       return allUsers;
     } catch (error) {

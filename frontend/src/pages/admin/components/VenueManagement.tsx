@@ -6,6 +6,7 @@ import { adminService } from '../../../services/adminService';
 import { Venue } from '../../../types';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import ModalPortal from '../../../components/common/ModalPortal';
+import { toast } from 'react-hot-toast';
 
 const VenueManagement: React.FC<AdminComponentProps> = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -325,6 +326,10 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
             setDeletingId(confirmDelete.id);
             await adminService.deleteVenue(confirmDelete.id);
             setVenues(prev => prev.filter(v => v.id !== confirmDelete.id));
+            toast.success('Venue deleted successfully');
+          } catch (error: any) {
+            console.error('Error deleting venue:', error);
+            toast.error(error?.response?.data?.message || 'Failed to delete venue');
           } finally {
             setDeletingId(null);
             setConfirmDelete(null);
@@ -337,7 +342,7 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
       {viewVenue && (
         <ModalPortal>
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setViewVenue(null); }}>
-            <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+            <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl overflow-y-auto max-h-[90vh]">
               <button onClick={() => setViewVenue(null)} aria-label="Close" className="absolute right-3 top-3 rounded-full p-1 text-gray-500 hover:bg-gray-100">
                 <X className="h-5 w-5" />
               </button>
@@ -374,6 +379,34 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
                   <div className="text-sm font-semibold text-gray-900">Status</div>
                   <div className="text-sm">{viewVenue.approved ? 'Approved' : 'Pending'}</div>
                 </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Rating</div>
+                  <div className="text-sm flex items-center">
+                    <Star className="h-4 w-4 mr-1 text-yellow-400" />
+                    {viewVenue.rating || 0} ({viewVenue.totalReviews || 0})
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Created</div>
+                  <div className="text-sm">{viewVenue.createdAt ? new Date(viewVenue.createdAt).toLocaleString() : 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Updated</div>
+                  <div className="text-sm">{viewVenue.updatedAt ? new Date(viewVenue.updatedAt).toLocaleString() : 'N/A'}</div>
+                </div>
+                {viewVenue.mapLocationLink && (
+                  <div className="md:col-span-2">
+                    <div className="text-sm font-semibold text-gray-900">Map Location</div>
+                    <a
+                      href={viewVenue.mapLocationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline break-all"
+                    >
+                      {viewVenue.mapLocationLink}
+                    </a>
+                  </div>
+                )}
                 {viewVenue.membership && (
                   <div className="md:col-span-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
                     <div className="text-sm font-semibold text-gray-900">Membership</div>
@@ -381,6 +414,53 @@ const VenueManagement: React.FC<AdminComponentProps> = () => {
                   </div>
                 )}
               </div>
+
+              {viewVenue.description && (
+                <div className="mt-4">
+                  <div className="text-sm font-semibold text-gray-900">Description</div>
+                  <div className="text-sm text-gray-700 whitespace-pre-line">{viewVenue.description}</div>
+                </div>
+              )}
+
+              {viewVenue.highlight && (
+                <div className="mt-3">
+                  <div className="text-sm font-semibold text-gray-900">Highlight</div>
+                  <div className="text-sm text-gray-700 whitespace-pre-line">{viewVenue.highlight}</div>
+                </div>
+              )}
+
+              {Array.isArray(viewVenue.features) && viewVenue.features.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-sm font-semibold text-gray-900 mb-1">Features</div>
+                  <div className="flex flex-wrap gap-2">
+                    {viewVenue.features.map((feature, idx) => (
+                      <span key={idx} className="px-2 py-1 text-xs bg-gray-100 rounded border border-gray-200">
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(viewVenue.images) && viewVenue.images.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-sm font-semibold text-gray-900 mb-2">Images</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {viewVenue.images.slice(0, 6).map((img, idx) => (
+                      <img key={idx} src={img} alt={`venue-${idx}`} className="w-full h-24 object-cover rounded" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {viewVenue.cancellationPolicy && (
+                <div className="mt-4">
+                  <div className="text-sm font-semibold text-gray-900 mb-1">Cancellation Policy</div>
+                  <pre className="text-xs bg-gray-50 p-3 rounded border border-gray-200 overflow-auto max-h-48">
+{JSON.stringify(viewVenue.cancellationPolicy, null, 2)}
+                  </pre>
+                </div>
+              )}
               <div className="mt-6 flex justify-end">
                 <button onClick={() => setViewVenue(null)} className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-900">Close</button>
               </div>

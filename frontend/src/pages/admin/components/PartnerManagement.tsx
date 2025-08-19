@@ -106,31 +106,12 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
               >
                 Refresh Partners
               </button>
-              <button 
-                onClick={async () => {
-                  try {
-                    const users = await adminService.getAllUsers();
-                    console.log('🎯 ALL USERS from API:', users);
-                    
-                    const usersByRole = users.reduce((acc, user) => {
-                      acc[user.role] = (acc[user.role] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>);
-                    
-                    const summary = Object.entries(usersByRole)
-                      .map(([role, count]) => `${role}: ${count}`)
-                      .join(', ');
-                    
-                    alert(`Found ${users.length} total users (${summary}). Check console for full details.`);
-                  } catch (err) {
-                    console.error('❌ Error fetching users:', err);
-                    alert('Error fetching users. Check console.');
-                  }
-                }}
+              {/* <button 
+                onClick={() => navigator('/admin/users')}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
                 Show All Users
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

@@ -233,9 +233,19 @@ const EventManagement: React.FC<AdminComponentProps> = () => {
   return (
     <div className="space-y-6">
       <div className={sectionClass}>
-        <div className="mb-4 flex gap-2">
-          <button onClick={() => setActiveTab('create')} className={`px-3 py-2 rounded-lg text-sm ${activeTab === 'create' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}>Create Event</button>
-          <button onClick={() => setActiveTab('list')} className={`px-3 py-2 rounded-lg text-sm ${activeTab === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}>All Events</button>
+        <div className="mb-4 flex gap-2 w-full">
+          <button
+            onClick={() => setActiveTab('create')}
+            className={`flex-1 w-full px-3 py-2 rounded-lg text-sm ${activeTab === 'create' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+          >
+            Create Event
+          </button>
+          <button
+            onClick={() => setActiveTab('list')}
+            className={`flex-1 w-full px-3 py-2 rounded-lg text-sm ${activeTab === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+          >
+            All Events
+          </button>
         </div>
 
         {activeTab === 'create' && (

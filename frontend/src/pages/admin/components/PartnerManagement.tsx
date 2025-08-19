@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Edit, Trash2, Building2 } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Building2, X, Phone, Mail, Building } from 'lucide-react';
 import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { User } from '../../../types';
+import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
+import { toast } from 'react-hot-toast';
+import ModalPortal from '../../../components/common/ModalPortal';
 
 const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [partners, setPartners] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [viewPartner, setViewPartner] = useState<User | null>(null);
 
   useEffect(() => {
     fetchPartners();
@@ -62,6 +68,21 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
     );
   }
 
+  const handleDeletePartner = async (partnerId: string) => {
+    try {
+      setDeletingId(partnerId);
+      await adminService.deleteUser(partnerId);
+      setPartners(prev => prev.filter(p => p.id !== partnerId));
+      toast.success('Partner deleted successfully');
+    } catch (err: any) {
+      console.error('Failed to delete partner:', err);
+      toast.error(err?.response?.data?.message || 'Failed to delete partner');
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-gray-800 border border-gray-700 rounded-xl">
@@ -85,31 +106,12 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
               >
                 Refresh Partners
               </button>
-              <button 
-                onClick={async () => {
-                  try {
-                    const users = await adminService.getAllUsers();
-                    console.log('🎯 ALL USERS from API:', users);
-                    
-                    const usersByRole = users.reduce((acc, user) => {
-                      acc[user.role] = (acc[user.role] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>);
-                    
-                    const summary = Object.entries(usersByRole)
-                      .map(([role, count]) => `${role}: ${count}`)
-                      .join(', ');
-                    
-                    alert(`Found ${users.length} total users (${summary}). Check console for full details.`);
-                  } catch (err) {
-                    console.error('❌ Error fetching users:', err);
-                    alert('Error fetching users. Check console.');
-                  }
-                }}
+              {/* <button 
+                onClick={() => navigator('/admin/users')}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
                 Show All Users
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -165,14 +167,23 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button className="p-1 text-blue-400 hover:text-blue-300">
+                          <button className="p-1 text-blue-400 hover:text-blue-300" onClick={() => setViewPartner(partner)}>
                             <Eye className="h-4 w-4" />
                           </button>
                           <button className="p-1 text-green-400 hover:text-green-300">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button className="p-1 text-red-400 hover:text-red-300">
-                            <Trash2 className="h-4 w-4" />
+                          <button
+                            onClick={() => setConfirmDelete({ id: partner.id, name: partner.name })}
+                            disabled={deletingId === partner.id}
+                            className="p-1 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete partner"
+                          >
+                            {deletingId === partner.id ? (
+                              <span className="text-xs text-gray-400">Deleting...</span>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -202,6 +213,87 @@ const PartnerManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && handleDeletePartner(confirmDelete.id)}
+        title="Delete Partner"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This will remove their account and related data.`}
+        isLoading={!!deletingId}
+      />
+      {viewPartner && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setViewPartner(null); }}>
+            <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+              <button onClick={() => setViewPartner(null)} aria-label="Close" className="absolute right-3 top-3 rounded-full p-1 text-gray-500 hover:bg-gray-100">
+                <X className="h-5 w-5" />
+              </button>
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Partner Details</h3>
+                <p className="text-sm text-gray-600">Full information about the selected partner</p>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-gray-900">{viewPartner.name}</div>
+                    <div className="text-xs text-gray-500 capitalize">Role: {viewPartner.role}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Mail className="h-4 w-4" />
+                  <span className="text-sm">{viewPartner.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Phone className="h-4 w-4" />
+                  <span className="text-sm">{viewPartner.phone || 'Not provided'}</span>
+                </div>
+                {viewPartner.partnerDetails && (
+                  <div className="mt-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-1 text-gray-800">
+                      <Building className="h-4 w-4" />
+                      <span className="text-sm font-semibold">Company</span>
+                    </div>
+                    <div className="text-sm text-gray-700">Name: {viewPartner.partnerDetails.companyName}</div>
+                    <div className="text-sm text-gray-700">Subscription: {viewPartner.partnerDetails.subscriptionType}</div>
+                    {viewPartner.partnerDetails.gstNumber && (
+                      <div className="text-sm text-gray-700">GST: {viewPartner.partnerDetails.gstNumber}</div>
+                    )}
+                    {viewPartner.partnerDetails.websiteUrl && (
+                      <div className="text-sm text-blue-600"><a href={viewPartner.partnerDetails.websiteUrl} target="_blank" rel="noreferrer">{viewPartner.partnerDetails.websiteUrl}</a></div>
+                    )}
+                  </div>
+                )}
+                {typeof viewPartner.membership !== 'undefined' && viewPartner.membership !== null && (
+                  <div className="mt-2 rounded-lg border border-gray-200 p-3 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-1 text-gray-800">
+                      <Building className="h-4 w-4" />
+                      <span className="text-sm font-semibold">Membership</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                      <div><span className="font-semibold">Plan:</span> {viewPartner.membership.planName}</div>
+                      <div><span className="font-semibold">Amount:</span> ₹{viewPartner.membership.amount}</div>
+                      <div><span className="font-semibold">Credits:</span> {viewPartner.membership.credits}</div>
+                      <div><span className="font-semibold">Started:</span> {new Date(viewPartner.membership.startedAt).toLocaleString()}</div>
+                      <div><span className="font-semibold">Expires:</span> {viewPartner.membership.expiresAt ? new Date(viewPartner.membership.expiresAt).toLocaleString() : 'N/A'}</div>
+                      <div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${viewPartner.membership.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {viewPartner.membership.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button onClick={() => setViewPartner(null)} className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-900">Close</button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 };

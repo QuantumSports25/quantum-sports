@@ -1,4 +1,4 @@
-import React, { useEffect,  useState } from 'react';
+import React, { useEffect, useState,} from 'react';
 import { Edit, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventService } from '../../../services/eventService';
@@ -104,5 +104,3 @@ const EventList: React.FC<EventListProps> = ({ onEdit, refreshKey }) => {
 };
 
 export default EventList;
-
-

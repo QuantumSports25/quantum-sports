@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth-services/auth.service";
 import { UserRole } from "../models/user.model";
+// no-op
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -521,6 +522,57 @@ export class AuthController {
         message: "Internal server error while retrieving users",
         error: error instanceof Error ? error.message : "Unknown error",
       });
+    }
+  }
+
+  static async getProfile(req: Request, res: Response) {
+    try {
+      const authReq = req as any;
+      const userId = authReq.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+      }
+      const user = await AuthService.getUserById(userId);
+      return res.status(200).json({ success: true, data: user, message: "Profile fetched" });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Failed to fetch profile" });
+    }
+  }
+
+  static async updateProfile(req: Request, res: Response) {
+    try {
+      const authReq = req as any;
+      const userId = authReq.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+      }
+
+      const body = req.body as { name?: string; phone?: string };
+      const updatePayload: { name?: string; phone?: string } = {};
+      if (typeof body.name === 'string') updatePayload.name = body.name;
+      if (typeof body.phone === 'string') updatePayload.phone = body.phone;
+      const updated = await AuthService.updateUserProfile(userId, updatePayload);
+      return res.status(200).json({ success: true, data: updated, message: "Profile updated" });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Failed to update profile" });
+    }
+  }
+
+  static async changePassword(req: Request, res: Response) {
+    try {
+      const authReq = req as any;
+      const userId = authReq.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+      }
+      const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: "Both currentPassword and newPassword are required" });
+      }
+      await AuthService.changeUserPassword(userId, currentPassword, newPassword);
+      return res.status(200).json({ success: true, data: "Password changed", message: "Password changed" });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Failed to change password" });
     }
   }
 }

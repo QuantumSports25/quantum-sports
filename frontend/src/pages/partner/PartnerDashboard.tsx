@@ -12,10 +12,14 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Chart from '../../components/common/Chart';
 import { useAuthStore } from '../../store/authStore';
+import PartnerSettings from './components/Settings';
+import { useLocation } from 'react-router-dom';
 
 const PartnerDashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d');
   const { user } = useAuthStore();
+  const location = useLocation();
+  const isSettings = location.pathname.includes('/partner/dashboard/settings');
 
   // Mock data
   const mockStats = {
@@ -73,7 +77,10 @@ const PartnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Dashboard Content */}
+        {isSettings ? (
+          <PartnerSettings />
+        ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-gray-800 rounded-lg p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
@@ -205,6 +212,8 @@ const PartnerDashboard: React.FC = () => {
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
     </DashboardLayout>
   );

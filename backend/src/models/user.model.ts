@@ -6,6 +6,7 @@ export interface User {
   role: UserRole;
   phone?: string;
   partnerDetails?: partnerDetails;
+  membership?: MembershipSummary;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -27,4 +28,15 @@ export interface partnerDetails {
 export enum subscriptionType {
   REVNUE = "revnue_share",
   MEMBERSHIP = "membership",
+}
+
+export interface MembershipSummary {
+  id: string;
+  planId: string;
+  planName: string;
+  amount: number;
+  credits: number;
+  startedAt: Date;
+  expiresAt?: Date | null;
+  isActive: boolean;
 }

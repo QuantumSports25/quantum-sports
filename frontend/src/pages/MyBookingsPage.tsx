@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, MoreHorizontal, Filter, Search, Plus, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Filter, Search, Plus, Loader2 } from 'lucide-react';
 import { bookingService } from '../services/bookingService';
 import { useAuth } from '../hooks';
 import { Booking } from '../types';
 import { toast } from 'react-hot-toast';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 
 // Date formatting helper
 const formatDate = (date: Date | string) => {
@@ -28,6 +29,11 @@ const MyBookingsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Cancel confirmation modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [bookingIdToCancel, setBookingIdToCancel] = useState<string | null>(null);
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,11 +68,22 @@ const MyBookingsPage: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed': return 'text-green-400 bg-green-400/20 border-green-400/30';
-      case 'pending': return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
+      // case 'pending': return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/30';
       case 'cancelled': return 'text-red-400 bg-red-400/20 border-red-400/30';
-      case 'completed': return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
+      // case 'completed': return 'text-blue-400 bg-blue-400/20 border-blue-400/30';
       default: return 'text-gray-400 bg-gray-400/20 border-gray-400/30';
     }
+  };
+
+  const openCancelModal = (bookingId: string) => {
+    setBookingIdToCancel(bookingId);
+    setIsCancelModalOpen(true);
+  };
+
+  const closeCancelModal = () => {
+    if (isCancelLoading) return;
+    setIsCancelModalOpen(false);
+    setBookingIdToCancel(null);
   };
 
   const handleCancelBooking = async (bookingId: string) => {
@@ -79,6 +96,18 @@ const MyBookingsPage: React.FC = () => {
       toast.success('Booking cancelled successfully');
     } catch {
       toast.error('Failed to cancel booking');
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!bookingIdToCancel) return;
+    try {
+      setIsCancelLoading(true);
+      await handleCancelBooking(bookingIdToCancel);
+    } finally {
+      setIsCancelLoading(false);
+      setIsCancelModalOpen(false);
+      setBookingIdToCancel(null);
     }
   };
 
@@ -162,7 +191,7 @@ const MyBookingsPage: React.FC = () => {
     const searchableTitle = getBookingTitle(booking);
     const searchableAddress = getBookingAddress(booking);
     const searchableCity = booking.venue?.location?.city || b?.event?.location?.city || '';
-    
+
     const matchesSearch =
       searchableTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       searchableAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -221,8 +250,9 @@ const MyBookingsPage: React.FC = () => {
                 >
                   <option value="all">All Status</option>
                   <option value="confirmed">Confirmed</option>
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  {/* <option value="pending">Pending</option>
+                  <option value="completed">Completed</option> */}
                 </select>
               </div>
             </div>
@@ -283,15 +313,13 @@ const MyBookingsPage: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       {booking.bookingStatus === 'confirmed' && (
                         <button
-                          onClick={() => handleCancelBooking(booking.id)}
+                          onClick={() => openCancelModal(booking.id)}
                           className="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
                         >
                           Cancel
                         </button>
                       )}
-                      <button className="p-2 hover:bg-gray-700 rounded-full transition-colors" title="More Details">
-                        <MoreHorizontal className="h-5 w-5 text-gray-400 hover:text-white" />
-                      </button>
+                     
                     </div>
                   </div>
                 </div>
@@ -339,6 +367,16 @@ const MyBookingsPage: React.FC = () => {
           </>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={isCancelModalOpen}
+        onClose={closeCancelModal}
+        onConfirm={confirmCancel}
+        isLoading={isCancelLoading}
+        title="Cancel Booking"
+        message="Are you sure you want to cancel this booking? This action cannot be undone."
+        confirmLabel="Yes, Cancel"
+        loadingLabel="Cancelling..."
+      />
     </div>
   );
 };

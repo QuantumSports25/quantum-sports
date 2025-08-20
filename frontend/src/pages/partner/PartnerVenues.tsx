@@ -16,6 +16,8 @@ import AddCart, { VenueFormData } from "./components/venue/AddCart";
 import { useAuthStore } from "../../store/authStore";
 import DeleteConfirmationModal from "../../components/common/DeleteConfirmationModal";
 import VenueDetailsManagement from "./components/venue/VenueDetailsManagement";
+import { VenuePlanModal } from "../../components/modals";
+import membershipService, { MembershipPlan as APIMembershipPlan } from "../../services/membershipService";
 
 const UnauthorizedView: React.FC = () => (
   <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
@@ -41,6 +43,9 @@ const PartnerVenues: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingVenue, setDeletingVenue] = useState<{ id: string; name: string } | null>(null);
   const [selectedVenueForDetails, setSelectedVenueForDetails] = useState<Venue | null>(null);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isPurchasingPlan, setIsPurchasingPlan] = useState(false);
+  const [selectedMembershipId, setSelectedMembershipId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
@@ -63,6 +68,7 @@ const PartnerVenues: React.FC = () => {
       const dataWithPartnerId = {
         ...venueData,
         partnerId,
+        ...(selectedMembershipId ? { membershipId: selectedMembershipId } : {}),
       };
       return createVenue(dataWithPartnerId);
     },
@@ -113,11 +119,160 @@ const PartnerVenues: React.FC = () => {
   };
 
   const handleOpenAddCart = () => {
-    setIsAddCartOpen(true);
+    setIsPlanModalOpen(true);
   };
 
   const handleCloseAddCart = () => {
     setIsAddCartOpen(false);
+  };
+
+  const handleSelectMonthlyPlan = async () => {
+    try {
+      if (!user?.id) {
+        toast.error("Please login to continue.");
+        return;
+      }
+      setIsPurchasingPlan(true);
+      setIsPlanModalOpen(false);
+
+      // 1) Fetch active membership plans and find partner membership
+      const plansResp = await membershipService.getMembershipPlans();
+      if (!plansResp.success || !Array.isArray(plansResp.data)) {
+        throw new Error("Unable to fetch plans");
+      }
+      const partnerPlan: APIMembershipPlan | undefined =
+        plansResp.data.find((p) => p.name.toLowerCase() === "partner membership") ||
+        plansResp.data.find((p) => p.name.toLowerCase().includes("partner"));
+      if (!partnerPlan) {
+        throw new Error("Partner membership plan not found");
+      }
+
+      // 2) Create membership record
+      const membershipResp = await membershipService.createMembership({
+        userId: user.id,
+        planId: partnerPlan.id,
+      });
+      if (!membershipResp.success || !membershipResp.id) {
+        throw new Error("Failed to create membership record");
+      }
+
+      // 3) Create Razorpay order
+      const orderResp = await membershipService.createMembershipOrder(membershipResp.id, {
+        amount: partnerPlan.amount,
+        userId: user.id,
+        planId: partnerPlan.id,
+      });
+      if (!orderResp.success || !orderResp.data?.id) {
+        throw new Error("Failed to create payment order");
+      }
+
+      // 4) Ensure Razorpay is loaded
+      const ensureRazorpay = () => new Promise<void>((resolve, reject) => {
+        if ((window as any).Razorpay) return resolve();
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Razorpay"));
+        document.body.appendChild(script);
+      });
+      await ensureRazorpay();
+
+      const keyId = process.env.REACT_APP_RAZORPAY_KEY_ID;
+      if (!keyId) throw new Error("Razorpay key not configured");
+
+      // 5) Open Razorpay
+      const options = {
+        key: keyId,
+        amount: partnerPlan.amount * 100,
+        currency: "INR",
+        name: "Quantum Sports",
+        description: `${partnerPlan.name}`,
+        order_id: orderResp.data.id,
+        handler: async (response: any) => {
+          try {
+            const verifyResp = await membershipService.verifyMembershipPayment({
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              orderId: response.razorpay_order_id,
+              membershipId: membershipResp.id,
+            });
+            if (!verifyResp.success) throw new Error("Verification failed");
+            setSelectedMembershipId(membershipResp.id);
+            toast.success("Plan activated. You can now add a venue.");
+            setIsAddCartOpen(true);
+          } catch (err: any) {
+            toast.error(err?.message || "Payment verification failed");
+          } finally {
+            setIsPurchasingPlan(false);
+          }
+        },
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        theme: { color: "#2563eb" },
+        modal: {
+          ondismiss: function () {
+            toast("Payment cancelled");
+            setIsPurchasingPlan(false);
+          },
+        },
+      } as any;
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function (resp: any) {
+        toast.error(`Payment failed: ${resp?.error?.description || "Unknown error"}`);
+        setIsPurchasingPlan(false);
+      });
+      rzp.open();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || "Failed to start payment");
+      setIsPurchasingPlan(false);
+    }
+  };
+
+  const handleSelectRevenueShare = async () => {
+    try {
+      if (!user?.id) {
+        toast.error("Please login to continue.");
+        return;
+      }
+      setIsPlanModalOpen(false);
+      setIsPurchasingPlan(true);
+
+      // Fetch plans and find Revenue Share
+      const plansResp = await membershipService.getMembershipPlans();
+      if (!plansResp.success || !Array.isArray(plansResp.data)) {
+        throw new Error("Unable to fetch plans");
+      }
+      const revenuePlan =
+        plansResp.data.find((p) => p.name.toLowerCase() === "revenue share") ||
+        plansResp.data.find((p) => p.name.toLowerCase().includes("revenue"));
+      if (!revenuePlan) {
+        throw new Error("Revenue Share plan not found");
+      }
+
+      // Create membership record for Revenue Share (no payment/order)
+      const membershipResp = await membershipService.createMembership({
+        userId: user.id,
+        planId: revenuePlan.id,
+      });
+      if (!membershipResp.success || !membershipResp.id) {
+        throw new Error("Failed to create revenue share membership");
+      }
+
+      setSelectedMembershipId(membershipResp.id);
+      toast.success("Revenue Share model selected. You can now add a venue.");
+      setIsAddCartOpen(true);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || "Failed to set Revenue Share plan");
+    } finally {
+      setIsPurchasingPlan(false);
+    }
   };
 
   const handleEditVenue = (venue: Venue) => {
@@ -155,7 +310,7 @@ const PartnerVenues: React.FC = () => {
   if (selectedVenueForDetails) {
     return (
       <DashboardLayout userRole="partner">
-        <VenueDetailsManagement 
+        <VenueDetailsManagement
           venue={selectedVenueForDetails}
           onBack={handleCloseVenueDetails}
         />
@@ -178,16 +333,16 @@ const PartnerVenues: React.FC = () => {
           <div className="flex items-center space-x-4">
             <button
               onClick={handleOpenAddCart}
-              disabled={createVenueMutation.isPending}
+              disabled={createVenueMutation.isPending || isPurchasingPlan}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {createVenueMutation.isPending ? (
+              {createVenueMutation.isPending || isPurchasingPlan ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Plus className="h-4 w-4" />
               )}
               <span>
-                {createVenueMutation.isPending ? "Creating..." : "Add Venue"}
+                {createVenueMutation.isPending || isPurchasingPlan ? "Processing..." : "Add Venue"}
               </span>
             </button>
           </div>
@@ -227,9 +382,9 @@ const PartnerVenues: React.FC = () => {
         {!isLoading && !error && venues && venues.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {venues.map((venue: Venue) => (
-              <VenueCard 
-                key={venue.id} 
-                venue={venue} 
+              <VenueCard
+                key={venue.id}
+                venue={venue}
                 onEdit={() => handleEditVenue(venue)}
                 onDelete={() => venue.id && setDeletingVenue({ id: venue.id, name: venue.name })}
                 onView={() => handleViewVenueDetails(venue)}
@@ -270,6 +425,13 @@ const PartnerVenues: React.FC = () => {
         )}
 
         {/* Add Venue Modal */}
+        <VenuePlanModal
+          isOpen={isPlanModalOpen}
+          onClose={() => setIsPlanModalOpen(false)}
+          onSelectMonthly={handleSelectMonthlyPlan}
+          onSelectRevenueShare={handleSelectRevenueShare}
+        />
+
         <AddCart
           isOpen={isAddCartOpen}
           onClose={handleCloseAddCart}

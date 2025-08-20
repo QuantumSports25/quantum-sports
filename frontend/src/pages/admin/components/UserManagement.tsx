@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Edit, Trash2, User as UserIcon } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, User as UserIcon, X, Phone, Mail } from 'lucide-react';
 import { AdminComponentProps } from '../types/adminTypes';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { adminService } from '../../../services/adminService';
 import { User } from '../../../types';
+import { toast } from 'react-hot-toast';
+import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
+import ModalPortal from '../../../components/common/ModalPortal';
 
 const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [viewUser, setViewUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -19,13 +25,13 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('🚀 Calling real API endpoint: /auth/users?role=user');
       const usersData = await adminService.getAllUsers();
-      
+
       // Filter only regular users (not partners)
       const regularUsers = usersData.filter(user => user.role === 'user');
-      
+
       if (regularUsers.length > 0) {
         setUsers(regularUsers);
         console.log(`✅ Loaded ${regularUsers.length} users from API`);
@@ -65,6 +71,21 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
     );
   }
 
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setDeletingId(userId);
+      await adminService.deleteUser(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      toast.success('User deleted successfully');
+    } catch (err: any) {
+      console.error('Failed to delete user:', err);
+      toast.error(err?.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-gray-800 border border-gray-700 rounded-xl">
@@ -82,7 +103,7 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                   className="bg-gray-700 text-white placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <button 
+              <button
                 onClick={fetchUsers}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
@@ -143,14 +164,23 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button className="p-1 text-blue-400 hover:text-blue-300">
+                          <button className="p-1 text-blue-400 hover:text-blue-300" onClick={() => setViewUser(user)}>
                             <Eye className="h-4 w-4" />
                           </button>
                           <button className="p-1 text-green-400 hover:text-green-300">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button className="p-1 text-red-400 hover:text-red-300">
-                            <Trash2 className="h-4 w-4" />
+                          <button
+                            onClick={() => setConfirmDelete({ id: user.id, name: user.name })}
+                            disabled={deletingId === user.id}
+                            className="p-1 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete user"
+                          >
+                            {deletingId === user.id ? (
+                              <span className="text-xs text-gray-400">Deleting...</span>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -180,6 +210,51 @@ const UserManagement: React.FC<AdminComponentProps> = ({ mockData }) => {
           </div>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && handleDeleteUser(confirmDelete.id)}
+        title="Delete User"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This action cannot be undone.`}
+        isLoading={!!deletingId}
+      />
+      {viewUser && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setViewUser(null); }}>
+            <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+              <button onClick={() => setViewUser(null)} aria-label="Close" className="absolute right-3 top-3 rounded-full p-1 text-gray-500 hover:bg-gray-100">
+                <X className="h-5 w-5" />
+              </button>
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">User Details</h3>
+                <p className="text-sm text-gray-600">Full information about the selected user</p>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-gray-900">{viewUser.name}</div>
+                    <div className="text-xs text-gray-500 capitalize">Role: {viewUser.role}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Mail className="h-4 w-4" />
+                  <span className="text-sm">{viewUser.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Phone className="h-4 w-4" />
+                  <span className="text-sm">{viewUser.phone || 'Not provided'}</span>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button onClick={() => setViewUser(null)} className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-900">Close</button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 };

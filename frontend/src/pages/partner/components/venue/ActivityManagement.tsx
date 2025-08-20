@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Edit3, Trash2, Users, Tag, DollarSign, Loader2 } from "lucide-react";
+import { Plus, Edit3, Trash2, Users, Tag,  Loader2 } from "lucide-react";
 import { Venue } from "../../../../types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
@@ -153,7 +153,7 @@ const ActivityManagement: React.FC<ActivityManagementProps> = ({ venue }) => {
                     {activity.name}
                   </h3>
                   <div className="flex items-center text-gray-400 text-sm">
-                    <DollarSign className="h-4 w-4 mr-1" />
+                    {/* <DollarSign className="h-4 w-4 mr-1" /> */}
                     <span>₹{activity.start_price_per_hour}/hour</span>
                   </div>
                 </div>

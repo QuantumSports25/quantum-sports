@@ -13,7 +13,7 @@ const PartnerRegisterPage: React.FC = () => {
     confirmPassword: "",
     phone: "",
     companyName: "",
-    subscriptionType: "fixed" as "fixed" | "revenue",
+    subscriptionType: "fixed",
     gstNumber: "",
     websiteUrl: "",
   });
@@ -205,10 +205,10 @@ const PartnerRegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="subscriptionType" className="block text-sm font-semibold text-white mb-2">
+              {/* <label htmlFor="subscriptionType" className="block text-sm font-semibold text-white mb-2">
                 Subscription Type
-              </label>
-              <select
+              </label> */}
+              {/* <select
                 id="subscriptionType"
                 name="subscriptionType"
                 required
@@ -221,7 +221,7 @@ const PartnerRegisterPage: React.FC = () => {
               >
                 <option value="fixed">Fixed Monthly (₹5,000/month)</option>
                 <option value="revenue">Revenue Share</option>
-              </select>
+              </select> */}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

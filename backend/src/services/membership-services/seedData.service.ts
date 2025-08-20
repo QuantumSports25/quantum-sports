@@ -5,15 +5,7 @@ const prisma = new PrismaClient();
 export class SeedDataService {
   static async seedMembershipPlans() {
     try {
-      // Check if membership plans already exist
-      const existingPlans = await prisma.membershipPlan.findMany();
-      
-      if (existingPlans.length > 0) {
-        console.log('Membership plans already exist, skipping seed...');
-        return existingPlans;
-      }
-
-      console.log('Seeding membership plans...');
+      console.log('Seeding membership plans (add missing and sync changes)...');
 
       const membershipPlans = [
         {
@@ -33,17 +25,69 @@ export class SeedDataService {
           forRole: 'user' as any,
           durationDays: 365, // 1 year
           isActive: true,
+        },
+        {
+          name:'Partner Membership',
+          description:'Get started with premium venue adding experience',
+          amount:4999,
+          credits:4999,
+          forRole:'partner' as any,
+          durationDays:30,
+          isActive:true,
+        },
+        {
+          name:'Revenue Share',
+          description:'Get started with premium and low commission sports booking experience',
+          amount:0,
+          credits:0,
+          forRole:'partner' as any,
+          durationDays:30,
+          isActive:true,
         }
       ];
 
-      const createdPlans = await Promise.all(
-        membershipPlans.map(plan => 
-          prisma.membershipPlan.create({ data: plan })
-        )
-      );
+      let createdCount = 0;
+      let updatedCount = 0;
 
-      console.log(`✅ Created ${createdPlans.length} membership plans`);
-      return createdPlans;
+      for (const plan of membershipPlans) {
+        const existing = await prisma.membershipPlan.findFirst({
+          where: {
+            name: plan.name,
+            forRole: plan.forRole as any,
+          },
+        });
+
+        if (!existing) {
+          await prisma.membershipPlan.create({ data: plan });
+          createdCount += 1;
+          continue;
+        }
+
+        const needsUpdate =
+          existing.description !== plan.description ||
+          existing.amount !== plan.amount ||
+          existing.credits !== plan.credits ||
+          existing.durationDays !== plan.durationDays ||
+          existing.isActive !== plan.isActive;
+
+        if (needsUpdate) {
+          await prisma.membershipPlan.update({
+            where: { id: existing.id },
+            data: {
+              description: plan.description,
+              amount: plan.amount,
+              credits: plan.credits,
+              durationDays: plan.durationDays,
+              isActive: plan.isActive,
+            },
+          });
+          updatedCount += 1;
+        }
+      }
+
+      const totalPlans = await prisma.membershipPlan.findMany();
+      console.log(`✅ Seeding done. Created: ${createdCount}, Updated: ${updatedCount}, Total plans now: ${totalPlans.length}`);
+      return totalPlans;
     } catch (error) {
       console.error('Error seeding membership plans:', error);
       throw error;

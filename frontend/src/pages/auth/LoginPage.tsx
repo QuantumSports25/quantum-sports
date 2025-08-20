@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "../../services/authService";
@@ -10,17 +10,58 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const videoSourcesRef = useRef<string[]>(["/videos/video.mp4", "/videos/sign_up_2.mp4"]);
+  const [activeSourceIndex, setActiveSourceIndex] = useState(0);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
   const { getAndClearRoute, getLastRoute } = useLastRouteRedirect();
 
-  // Determine the redirect path from location state OR route history
+  // Lazy-load the video when it becomes visible
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShouldLoadVideo(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(container);
+    const fallbackTimer = window.setTimeout(() => setShouldLoadVideo(true), 2000);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallbackTimer);
+    };
+  }, []);
+
+  // Try autoplay once ready
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl || !shouldLoadVideo) return;
+    const handleReady = () => {
+      videoEl
+        .play()
+        .catch((err) => console.log("Autoplay blocked or failed:", err));
+    };
+    videoEl.addEventListener("canplay", handleReady);
+    videoEl.addEventListener("loadeddata", handleReady);
+    return () => {
+      videoEl.removeEventListener("canplay", handleReady);
+      videoEl.removeEventListener("loadeddata", handleReady);
+    };
+  }, [shouldLoadVideo]);
+
+  // Determine redirect path
   const fromLocationState = location.state?.from?.pathname;
   const loginIntent = location.state?.intent;
   const lastTrackedRoute = getLastRoute();
-
-  // Priority: location state > tracked route > default
   const redirectPath = fromLocationState || lastTrackedRoute || "/";
 
   // Login mutation
@@ -29,39 +70,27 @@ const LoginPage: React.FC = () => {
       authService.login(credentials),
     onSuccess: (response: {
       success: boolean;
-      data?: {
-        user: any;
-        token: string;
-      };
+      data?: { user: any; token: string };
       message?: string;
     }) => {
       if (response.success && response.data) {
         login(response.data.user, response.data.token);
 
-        // Determine where to redirect
         let finalRedirectPath = "/";
-
         switch (loginIntent) {
           case "proceed_to_payment":
-            // For payment intent, try to go back to the original route
             finalRedirectPath = getAndClearRoute() || "/booking";
             break;
           case "protected_route_access":
           case "role_required":
-            // Use the original route or fallback to tracked route
             finalRedirectPath = fromLocationState || getAndClearRoute() || "/";
             break;
           default:
-            // For normal login, use the best available redirect path
             finalRedirectPath = redirectPath;
-            // Clear the tracked route since we're using it
-            if (lastTrackedRoute) {
-              getAndClearRoute();
-            }
+            if (lastTrackedRoute) getAndClearRoute();
             break;
         }
 
-        // Ensure we don't redirect to login pages
         const authPages = [
           "/login",
           "/register",
@@ -83,13 +112,13 @@ const LoginPage: React.FC = () => {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     loginMutation.mutate({ email, password });
   };
 
-  // Optional: Show a context-aware message based on login intent
+  // Context-aware login messages
   useEffect(() => {
     switch (loginIntent) {
       case "proceed_to_payment":
@@ -104,86 +133,37 @@ const LoginPage: React.FC = () => {
         );
         break;
       default:
-        // Clear any existing error for normal login
         setError("");
     }
   }, [loginIntent]);
 
   return (
     <div className="min-h-screen flex pt-16">
-      {" "}
-      {/* Added pt-16 for top padding */}
       {/* Left Side - Video Background */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        {/* Sports Video Background - Working Implementation */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
-          {/* Primary Video */}
+        <div ref={videoContainerRef} className="absolute inset-0 w-full h-full overflow-hidden">
           <video
             className="absolute inset-0 w-full h-full object-cover"
             autoPlay
             loop
             muted
             playsInline
-            preload="auto"
-            onError={(e) => {
-              console.log("Video failed to load:", e);
-              // Fallback to next video or image
-              const video = e.target as HTMLVideoElement;
-              const parent = video.parentElement;
-              if (parent) {
-                parent.style.backgroundImage = `
-                  linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(17,24,39,0.9) 100%),
-                  url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
-                `;
-                parent.style.backgroundSize = "cover";
-                parent.style.backgroundPosition = "center";
-              }
+            preload={shouldLoadVideo ? "auto" : "none"}
+            ref={videoRef}
+            src={shouldLoadVideo ? videoSourcesRef.current[activeSourceIndex] : undefined}
+            onError={() => {
+              setActiveSourceIndex((idx) =>
+                idx + 1 < videoSourcesRef.current.length ? idx + 1 : idx
+              );
             }}
-          >
-            <source src="/videos/video.mp4" type="video/mp4" />
-            <source src="/videos/video.mp4" type="video/mp4" />
-          </video>
-
-          {/* Fallback: Try YouTube embed if video fails */}
-          <iframe
-            className="absolute inset-0 w-full h-full"
-            src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playlist=dQw4w9WgXcQ&start=0"
-            title="Login Sports Video"
-            frameBorder="0"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            style={{ display: "none" }}
-            onLoad={(e) => {
-              // Show iframe if video fails
-              const iframe = e.target as HTMLIFrameElement;
-              const video = iframe.parentElement?.querySelector("video");
-              if (video && video.readyState === 0) {
-                iframe.style.display = "block";
-                video.style.display = "none";
-              }
-            }}
-          ></iframe>
-
-          {/* Final Fallback: Static Sports Image */}
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage: `
-                linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(17,24,39,0.8) 100%),
-                url('https://images.pexels.com/photos/7991178/pexels-photo-7991178.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop')
-              `,
-              zIndex: -1,
-            }}
-          ></div>
+          />
         </div>
 
-        {/* Overlay for better text readability */}
+        {/* Overlays */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
-
-        {/* Interactive gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 via-blue-900/30 to-green-900/40 mix-blend-multiply"></div>
 
-        {/* Content */}
+        {/* Left-side content */}
         <div className="absolute top-[320px] inset-0 flex flex-col justify-center items-start p-16 text-white z-10 mt-auto">
           <div className="transform hover:scale-105 transition-transform duration-300">
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
@@ -195,7 +175,6 @@ const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Interactive Stats */}
           <div className="grid grid-cols-2 gap-6 mt-8">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
               <div className="text-3xl font-bold text-yellow-400">1000+</div>
@@ -208,6 +187,7 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-black px-4 py-8">
         <div className="w-full max-w-md">
@@ -271,12 +251,6 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <Link
-                to="/login-otp"
-                className="text-yellow-400 hover:text-yellow-300 text-sm"
-              >
-                Login with OTP
-              </Link>
               <Link
                 to="/forgot-password"
                 className="text-yellow-400 hover:text-yellow-300 text-sm"

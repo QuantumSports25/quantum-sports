@@ -51,10 +51,10 @@ const Footer: React.FC = () => {
       iconColor: "text-blue-400",
       dotColor: "bg-blue-400",
       links: [
-        { to: "/venues", label: "Find Venues" },
+        { to: "/booking", label: "Find Venues" },
         { to: "/events", label: "Events" },
         { to: "/shop", label: "Shop" },
-        { to: "/partner", label: "Become Partner" },
+        { to: "/partner/register", label: "Become Partner" },
       ],
     },
     {
@@ -63,10 +63,10 @@ const Footer: React.FC = () => {
       iconColor: "text-green-400",
       dotColor: "bg-green-400",
       links: [
-        { to: "/about", label: "About Us" },
-        { to: "/careers", label: "Careers" },
-        { to: "/blog", label: "Blog" },
-        { to: "/press", label: "Press Kit" },
+        { to: "/", label: "About Us" },
+        { to: "/", label: "Careers" },
+        { to: "/", label: "Blog" },
+        { to: "/", label: "Press Kit" },
       ],
     },
     {
@@ -75,7 +75,7 @@ const Footer: React.FC = () => {
       iconColor: "text-purple-400",
       dotColor: "bg-purple-400",
       links: [
-        { to: "/help", label: "Help Center" },
+        { to: "/contact", label: "Help Center" },
         { to: "/contact", label: "Contact Us" },
         { to: "/privacy", label: "Privacy Policy" },
         { to: "/terms", label: "Terms & Conditions" },

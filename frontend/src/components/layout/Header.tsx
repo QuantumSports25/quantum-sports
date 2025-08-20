@@ -149,46 +149,6 @@ const Header: React.FC = () => {
             {/* Desktop User Actions */}
             {isAuthenticated ? (
               <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
-                {/* Quick Access Links - Hidden on smaller desktop screens, shown on larger */}
-                <div className="hidden xl:flex items-center space-x-2">
-                  <Link
-                    to="/contact"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                      isActivePath('/contact')
-                        ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                    }`}
-                    title="Contact Us"
-                  >
-                    <Phone className="h-4 w-4" />
-                    <span className="hidden 2xl:inline">Contact</span>
-                  </Link>
-                  <Link
-                    to="/wallet"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                      isActivePath('/wallet')
-                        ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                    }`}
-                    title="Wallet"
-                  >
-                    <Wallet className="h-4 w-4" />
-                    <span className="hidden 2xl:inline">Wallet</span>
-                  </Link>
-                  <Link
-                    to="/bookings"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                      isActivePath('/bookings')
-                        ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                    }`}
-                    title="My Bookings"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    <span className="hidden 2xl:inline">Bookings</span>
-                  </Link>
-                </div>
-
                 {/* User Menu Dropdown */}
                 <div className="relative" ref={userMenuRef}>
                   <button
@@ -206,9 +166,8 @@ const Header: React.FC = () => {
                       </p>
                       <p className="text-gray-400 text-xs capitalize">{user?.role}</p>
                     </div>
-                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
-                      isUserMenuOpen ? 'rotate-180' : ''
-                    }`} />
+                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isUserMenuOpen ? 'rotate-180' : ''
+                      }`} />
                   </button>
 
                   {/* Dropdown Menu */}
@@ -227,17 +186,16 @@ const Header: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Quick Access - Visible on smaller desktop screens */}
-                      <div className="xl:hidden px-2 py-2 border-b border-gray-700/50">
+                      {/* Quick Access */}
+                      <div className="px-2 py-2 border-b border-gray-700/50">
                         <div className="space-y-1">
                           <Link
                             to="/contact"
                             onClick={closeUserMenu}
-                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                              isActivePath('/contact')
-                                ? 'bg-blue-900/50 text-blue-400'
-                                : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                            }`}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActivePath('/contact')
+                              ? 'bg-blue-900/50 text-blue-400'
+                              : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                              }`}
                           >
                             <Phone className="h-4 w-4" />
                             <span>Contact Us</span>
@@ -245,11 +203,10 @@ const Header: React.FC = () => {
                           <Link
                             to="/wallet"
                             onClick={closeUserMenu}
-                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                              isActivePath('/wallet')
-                                ? 'bg-blue-900/50 text-blue-400'
-                                : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                            }`}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActivePath('/wallet')
+                              ? 'bg-blue-900/50 text-blue-400'
+                              : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                              }`}
                           >
                             <Wallet className="h-4 w-4" />
                             <span>Wallet</span>
@@ -257,11 +214,10 @@ const Header: React.FC = () => {
                           <Link
                             to="/bookings"
                             onClick={closeUserMenu}
-                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                              isActivePath('/bookings')
-                                ? 'bg-blue-900/50 text-blue-400'
-                                : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                            }`}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActivePath('/bookings')
+                              ? 'bg-blue-900/50 text-blue-400'
+                              : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                              }`}
                           >
                             <Calendar className="h-4 w-4" />
                             <span>My Bookings</span>
@@ -353,189 +309,186 @@ const Header: React.FC = () => {
       </header>
 
       {/* Mobile Menu Overlay */}
-      <div className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out ${
-        isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-      }`}>
+      <div className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}>
         <div
-          className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
           onClick={closeMenu}
         ></div>
 
         {/* Mobile Menu Panel */}
-        <div className={`absolute top-16 left-0 right-0 bg-gray-900/98 backdrop-blur-xl border-b border-gray-700/50 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto transform transition-all duration-300 ease-in-out ${
-          isMenuOpen 
-            ? 'translate-y-0 opacity-100' 
-            : '-translate-y-4 opacity-0'
-        }`}>
-            <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
-              {/* Mobile Navigation */}
-              <nav className="space-y-2 mb-6">
-                {/* Partner Link - Mobile */}
-                <Link
-                  to="/partner/register"
-                  onClick={closeMenu}
-                  className="block px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg mb-4"
-                >
-                  Join as Partner
-                </Link>
-                {isAuthenticated && (
-                  <>
-                    <Link
-                      to="/contact"
-                      onClick={closeMenu}
-                      className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/contact')
-                        ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                        : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                        }`}
-                    >
-                      Contact Us
-                    </Link>
-                    <Link
-                      to="/wallet"
-                      onClick={closeMenu}
-                      className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/wallet')
-                        ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                        : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                        }`}
-                    >
-                      Wallet
-                    </Link>
-                    <Link
-                      to="/bookings"
-                      onClick={closeMenu}
-                      className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/bookings')
-                        ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                        : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                        }`}
-                    >
-                      My Bookings
-                    </Link>
-                  </>
-                )}
-                <Link
-                  to="/membership"
-                  onClick={closeMenu}
-                  className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/membership')
-                    ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                    : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                    }`}
-                >
-                  Membership
-                </Link>
-                <Link
-                  to="/venues"
-                  onClick={closeMenu}
-                  className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/venues')
-                    ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                    : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                    }`}
-                >
-                  Venues
-                </Link>
-                <Link
-                  to="/events"
-                  onClick={closeMenu}
-                  className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/events')
-                    ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                    : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                    }`}
-                >
-                  Events
-                </Link>
-                <Link
-                  to="/shop"
-                  onClick={closeMenu}
-                  className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/shop')
-                    ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
-                    : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
-                    }`}
-                >
-                  Shop
-                </Link>
-              </nav>
+        <div className={`absolute top-16 left-0 right-0 bg-gray-900/98 backdrop-blur-xl border-b border-gray-700/50 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto transform transition-all duration-300 ease-in-out ${isMenuOpen
+          ? 'translate-y-0 opacity-100'
+          : '-translate-y-4 opacity-0'
+          }`}>
+          <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+            {/* Mobile Navigation */}
+            <nav className="space-y-2 mb-6">
+              {/* Partner Link - Mobile */}
+              <Link
+                to="/partner/register"
+                onClick={closeMenu}
+                className="block px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg mb-4"
+              >
+                Join as Partner
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/contact"
+                    onClick={closeMenu}
+                    className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/contact')
+                      ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                      : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                      }`}
+                  >
+                    Contact Us
+                  </Link>
+                  <Link
+                    to="/wallet"
+                    onClick={closeMenu}
+                    className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/wallet')
+                      ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                      : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                      }`}
+                  >
+                    Wallet
+                  </Link>
+                  <Link
+                    to="/bookings"
+                    onClick={closeMenu}
+                    className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/bookings')
+                      ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                      : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                      }`}
+                  >
+                    My Bookings
+                  </Link>
+                </>
+              )}
+              <Link
+                to="/membership"
+                onClick={closeMenu}
+                className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/membership')
+                  ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                  : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                  }`}
+              >
+                Membership
+              </Link>
+              <Link
+                to="/venues"
+                onClick={closeMenu}
+                className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/venues')
+                  ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                  : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                  }`}
+              >
+                Venues
+              </Link>
+              <Link
+                to="/events"
+                onClick={closeMenu}
+                className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/events')
+                  ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                  : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                  }`}
+              >
+                Events
+              </Link>
+              <Link
+                to="/shop"
+                onClick={closeMenu}
+                className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/shop')
+                  ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                  : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                  }`}
+              >
+                Shop
+              </Link>
+            </nav>
 
-              {/* Mobile User Actions */}
-              <div className="border-t border-gray-700/50 pt-4">
-                {isAuthenticated ? (
-                  <div className="space-y-4">
-                    {/* User Info */}
-                    <div className="flex items-center space-x-3 px-4 py-3 bg-gray-800/50 backdrop-blur-md rounded-xl border border-gray-700/50 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-200 truncate">Hi, {user?.name}</p>
-                        <p className="text-sm text-gray-400 capitalize">{user?.role}</p>
-                      </div>
+            {/* Mobile User Actions */}
+            <div className="border-t border-gray-700/50 pt-4">
+              {isAuthenticated ? (
+                <div className="space-y-4">
+                  {/* User Info */}
+                  <div className="flex items-center space-x-3 px-4 py-3 bg-gray-800/50 backdrop-blur-md rounded-xl border border-gray-700/50 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-white" />
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-200 truncate">Hi, {user?.name}</p>
+                      <p className="text-sm text-gray-400 capitalize">{user?.role}</p>
+                    </div>
+                  </div>
 
-                    {/* Menu Items */}
-                    <div className="space-y-2">
+                  {/* Menu Items */}
+                  <div className="space-y-2">
+                    <Link
+                      to="/profile"
+                      onClick={closeMenu}
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl transition-all duration-200 touch-manipulation"
+                    >
+                      <Settings className="h-5 w-5 flex-shrink-0" />
+                      <span>Profile Settings</span>
+                    </Link>
+
+                    {user?.role === 'partner' && (
                       <Link
-                        to="/profile"
+                        to="/partner/dashboard"
                         onClick={closeMenu}
                         className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl transition-all duration-200 touch-manipulation"
                       >
-                        <Settings className="h-5 w-5 flex-shrink-0" />
-                        <span>Profile Settings</span>
+                        <BarChart3 className="h-5 w-5 flex-shrink-0" />
+                        <span>Partner Dashboard</span>
                       </Link>
+                    )}
 
-                      {user?.role === 'partner' && (
-                        <Link
-                          to="/partner/dashboard"
-                          onClick={closeMenu}
-                          className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl transition-all duration-200 touch-manipulation"
-                        >
-                          <BarChart3 className="h-5 w-5 flex-shrink-0" />
-                          <span>Partner Dashboard</span>
-                        </Link>
-                      )}
-
-                      {user?.role === 'admin' && (
-                        <Link
-                          to="/admin/dashboard"
-                          onClick={closeMenu}
-                          className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl transition-all duration-200 touch-manipulation"
-                        >
-                          <Shield className="h-5 w-5 flex-shrink-0" />
-                          <span>Admin Panel</span>
-                        </Link>
-                      )}
-
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-3 text-red-400 hover:bg-red-900/20 rounded-xl transition-all duration-200 w-full text-left touch-manipulation"
+                    {user?.role === 'admin' && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={closeMenu}
+                        className="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl transition-all duration-200 touch-manipulation"
                       >
-                        <LogOut className="h-5 w-5 flex-shrink-0" />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <Link
-                      to="/login"
-                      onClick={closeMenu}
-                      className="block px-6 py-3 text-center text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl font-medium transition-all duration-200 touch-manipulation"
+                        <Shield className="h-5 w-5 flex-shrink-0" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center space-x-3 px-4 py-3 text-red-400 hover:bg-red-900/20 rounded-xl transition-all duration-200 w-full text-left touch-manipulation"
                     >
-                      Login
-                    </Link>
-                    <Link
-                      to="/register"
-                      onClick={closeMenu}
-                      className="block px-6 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg touch-manipulation"
-                    >
-                      Sign Up
-                    </Link>
+                      <LogOut className="h-5 w-5 flex-shrink-0" />
+                      <span>Logout</span>
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    to="/login"
+                    onClick={closeMenu}
+                    className="block px-6 py-3 text-center text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-xl font-medium transition-all duration-200 touch-manipulation"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={closeMenu}
+                    className="block px-6 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg touch-manipulation"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
-     
+      </div>
+
     </>
   );
 };

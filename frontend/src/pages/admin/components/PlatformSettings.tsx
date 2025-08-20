@@ -1,12 +1,14 @@
 import React from 'react';
-import { Save } from 'lucide-react';
+// import { Save } from 'lucide-react';
+import AccountSettings from '../../../components/common/AccountSettings';
 
 const PlatformSettings: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+      <AccountSettings variant="dark" />
+      {/* <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-white mb-6">Platform Settings</h3>
-        
+
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -78,7 +80,7 @@ const PlatformSettings: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

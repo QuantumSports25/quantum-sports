@@ -14,6 +14,11 @@ router.post('/partner-login', AuthController.partnerLogin);
 router.post('/admin-login', AuthController.adminLogin);
 router.get('/users', AuthController.getAllUsersByRole);
 
+// Profile routes
+router.get('/profile', authMiddleware, AuthController.getProfile);
+router.put('/profile', authMiddleware, AuthController.updateProfile);
+router.post('/change-password', authMiddleware, AuthController.changePassword);
+
 // Admin user management
 router.delete('/admin/users/:id', authMiddleware, isAdmin, AdminUsersController.deleteUser);
 

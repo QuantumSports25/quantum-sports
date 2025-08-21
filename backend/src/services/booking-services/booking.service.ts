@@ -3,9 +3,9 @@ import {
   Booking,
   BookingStatus,
   BookingType,
-  customerDetails,
+  CustomerDetails,
   EventBooking,
-  paymentDetails,
+  PaymentDetails,
   PaymentStatus,
   VenueBooking,
 } from "../../models/booking.model";
@@ -123,8 +123,8 @@ export class BookingService {
         cancelledAt: booking.cancelledAt,
         bookingStatus: booking.bookingStatus as BookingStatus,
         paymentStatus: booking.paymentStatus as PaymentStatus,
-        customerDetails: booking?.customerDetails as unknown as customerDetails,
-        paymentDetails: booking?.paymentDetails as unknown as paymentDetails,
+        customerDetails: booking?.customerDetails as unknown as CustomerDetails,
+        paymentDetails: booking?.paymentDetails as unknown as PaymentDetails,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
       };

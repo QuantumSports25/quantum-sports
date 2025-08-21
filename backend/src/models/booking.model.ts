@@ -11,8 +11,8 @@ export interface Booking {
   cancelledAt?: Date | null;
   bookingStatus: BookingStatus;
   paymentStatus: PaymentStatus;
-  customerDetails: customerDetails;
-  paymentDetails?: paymentDetails;
+  customerDetails: CustomerDetails;
+  paymentDetails?: PaymentDetails;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -56,14 +56,14 @@ export enum PaymentStatus {
   Refunded = "refunded",
 }
 
-export interface customerDetails {
+export interface CustomerDetails {
   customerId: string;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
 }
 
-export interface paymentDetails {
+export interface PaymentDetails {
   paymentAmount: number;
   paymentMethod: PaymentMethod
   paymentDate: Date;

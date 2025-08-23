@@ -106,6 +106,28 @@ export class ShopController {
     }
   }
 
+  static async unlockInventoryByOrderId(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({ error: "Missing order ID" });
+      }
+
+      const order = await ShopService.getShopOrderById(id);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      await ShopService.unlockProductInventory(order.products, order.userId, false);
+      
+      return res.status(200).json({ message: "Inventory unlocked successfully" });
+    } catch (error) {
+      console.error("Error unlocking inventory:", error);
+      return res.status(500).json({ error: "Failed to unlock inventory" });
+    }
+  }
+
   static async createOrderBeforePayment(req: Request, res: Response) {
     try {
       const orderData = req.body as ShopOrder;

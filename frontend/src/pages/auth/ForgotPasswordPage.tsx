@@ -11,11 +11,12 @@ const ForgotPasswordPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
+  // Fix: include 'email' in dependency array to satisfy exhaustive-deps
   useEffect(() => {
     if (!email && user?.email) {
       setEmail(user.email);
     }
-  }, [user?.email]);
+  }, [user?.email, email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,5 +118,3 @@ const ForgotPasswordPage: React.FC = () => {
 };
 
 export default ForgotPasswordPage;
-
-

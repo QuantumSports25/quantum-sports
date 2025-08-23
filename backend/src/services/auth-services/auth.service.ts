@@ -204,6 +204,9 @@ export class AuthService {
 
       // Generate OTP
       const otp = EmailService.generateOTP();
+      if (process.env["NODE_ENV"] !== "production") {
+        console.log(`[DEV] Login OTP for ${email}: ${otp}`);
+      }
       const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
       // Save OTP to database
@@ -345,6 +348,69 @@ export class AuthService {
   // Add a specific partner login method for clarity
   static async partnerLogin(email: string, password: string) {
     return this.loginUser(email, password, "partner");
+  }
+
+  static async initiatePasswordReset(email: string) {
+    try {
+      const user = await prisma.user.findUnique({ where: { email } });
+      // Always return success to avoid user enumeration
+      if (!user) {
+        return { success: true };
+      }
+
+      const code = EmailService.generateOTP();
+      if (process.env["NODE_ENV"] !== "production") {
+        console.log(`[DEV] Password reset code for ${email}: ${code}`);
+      }
+      const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { otp: code, otpExpiry },
+      });
+
+      await EmailService.sendPasswordResetOTP(email, code, 15);
+      return { success: true };
+    } catch (error) {
+      console.error("initiatePasswordReset error:", error);
+      return { success: true };
+    }
+  }
+
+  static async verifyPasswordResetCode(email: string, code: string) {
+    try {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user || !user.otp || !user.otpExpiry) {
+        return { success: false, error: "Invalid or expired code" };
+      }
+      if (user.otp !== code || user.otpExpiry < new Date()) {
+        return { success: false, error: "Invalid or expired code" };
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: "Invalid or expired code" };
+    }
+  }
+
+  static async resetPasswordWithCode(email: string, code: string, newPassword: string) {
+    try {
+      const verify = await this.verifyPasswordResetCode(email, code);
+      if (!verify.success) {
+        return verify;
+      }
+      if (newPassword.length < 6) {
+        return { success: false, error: "Password must be at least 6 characters long" };
+      }
+      const hashed = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({
+        where: { email },
+        data: { password: hashed, otp: null, otpExpiry: null },
+      });
+      return { success: true };
+    } catch (error) {
+      console.error("resetPasswordWithCode error:", error);
+      return { success: false, error: "Reset failed" };
+    }
   }
 
   static async getUserById(userId: string): Promise<User | null> {

@@ -19,6 +19,11 @@ router.get('/profile', authMiddleware, AuthController.getProfile);
 router.put('/profile', authMiddleware, AuthController.updateProfile);
 router.post('/change-password', authMiddleware, AuthController.changePassword);
 
+// Password reset via OTP
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/verify-reset-code', AuthController.verifyResetCode);
+router.post('/reset-password', AuthController.resetPassword);
+
 // Admin user management
 router.delete('/admin/users/:id', authMiddleware, isAdmin, AdminUsersController.deleteUser);
 

@@ -76,12 +76,15 @@ export const authService = {
     return response.data;
   },
 
-  // Reset password
-  resetPassword: async (token: string, newPassword: string): Promise<ApiResponse<string>> => {
-    const response = await api.post('/auth/reset-password', {
-      token,
-      newPassword,
-    });
+  // Verify reset code (OTP)
+  verifyResetCode: async (email: string, code: string): Promise<ApiResponse<string>> => {
+    const response = await api.post('/auth/verify-reset-code', { email, code });
+    return response.data;
+  },
+
+  // Reset password with email + code (OTP)
+  resetPassword: async (email: string, code: string, newPassword: string): Promise<ApiResponse<string>> => {
+    const response = await api.post('/auth/reset-password', { email, code, newPassword });
     return response.data;
   },
 

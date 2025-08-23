@@ -204,6 +204,54 @@ export class AuthController {
     }
   }
 
+  static async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body as { email?: string };
+      if (!email) {
+        return res.status(400).json({ success: false, message: "Email is required" });
+      }
+      const result = await AuthService.initiatePasswordReset(email);
+      if (result.success) {
+        return res.status(200).json({ success: true, message: "If the email exists, a reset code has been sent" });
+      }
+      return res.status(200).json({ success: true, message: "If the email exists, a reset code has been sent" });
+    } catch (error) {
+      return res.status(200).json({ success: true, message: "If the email exists, a reset code has been sent" });
+    }
+  }
+
+  static async verifyResetCode(req: Request, res: Response) {
+    try {
+      const { email, code } = req.body as { email?: string; code?: string };
+      if (!email || !code) {
+        return res.status(400).json({ success: false, message: "Email and code are required" });
+      }
+      const result = await AuthService.verifyPasswordResetCode(email, code);
+      if (!result.success) {
+        return res.status(400).json({ success: false, message: result.error || "Invalid or expired code" });
+      }
+      return res.status(200).json({ success: true, message: "Code verified" });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: "Invalid or expired code" });
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { email, code, newPassword } = req.body as { email?: string; code?: string; newPassword?: string };
+      if (!email || !code || !newPassword) {
+        return res.status(400).json({ success: false, message: "Email, code and new password are required" });
+      }
+      const result = await AuthService.resetPasswordWithCode(email, code, newPassword);
+      if (!result.success) {
+        return res.status(400).json({ success: false, message: result.error || "Reset failed" });
+      }
+      return res.status(200).json({ success: true, message: "Password has been reset" });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: "Reset failed" });
+    }
+  }
+
   static async registerPartner(req: Request, res: Response) {
     try {
       console.log("===== Partner Registration Request Debug =====");

@@ -1,3 +1,5 @@
+import { PaymentMethod } from "./payment.model";
+
 export interface Booking {
   id?: string;
   userId: string;
@@ -9,8 +11,8 @@ export interface Booking {
   cancelledAt?: Date | null;
   bookingStatus: BookingStatus;
   paymentStatus: PaymentStatus;
-  customerDetails: customerDetails;
-  paymentDetails?: paymentDetails;
+  customerDetails: CustomerDetails;
+  paymentDetails?: PaymentDetails;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -54,18 +56,18 @@ export enum PaymentStatus {
   Refunded = "refunded",
 }
 
-export interface customerDetails {
+export interface CustomerDetails {
   customerId: string;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
 }
 
-export interface paymentDetails {
-  paymentAmount: number;
-  paymentMethod: string;
-  paymentDate: Date;
-  isRefunded: boolean;
+export interface PaymentDetails {
+  paymentAmount?: number;
+  paymentMethod?: PaymentMethod;
+  paymentDate?: Date;
+  isRefunded?: boolean;
   refundDate?: Date;
   refundTime?: string;
   paymentTransactionTime?: string;

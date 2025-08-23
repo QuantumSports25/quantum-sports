@@ -58,6 +58,7 @@ export class PaymentService {
     orderId,
     bookingId,
     membershipId,
+    shopOrderId,
     amount,
     currency = Currency.INR,
     paymentMethod = PaymentMethod.Razorpay,
@@ -66,6 +67,7 @@ export class PaymentService {
     orderId: string;
     bookingId?: string;
     membershipId?: string;
+    shopOrderId?: string;
     amount: number;
     currency: Currency;
     paymentMethod: PaymentMethod;
@@ -88,6 +90,10 @@ export class PaymentService {
 
       if (membershipId) {
         transactionData.membershipId = membershipId;
+      }
+      
+      if (shopOrderId) {
+        transactionData.shopOrderId = shopOrderId;
       }
 
       const transaction = await prisma.transactionHistory.create({

@@ -19,6 +19,7 @@ model User {
   role      String    @default("user") @db.VarChar(20)
   otp       String?   @db.VarChar(10)
   otpExpiry DateTime?
+  shippingAddress Json? 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -191,6 +192,7 @@ model TransactionHistory {
   // Either bookingId or membershipId will be set
   bookingId     String?         @unique
   membershipId  String?         @unique
+  shopOrderId   String?         @unique
 
   paymentAmount   Decimal       @db.Decimal(10, 2)
   paymentCurrency String        @db.VarChar(3)
@@ -219,10 +221,10 @@ model MembershipPlan {
   id           String   @id @default(uuid())
   name         String
   description  String?
-  amount       Int // what user pays
-  credits      Int // what goes to wallet
+  amount       Int 
+  credits      Int
   forRole      UserRole
-  durationDays Int // expiration duration in days
+  durationDays Int 
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -294,4 +296,37 @@ enum Category {
   Business
   Fitness
   Art
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  inventory   Int
+  lock        Json?
+  category    String[]
+  images      String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sellerId    String
+}
+
+model ShopOrder {
+  id              String   @id @default(uuid())
+  products        Json     // stores [{ productId, quantity }]
+  shippingAddress Json     // stores ShoppingAddress object
+  totalAmount     Float
+  totalItems      Int
+  orderStatus     BookingStatus 
+  paymentStatus   PaymentStatus
+  paymentDetails  Json
+  customerDetails Json
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  userId          String
+  sellerId        String
 }

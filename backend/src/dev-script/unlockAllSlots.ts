@@ -1,4 +1,4 @@
-import { SlotAvailability } from "../models/venue.model";
+import { SlotAvailability } from "../controllers/event-controller/models/venue.model";
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 

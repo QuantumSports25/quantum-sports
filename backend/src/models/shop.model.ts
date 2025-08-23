@@ -1,5 +1,9 @@
-import { BookingStatus, PaymentDetails, PaymentStatus } from "./booking.model";
-
+import {
+  BookingStatus,
+  CustomerDetails,
+  PaymentDetails,
+  PaymentStatus,
+} from "./booking.model";
 
 export interface Product {
   id?: string;
@@ -7,32 +11,25 @@ export interface Product {
   description: string;
   price: number;
   images: string[];
-  discount: {
-    code: string;
-    percentage?: number;
-    amount?: number;
-  }[];
   inventory: number;
+  lock?: ShopInventoryLock[];
   category: string[];
   createdAt?: Date;
   updatedAt?: Date;
   sellerId: string;
 }
 
+export interface ShopInventoryLock {
+  quantity: number;
+  userId: string;
+  lockedAt: Date;
+}
+
 export interface ShopOrder {
   id?: string;
-  products: {
-    productId: string;
-    quantity: number;
-  }[];
-  discount: {
-    code: string;
-    percentage?: number;
-    amount?: number;
-  }[];
+  products: ShopProduct[];
   shippingAddress: ShoppingAddress;
   totalAmount: number;
-  totalDiscount: number;
   totalItems: number;
   confirmedAt?: Date;
   cancelledAt?: Date;
@@ -40,10 +37,17 @@ export interface ShopOrder {
   orderStatus: BookingStatus;
   paymentStatus: PaymentStatus;
   paymentDetails: PaymentDetails;
+  customerDetails: CustomerDetails;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
-  sellerIds: string;
+  sellerId: string;
+}
+
+export interface ShopProduct {
+  productId: string;
+  quantity: number;
+  name: string;
 }
 
 export interface ShoppingAddress {

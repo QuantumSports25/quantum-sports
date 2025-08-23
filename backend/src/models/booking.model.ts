@@ -64,10 +64,10 @@ export interface CustomerDetails {
 }
 
 export interface PaymentDetails {
-  paymentAmount: number;
-  paymentMethod: PaymentMethod
-  paymentDate: Date;
-  isRefunded: boolean;
+  paymentAmount?: number;
+  paymentMethod?: PaymentMethod;
+  paymentDate?: Date;
+  isRefunded?: boolean;
   refundDate?: Date;
   refundTime?: string;
   paymentTransactionTime?: string;

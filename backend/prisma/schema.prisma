@@ -303,8 +303,8 @@ model Product {
   name        String
   description String
   price       Float
-  discount    Json     // stores { code, percentage?, amount? }
   inventory   Int
+  lock        Json?
   category    String[]
   images      String[]
   createdAt   DateTime @default(now())
@@ -315,14 +315,13 @@ model Product {
 model ShopOrder {
   id              String   @id @default(uuid())
   products        Json     // stores [{ productId, quantity }]
-  discount        Json     // stores array of discount objects
   shippingAddress Json     // stores ShoppingAddress object
   totalAmount     Float
-  totalDiscount   Float
   totalItems      Int
   orderStatus     BookingStatus 
   paymentStatus   PaymentStatus
-  paymentDetails Json
+  paymentDetails  Json
+  customerDetails Json
   confirmedAt     DateTime?
   cancelledAt     DateTime?
   completedAt     DateTime?

@@ -11,6 +11,7 @@ import slotRoutes from "./routes/venue-routes/slot.routes";
 import devScriptRoutes from "./routes/devScriptRoutes";
 import eventRoutes from "./routes/event.routes";
 import statsRoutes from "./routes/stats.routes";
+import shopRoutes from "./routes/shop.routes";
 
 // Setup
 
@@ -95,6 +96,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/devscript", devScriptRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/shop", shopRoutes);
 
 app.get("/", (_req, res) => {
   res.send("Backend is running");

@@ -144,6 +144,7 @@ class MembershipService {
                                 capturedAt: new Date(),
                                 razorpayPaymentId: paymentId,
                                 membershipId: membership.id,
+                                name: membershipPlan.name,
                             },
                         });
                     }
@@ -163,6 +164,7 @@ class MembershipService {
                             data: {
                                 captured: false,
                                 capturedAt: null,
+                                name: membershipPlan.name
                             },
                         });
                     }
@@ -171,6 +173,36 @@ class MembershipService {
         }
         catch (error) {
             console.error("Error handling membership payment:", error);
+            throw error;
+        }
+    }
+    static async activateFreeMembership({ membershipId, planId, }) {
+        try {
+            await (0, retryFunction_1.withRetries)(async () => {
+                await prisma.$transaction(async (tx) => {
+                    const membership = await tx.membership.findUnique({ where: { id: membershipId } });
+                    const membershipPlan = await tx.membershipPlan.findUnique({ where: { id: planId } });
+                    if (!membership || !membershipPlan) {
+                        throw new Error("Membership or membership plan not found");
+                    }
+                    await tx.membership.update({
+                        where: { id: membershipId },
+                        data: {
+                            isActive: true,
+                            startedAt: new Date(),
+                            expiresAt: membership.expiresAt || null,
+                            paymentDetails: {
+                                paymentMethod: "Free",
+                                paymentDate: new Date(),
+                                isRefunded: false,
+                            },
+                        },
+                    });
+                });
+            }, 3);
+        }
+        catch (error) {
+            console.error("Error activating free membership:", error);
             throw error;
         }
     }

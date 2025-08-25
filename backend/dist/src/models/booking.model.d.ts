@@ -1,25 +1,40 @@
+import { PaymentMethod } from "./payment.model";
 export interface Booking {
     id?: string;
     userId: string;
-    partnerId: string;
-    venueId: string;
-    facilityId: string;
-    slotIds: string[];
-    activityId: string;
+    type: BookingType;
+    bookingData: EventBooking | VenueBooking;
     amount: number;
-    duration: number;
-    startTime: string;
-    endTime: string;
-    numberOfSlots: number;
     bookedDate: Date;
     confirmedAt?: Date | null;
     cancelledAt?: Date | null;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
-    customerDetails: customerDetails;
-    paymentDetails?: paymentDetails;
+    customerDetails: CustomerDetails;
+    paymentDetails?: PaymentDetails;
     createdAt?: Date;
     updatedAt?: Date;
+}
+export declare enum BookingType {
+    Event = "event",
+    Venue = "venue"
+}
+export interface EventBooking {
+    type: BookingType.Event;
+    eventId: string;
+    seats: number;
+}
+export interface VenueBooking {
+    type: BookingType.Venue;
+    venueId: string;
+    partnerId: string;
+    facilityId: string;
+    slotIds: string[];
+    activityId: string;
+    duration: number;
+    startTime: string;
+    endTime: string;
+    numberOfSlots: number;
 }
 export declare enum BookingStatus {
     Pending = "pending",
@@ -34,17 +49,17 @@ export declare enum PaymentStatus {
     Failed = "failed",
     Refunded = "refunded"
 }
-export interface customerDetails {
+export interface CustomerDetails {
     customerId: string;
     customerName: string;
     customerPhone?: string;
     customerEmail?: string;
 }
-export interface paymentDetails {
-    paymentAmount: number;
-    paymentMethod: string;
-    paymentDate: Date;
-    isRefunded: boolean;
+export interface PaymentDetails {
+    paymentAmount?: number;
+    paymentMethod?: PaymentMethod;
+    paymentDate?: Date;
+    isRefunded?: boolean;
     refundDate?: Date;
     refundTime?: string;
     paymentTransactionTime?: string;

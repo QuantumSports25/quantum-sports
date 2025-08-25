@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 export declare class BookingController {
-    static createBookingBeforePayment(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static createVenueBookingBeforePayment(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static createBookingPayment(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static verifyPaymentAndBooking(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getBookingById(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;

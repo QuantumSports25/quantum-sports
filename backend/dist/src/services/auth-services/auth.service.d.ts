@@ -144,6 +144,11 @@ export declare class AuthService {
         token?: never;
     }>;
     static getUserById(userId: string): Promise<User | null>;
-    static getAllUsers(page: number, offset: number, role?: UserRole): Promise<User[]>;
+    static updateUserProfile(userId: string, data: {
+        name?: string;
+        phone?: string;
+    }): Promise<User>;
+    static changeUserPassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
+    static getAllUsers(limit: number, offset: number, role?: UserRole): Promise<User[]>;
 }
 //# sourceMappingURL=auth.service.d.ts.map

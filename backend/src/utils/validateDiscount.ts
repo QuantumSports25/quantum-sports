@@ -1,11 +1,9 @@
 import { Product } from "../models/shop.model";
 
+type DiscountRequest = { productId: string; code: string; percentage?: number; amount?: number };
+
 const validateDiscount = async (
-  discounts: {
-    code: string;
-    percentage?: number;
-    amount?: number;
-  }[],
+  discounts: DiscountRequest[],
   productsData: Product[]
 ): Promise<boolean> => {
   if (

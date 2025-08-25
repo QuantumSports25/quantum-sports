@@ -1,9 +1,9 @@
 import { Membership } from "../../models/membership.model";
 import { PaymentMethod } from "../../models/payment.model";
 import { withRetries } from "../../utils/retryFunction";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 export class MembershipService {
   static async createMembership(data: {
     userId: string;

@@ -1,3 +1,5 @@
+import { SortDirection } from "../../models/event.model";
+import { IUiTransaction } from "../../models/payment.model";
 export declare class WalletService {
     static getWalletBalance(userId: string): Promise<number>;
     static updateUserWallet(userId: string, credits: number): Promise<{
@@ -21,5 +23,6 @@ export declare class WalletService {
         userId: string;
         balance: number;
     }) | null>;
+    static getWalletHistory(userId: string, page: number, pageSize: number, sortDirection?: SortDirection, createdBefore?: string, createdAfter?: string): Promise<IUiTransaction[]>;
 }
 //# sourceMappingURL=wallet.services.d.ts.map

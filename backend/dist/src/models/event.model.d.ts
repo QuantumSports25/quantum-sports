@@ -1,6 +1,6 @@
 import { Location } from "./venue.model";
 export interface Event {
-    id?: string | undefined;
+    id?: string;
     title: string;
     description?: string | undefined;
     date: Date;
@@ -9,7 +9,8 @@ export interface Event {
     venue: string;
     venueName: string;
     capacity: number;
-    registeredUsers: number;
+    bookedSeats: number;
+    registeredUsers: string[];
     ticketPrice: number;
     category: Category;
     images: string[];

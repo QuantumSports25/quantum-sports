@@ -1,3 +1,4 @@
+import { ShoppingAddress } from "./shop.model";
 export interface User {
     id: string;
     name: string;
@@ -6,6 +7,8 @@ export interface User {
     role: UserRole;
     phone?: string;
     partnerDetails?: partnerDetails;
+    membership?: MembershipSummary;
+    shippingAddress: ShoppingAddress[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -24,5 +27,15 @@ export interface partnerDetails {
 export declare enum subscriptionType {
     REVNUE = "revnue_share",
     MEMBERSHIP = "membership"
+}
+export interface MembershipSummary {
+    id: string;
+    planId: string;
+    planName: string;
+    amount: number;
+    credits: number;
+    startedAt: Date;
+    expiresAt?: Date | null;
+    isActive: boolean;
 }
 //# sourceMappingURL=user.model.d.ts.map

@@ -4,12 +4,12 @@ export declare class SeedDataService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         description: string | null;
         amount: number;
         credits: number;
         forRole: import(".prisma/client").$Enums.UserRole;
         durationDays: number;
-        isActive: boolean;
     }[]>;
     static seedAllData(): Promise<void>;
 }

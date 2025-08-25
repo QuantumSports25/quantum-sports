@@ -12,14 +12,14 @@ class WalletController {
             const balance = await wallet_services_1.WalletService.getWalletBalance(userId);
             return res.status(200).json({
                 success: true,
-                balance: balance
+                balance: balance,
             });
         }
         catch (error) {
             console.error("Error fetching wallet balance:", error);
             return res.status(500).json({
                 success: false,
-                error: "Internal server error"
+                error: "Internal server error",
             });
         }
     }
@@ -32,14 +32,14 @@ class WalletController {
             const wallet = await wallet_services_1.WalletService.getUserWallet(userId);
             return res.status(200).json({
                 success: true,
-                data: wallet
+                data: wallet,
             });
         }
         catch (error) {
             console.error("Error fetching user wallet:", error);
             return res.status(500).json({
                 success: false,
-                error: "Internal server error"
+                error: "Internal server error",
             });
         }
     }
@@ -47,19 +47,21 @@ class WalletController {
         try {
             const { userId, credits } = req.body;
             if (!userId || !credits) {
-                return res.status(400).json({ message: "User ID and credits are required" });
+                return res
+                    .status(400)
+                    .json({ message: "User ID and credits are required" });
             }
             const success = await wallet_services_1.WalletService.addCredits(userId, credits);
             if (success) {
                 return res.status(200).json({
                     success: true,
-                    message: "Credits added successfully"
+                    message: "Credits added successfully",
                 });
             }
             else {
                 return res.status(400).json({
                     success: false,
-                    message: "Failed to add credits"
+                    message: "Failed to add credits",
                 });
             }
         }
@@ -67,7 +69,7 @@ class WalletController {
             console.error("Error adding credits:", error);
             return res.status(500).json({
                 success: false,
-                error: "Internal server error"
+                error: "Internal server error",
             });
         }
     }
@@ -75,19 +77,21 @@ class WalletController {
         try {
             const { userId, credits } = req.body;
             if (!userId || !credits) {
-                return res.status(400).json({ message: "User ID and credits are required" });
+                return res
+                    .status(400)
+                    .json({ message: "User ID and credits are required" });
             }
             const success = await wallet_services_1.WalletService.deductCredits(userId, credits);
             if (success) {
                 return res.status(200).json({
                     success: true,
-                    message: "Credits deducted successfully"
+                    message: "Credits deducted successfully",
                 });
             }
             else {
                 return res.status(400).json({
                     success: false,
-                    message: "Failed to deduct credits - insufficient balance"
+                    message: "Failed to deduct credits - insufficient balance",
                 });
             }
         }
@@ -95,7 +99,33 @@ class WalletController {
             console.error("Error deducting credits:", error);
             return res.status(500).json({
                 success: false,
-                error: "Internal server error"
+                error: "Internal server error",
+            });
+        }
+    }
+    static async getWalletHistory(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { page = 1, pageSize = 10, sort, } = req.query;
+            console.log("Fetching wallet history for user:", userId);
+            let { createdBefore, createdAfter } = req.query;
+            if (!userId) {
+                return res.status(400).json({ message: "User ID is required" });
+            }
+            const history = await wallet_services_1.WalletService.getWalletHistory(userId, page, pageSize, sort, createdBefore ?? "", createdAfter ?? "");
+            return res.status(200).json({
+                success: true,
+                data: history,
+                total: history.length,
+                pageSize: pageSize,
+                page: page,
+            });
+        }
+        catch (error) {
+            console.error("Error fetching wallet history:", error);
+            return res.status(500).json({
+                success: false,
+                error: "Internal server error",
             });
         }
     }

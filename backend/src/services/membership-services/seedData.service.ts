@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class SeedDataService {
   static async seedMembershipPlans() {

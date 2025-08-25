@@ -19,5 +19,9 @@ export declare class MembershipService {
         paymentId: string;
         expiresAt: Date | null;
     }): Promise<void>;
+    static activateFreeMembership({ membershipId, planId, }: {
+        membershipId: string;
+        planId: string;
+    }): Promise<void>;
 }
 //# sourceMappingURL=membership.service.d.ts.map

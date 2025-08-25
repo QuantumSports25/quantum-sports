@@ -1,4 +1,5 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../../config/db";
 import {
   Booking,
   BookingStatus,
@@ -14,7 +15,7 @@ import { PaymentMethod } from "../../models/payment.model";
 import { withRetries } from "../../utils/retryFunction";
 import { EventService } from "../event-services/event.services";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class BookingService {
   static createBooking = (booking: Booking) => {

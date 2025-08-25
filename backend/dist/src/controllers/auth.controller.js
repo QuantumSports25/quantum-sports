@@ -424,15 +424,16 @@ class AuthController {
     }
     static async getAllUsersByRole(req, res) {
         try {
-            const role = req.params["role"];
-            const { page = 0, offset = 10 } = req.query;
+            const role = req.query["role"];
+            console.log(role);
+            const { limit = 20, offset = 0 } = req.query;
             if (role && !Object.values(user_model_1.UserRole).includes(role)) {
                 return res.status(400).json({
                     success: false,
                     message: `Invalid role. Must be one of: ${Object.values(user_model_1.UserRole).join(", ")}`,
                 });
             }
-            const users = await auth_service_1.AuthService.getAllUsers(page, offset, role);
+            const users = await auth_service_1.AuthService.getAllUsers(limit, offset, role);
             if (users && users.length > 0) {
                 return res.status(200).json({
                     success: true,
@@ -454,6 +455,58 @@ class AuthController {
                 message: "Internal server error while retrieving users",
                 error: error instanceof Error ? error.message : "Unknown error",
             });
+        }
+    }
+    static async getProfile(req, res) {
+        try {
+            const authReq = req;
+            const userId = authReq.user?.userId;
+            if (!userId) {
+                return res.status(401).json({ success: false, message: "Unauthorized" });
+            }
+            const user = await auth_service_1.AuthService.getUserById(userId);
+            return res.status(200).json({ success: true, data: user, message: "Profile fetched" });
+        }
+        catch (error) {
+            return res.status(500).json({ success: false, message: "Failed to fetch profile" });
+        }
+    }
+    static async updateProfile(req, res) {
+        try {
+            const authReq = req;
+            const userId = authReq.user?.userId;
+            if (!userId) {
+                return res.status(401).json({ success: false, message: "Unauthorized" });
+            }
+            const body = req.body;
+            const updatePayload = {};
+            if (typeof body.name === 'string')
+                updatePayload.name = body.name;
+            if (typeof body.phone === 'string')
+                updatePayload.phone = body.phone;
+            const updated = await auth_service_1.AuthService.updateUserProfile(userId, updatePayload);
+            return res.status(200).json({ success: true, data: updated, message: "Profile updated" });
+        }
+        catch (error) {
+            return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Failed to update profile" });
+        }
+    }
+    static async changePassword(req, res) {
+        try {
+            const authReq = req;
+            const userId = authReq.user?.userId;
+            if (!userId) {
+                return res.status(401).json({ success: false, message: "Unauthorized" });
+            }
+            const { currentPassword, newPassword } = req.body;
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ success: false, message: "Both currentPassword and newPassword are required" });
+            }
+            await auth_service_1.AuthService.changeUserPassword(userId, currentPassword, newPassword);
+            return res.status(200).json({ success: true, data: "Password changed", message: "Password changed" });
+        }
+        catch (error) {
+            return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Failed to change password" });
         }
     }
 }

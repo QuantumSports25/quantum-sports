@@ -8,7 +8,7 @@ const prisma = new client_1.PrismaClient();
 class CreateVenueController {
     static async createVenue(req, res) {
         try {
-            const { name, highlight, start_price_per_hour, partnerId, city, state, images, country, zip, phone, mapLocationLink, lat, lang, } = req.body;
+            const { name, highlight, start_price_per_hour, partnerId, city, state, images, country, zip, phone, mapLocationLink, lat, lang, membershipId, } = req.body;
             if (!name ||
                 !highlight ||
                 !start_price_per_hour ||
@@ -56,6 +56,27 @@ class CreateVenueController {
             const result = await prisma.$transaction(async (tx) => {
                 const createdVenue = await venue_service_1.VenueService.createVenue(venueData, tx);
                 const mapping = await partnerVenueMap_service_1.PartnerVenueMapService.createMapping(partnerId, createdVenue.id, tx);
+                if (membershipId) {
+                    const membership = await tx.membership.findUnique({ where: { id: membershipId } });
+                    if (!membership) {
+                        throw new Error("Membership not found for provided membershipId");
+                    }
+                    if (membership.userId !== partnerId) {
+                        throw new Error("Membership does not belong to this partner");
+                    }
+                    const existingDetails = membership.paymentDetails || {};
+                    const updatedDetails = {
+                        ...existingDetails,
+                        usedVenueId: createdVenue.id,
+                        usedAt: new Date().toISOString(),
+                    };
+                    await tx.membership.update({
+                        where: { id: membershipId },
+                        data: {
+                            paymentDetails: updatedDetails,
+                        },
+                    });
+                }
                 return { createdVenue, mapping };
             });
             if (!result) {

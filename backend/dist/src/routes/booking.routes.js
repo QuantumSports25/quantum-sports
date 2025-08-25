@@ -4,7 +4,7 @@ const express_1 = require("express");
 const booking_contoller_1 = require("../controllers/booking-controller/booking.contoller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
-router.post('/create-booking-before-payment/:paymentMethod', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.createBookingBeforePayment);
+router.post('/create-booking-before-payment/:paymentMethod', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.createVenueBookingBeforePayment);
 router.post('/booking-payment/:bookingId', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.createBookingPayment);
 router.post('/verify-payment-and-booking/:id', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.verifyPaymentAndBooking);
 router.get('/get-booking/:id', auth_middleware_1.authMiddleware, booking_contoller_1.BookingController.getBookingById);

@@ -6,5 +6,7 @@ export declare class EventController {
     static getAllEvents(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getEventsByCategory(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static archiveEvent(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static createEventBookingBeforePayment(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static freeSeats(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 }
 //# sourceMappingURL=event.controller.d.ts.map

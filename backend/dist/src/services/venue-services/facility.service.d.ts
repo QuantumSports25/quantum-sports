@@ -7,9 +7,9 @@ export declare class FacilityService {
         updatedAt: Date;
         start_price_per_hour: import("@prisma/client/runtime/library").Decimal;
         images: string[];
-        activityId: string;
         startTime: string;
         endTime: string;
+        activityId: string;
         isAvailable: boolean;
         isFillingFast: boolean;
     }>;
@@ -20,9 +20,9 @@ export declare class FacilityService {
         updatedAt: Date;
         start_price_per_hour: import("@prisma/client/runtime/library").Decimal;
         images: string[];
-        activityId: string;
         startTime: string;
         endTime: string;
+        activityId: string;
         isAvailable: boolean;
         isFillingFast: boolean;
     }[]>;
@@ -33,9 +33,9 @@ export declare class FacilityService {
         updatedAt: Date;
         start_price_per_hour: import("@prisma/client/runtime/library").Decimal;
         images: string[];
-        activityId: string;
         startTime: string;
         endTime: string;
+        activityId: string;
         isAvailable: boolean;
         isFillingFast: boolean;
     } | null>;
@@ -46,9 +46,9 @@ export declare class FacilityService {
         updatedAt: Date;
         start_price_per_hour: import("@prisma/client/runtime/library").Decimal;
         images: string[];
-        activityId: string;
         startTime: string;
         endTime: string;
+        activityId: string;
         isAvailable: boolean;
         isFillingFast: boolean;
     }>;
@@ -59,9 +59,9 @@ export declare class FacilityService {
         updatedAt: Date;
         start_price_per_hour: import("@prisma/client/runtime/library").Decimal;
         images: string[];
-        activityId: string;
         startTime: string;
         endTime: string;
+        activityId: string;
         isAvailable: boolean;
         isFillingFast: boolean;
     }>;

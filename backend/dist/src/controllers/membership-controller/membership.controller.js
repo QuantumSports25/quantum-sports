@@ -42,10 +42,17 @@ class MembershipController {
                     ? new Date(Date.now() + membershipPlan.durationDays * 24 * 60 * 60 * 1000)
                     : null,
             });
+            if (membershipPlan.amount === 0) {
+                await membership_service_1.MembershipService.activateFreeMembership({
+                    membershipId: membership,
+                    planId: membershipPlan.id,
+                });
+            }
             return res.status(201).json({
                 success: true,
                 message: "Membership created successfully",
                 id: membership,
+                activated: membershipPlan.amount === 0,
             });
         }
         catch (error) {
@@ -95,6 +102,7 @@ class MembershipController {
                 amount: Number(amount),
                 currency: payment_model_1.Currency.INR,
                 paymentMethod: payment_model_1.PaymentMethod.Razorpay,
+                userId: membership.userId,
             });
             if (!transaction) {
                 console.log("Transaction creation failed for membership order");

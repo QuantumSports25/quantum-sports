@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { EmailService } from "./email.service";
 import { User, UserRole, MembershipSummary } from "../../models/user.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class AuthService {
   static async registerUser(data: {

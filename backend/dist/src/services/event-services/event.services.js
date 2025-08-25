@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventService = void 0;
 const client_1 = require("@prisma/client");
+const booking_service_1 = require("../booking-services/booking.service");
 const prisma = new client_1.PrismaClient();
 class EventService {
     static async createEvent(event) {
@@ -16,7 +17,8 @@ class EventService {
                     venue: event.venue,
                     venueName: event.venueName,
                     capacity: event.capacity,
-                    registeredUsers: 0,
+                    bookedSeats: event.bookedSeats ?? 0,
+                    registeredUsers: event.registeredUsers ?? [],
                     ticketPrice: event.ticketPrice,
                     category: event.category,
                     images: event.images,
@@ -53,6 +55,7 @@ class EventService {
                 venue: event.venue,
                 venueName: event.venueName,
                 capacity: event.capacity,
+                bookedSeats: event.bookedSeats,
                 registeredUsers: event.registeredUsers,
                 ticketPrice: event.ticketPrice,
                 category: event.category,
@@ -71,7 +74,7 @@ class EventService {
             throw error;
         }
     }
-    static async getEventsByCategory({ category, page, limit, sort, date, archived }) {
+    static async getEventsByCategory({ category, page, limit, sort, date, archived, }) {
         try {
             const events = await prisma.event.findMany({
                 where: { category, date: { gte: date }, archived },
@@ -91,6 +94,7 @@ class EventService {
                 venue: event.venue,
                 venueName: event.venueName,
                 capacity: event.capacity,
+                bookedSeats: event.bookedSeats,
                 registeredUsers: event.registeredUsers,
                 ticketPrice: event.ticketPrice,
                 category: event.category,
@@ -133,6 +137,7 @@ class EventService {
                 venue: event.venue,
                 venueName: event.venueName,
                 capacity: event.capacity,
+                bookedSeats: event.bookedSeats,
                 registeredUsers: event.registeredUsers,
                 ticketPrice: event.ticketPrice,
                 category: event.category,
@@ -163,7 +168,8 @@ class EventService {
                     venue: event.venue,
                     venueName: event.venueName,
                     capacity: event.capacity,
-                    registeredUsers: 0,
+                    bookedSeats: event.bookedSeats,
+                    registeredUsers: event.registeredUsers,
                     ticketPrice: event.ticketPrice,
                     category: event.category,
                     images: event.images,
@@ -197,6 +203,59 @@ class EventService {
         }
         catch (error) {
             console.error("Error archiving event:", error);
+            throw error;
+        }
+    }
+    static async createEventBeforePayment(booking, capacity, registeredUsers) {
+        try {
+            const res = await prisma.$transaction(async (tx) => {
+                const newBooking = await tx.booking.create({
+                    data: booking_service_1.BookingService.createBooking(booking),
+                });
+                await tx.event.update({
+                    where: {
+                        id: booking.bookingData.eventId,
+                        bookedSeats: {
+                            lte: capacity - booking.bookingData.seats,
+                        },
+                    },
+                    data: {
+                        bookedSeats: {
+                            increment: booking.bookingData.seats,
+                        },
+                        registeredUsers: {
+                            set: [...registeredUsers, booking.userId],
+                        },
+                    },
+                });
+                return newBooking;
+            });
+            return res;
+        }
+        catch (error) {
+            console.error("Error creating event booking before payment:", error);
+            throw error;
+        }
+    }
+    static async handleEventSeats(bookingId) {
+        try {
+            const booking = await booking_service_1.BookingService.getBookingById(bookingId);
+            if (!booking) {
+                return false;
+            }
+            const { eventId, seats } = booking.bookingData;
+            await prisma.$executeRaw `
+        UPDATE "Event"
+        SET 
+        "bookedSeats" = GREATEST("bookedSeats" - ${seats}, 0),
+        "registeredUsers" = array_remove("registeredUsers", ${booking.userId})
+        WHERE "id" = ${eventId}
+        AND ${booking.userId} = ANY("registeredUsers");
+      `;
+            return true;
+        }
+        catch (error) {
+            console.error("Error handling event seats:", error);
             throw error;
         }
     }

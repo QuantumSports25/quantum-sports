@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import { Facility } from "../../models/venue.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class FacilityService {
   static async createFacility(facility: Facility) {

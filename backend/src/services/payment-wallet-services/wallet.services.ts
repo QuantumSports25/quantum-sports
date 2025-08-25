@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import { SortDirection } from "../../models/event.model";
 import {
   Currency,
@@ -6,7 +6,7 @@ import {
   PaymentMethod,
 } from "../../models/payment.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class WalletService {
   static async getWalletBalance(userId: string): Promise<number> {

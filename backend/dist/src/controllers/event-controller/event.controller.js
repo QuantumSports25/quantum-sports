@@ -4,6 +4,9 @@ exports.EventController = void 0;
 const event_model_1 = require("../../models/event.model");
 const event_services_1 = require("../../services/event-services/event.services");
 const lodash_1 = require("lodash");
+const auth_service_1 = require("../../services/auth-services/auth.service");
+const booking_model_1 = require("../../models/booking.model");
+const payment_model_1 = require("../../models/payment.model");
 class EventController {
     static async createEvent(req, res) {
         try {
@@ -21,12 +24,12 @@ class EventController {
                 !Array.isArray(data.tags) ||
                 typeof data.featured !== "boolean" ||
                 !data?.mapLocationLink ||
-                city == null ||
-                state == null ||
-                country == null ||
-                pincode == null ||
-                lat == null ||
-                lang == null) {
+                !city ||
+                !state ||
+                !country ||
+                !pincode ||
+                !lat ||
+                !lang) {
                 return res.status(400).json({ error: "Invalid event data" });
             }
             const address = `${city}, ${state}, ${country}, ${pincode}`;
@@ -51,7 +54,8 @@ class EventController {
                 venue: data.venue,
                 venueName: data.venueName,
                 capacity: data.capacity,
-                registeredUsers: 0,
+                bookedSeats: data.bookedSeats || 0,
+                registeredUsers: data.registeredUsers || [],
                 ticketPrice: data.ticketPrice,
                 category: data.category,
                 images: data.images,
@@ -182,6 +186,92 @@ class EventController {
         }
         catch (error) {
             console.error("Error archiving event:", error);
+            return res
+                .status(500)
+                .json({ error: "Internal server error", details: error.message });
+        }
+    }
+    static async createEventBookingBeforePayment(req, res) {
+        try {
+            const paymentMethod = req.params["paymentMethod"];
+            const { eventId, seats } = req.body;
+            const bookingData = req.body;
+            if (!eventId ||
+                !seats ||
+                !bookingData.userId ||
+                !bookingData.amount ||
+                !bookingData.bookedDate) {
+                return res.status(400).json({ error: "Invalid booking data" });
+            }
+            if (!Object.values(payment_model_1.PaymentMethod).includes(paymentMethod)) {
+                return res.status(400).json({ message: "Invalid payment method" });
+            }
+            const [event, user] = await Promise.all([
+                event_services_1.EventService.getEventById(eventId),
+                auth_service_1.AuthService.getUserById(bookingData.userId),
+            ]);
+            if (!event || event.archived) {
+                return res.status(404).json({ error: "Event not found" });
+            }
+            if (event.bookedSeats + seats > event.capacity) {
+                return res.status(400).json({ error: "Not enough available seats" });
+            }
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+            const customerDetails = {
+                customerId: user.id,
+                customerName: user.name,
+                customerEmail: user.email ?? "",
+                customerPhone: user.phone ?? "",
+            };
+            const booking = {
+                userId: bookingData.userId,
+                type: booking_model_1.BookingType.Event,
+                bookingData: {
+                    type: booking_model_1.BookingType.Event,
+                    eventId,
+                    seats,
+                },
+                amount: bookingData.amount,
+                bookedDate: new Date(bookingData.bookedDate),
+                bookingStatus: booking_model_1.BookingStatus.Pending,
+                paymentStatus: booking_model_1.PaymentStatus.Initiated,
+                customerDetails: customerDetails,
+                paymentDetails: {
+                    paymentAmount: bookingData.amount,
+                    paymentMethod: paymentMethod,
+                    paymentDate: new Date(),
+                    isRefunded: false,
+                },
+            };
+            const createdBooking = await event_services_1.EventService.createEventBeforePayment(booking, event.capacity, event.registeredUsers || []);
+            return res.status(201).send({
+                message: "Booking created successfully",
+                data: createdBooking.id,
+            });
+        }
+        catch (error) {
+            console.error("Error creating event booking:", error);
+            return res
+                .status(500)
+                .json({ error: "Internal server error", details: error.message });
+        }
+    }
+    static async freeSeats(req, res) {
+        try {
+            const bookingId = req.params["bookingId"];
+            if (!bookingId) {
+                return res.status(400).json({ error: "Invalid booking ID" });
+            }
+            const success = await event_services_1.EventService.handleEventSeats(bookingId);
+            if (!success) {
+                return res.status(404).json({ error: "Booking not found" });
+            }
+            return res.status(200).json({ message: "Seats freed successfully" });
+        }
+        catch (error) {
+            console.error("Error freeing seats:", error);
             return res
                 .status(500)
                 .json({ error: "Internal server error", details: error.message });

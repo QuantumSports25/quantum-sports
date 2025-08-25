@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   Product,
   ShopInventoryLock,
@@ -16,7 +16,7 @@ import { PaymentMethod } from "../../models/payment.model";
 import { withRetries } from "../../utils/retryFunction";
 import { forEach } from "lodash";
 
-const prisma = new PrismaClient();
+import prisma from "../../config/db";
 
 export class ShopService {
   static async getAllProducts(page: number, pageSize: number) {

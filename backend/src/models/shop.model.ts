@@ -14,6 +14,7 @@ export interface Product {
   inventory: number;
   lock?: ShopInventoryLock[];
   category: string[];
+  discount?: { code: string; amount?: number; percentage?: number }[];
   createdAt?: Date;
   updatedAt?: Date;
   sellerId: string;

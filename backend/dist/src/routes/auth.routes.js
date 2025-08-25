@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_controller_1 = require("../controllers/auth.controller");
+const users_controller_1 = require("../controllers/admin/users.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 router.post('/register', auth_controller_1.AuthController.register);
 router.post('/login', auth_controller_1.AuthController.login);
@@ -10,6 +12,10 @@ router.post('/verify-otp', auth_controller_1.AuthController.verifyOTP);
 router.post('/register-partner', auth_controller_1.AuthController.registerPartner);
 router.post('/partner-login', auth_controller_1.AuthController.partnerLogin);
 router.post('/admin-login', auth_controller_1.AuthController.adminLogin);
-router.get('/users/:role', auth_controller_1.AuthController.getAllUsersByRole);
+router.get('/users', auth_controller_1.AuthController.getAllUsersByRole);
+router.get('/profile', auth_middleware_1.authMiddleware, auth_controller_1.AuthController.getProfile);
+router.put('/profile', auth_middleware_1.authMiddleware, auth_controller_1.AuthController.updateProfile);
+router.post('/change-password', auth_middleware_1.authMiddleware, auth_controller_1.AuthController.changePassword);
+router.delete('/admin/users/:id', auth_middleware_1.authMiddleware, auth_middleware_1.isAdmin, users_controller_1.AdminUsersController.deleteUser);
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map

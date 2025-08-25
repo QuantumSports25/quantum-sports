@@ -1,6 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PaymentStatus = exports.BookingStatus = void 0;
+exports.PaymentStatus = exports.BookingStatus = exports.BookingType = void 0;
+var BookingType;
+(function (BookingType) {
+    BookingType["Event"] = "event";
+    BookingType["Venue"] = "venue";
+})(BookingType || (exports.BookingType = BookingType = {}));
 var BookingStatus;
 (function (BookingStatus) {
     BookingStatus["Pending"] = "pending";

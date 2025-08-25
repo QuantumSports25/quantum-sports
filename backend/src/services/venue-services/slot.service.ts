@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import { Slot, SlotAvailability } from "../../models/venue.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class SlotService {
   static async createSlot(slot: Slot) {

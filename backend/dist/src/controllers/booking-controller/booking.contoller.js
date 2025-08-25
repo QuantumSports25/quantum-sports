@@ -9,28 +9,31 @@ const slot_service_1 = require("../../services/venue-services/slot.service");
 const auth_service_1 = require("../../services/auth-services/auth.service");
 const convertSlotTime_1 = require("../../utils/convertSlotTime");
 const wallet_services_1 = require("../../services/payment-wallet-services/wallet.services");
+const venue_service_1 = require("../../services/venue-services/venue.service");
+const event_services_1 = require("../../services/event-services/event.services");
 class BookingController {
-    static async createBookingBeforePayment(req, res) {
+    static async createVenueBookingBeforePayment(req, res) {
         try {
             const bookingData = req.body;
+            const data = req.body;
             const paymentMethod = req.params["paymentMethod"];
             if (!bookingData.userId ||
-                !bookingData.partnerId ||
-                !bookingData.venueId ||
-                !bookingData.facilityId ||
-                !bookingData.slotIds ||
-                !bookingData.activityId ||
+                !data.partnerId ||
+                !data.venueId ||
+                !data.facilityId ||
+                !data.slotIds ||
+                !data.activityId ||
                 !bookingData.amount ||
-                !bookingData.startTime ||
-                !bookingData.endTime ||
+                !data.startTime ||
+                !data.endTime ||
                 !bookingData.bookedDate) {
                 return res.status(400).json({ message: "Required fields are missing" });
             }
             if (!Object.values(payment_model_1.PaymentMethod).includes(paymentMethod)) {
                 return res.status(400).json({ message: "Invalid payment method" });
             }
-            const startTime = bookingData.startTime;
-            const endTime = bookingData.endTime;
+            const startTime = data.startTime;
+            const endTime = data.endTime;
             const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
             if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
                 return res.status(400).json({
@@ -51,19 +54,15 @@ class BookingController {
                     .json({ message: "Duration must be a multiple of 30" });
             }
             const numberOfSlots = duration / 30;
-            if (!Array.isArray(bookingData.slotIds) ||
-                bookingData.slotIds.length === 0) {
+            if (!Array.isArray(data.slotIds) || data.slotIds.length === 0) {
                 return res
                     .status(400)
                     .json({ message: "slotIds must be a non-empty array" });
             }
-            let allSlotsAvailable = false;
-            let partner = null;
-            let user = null;
-            await Promise.all([
-                (allSlotsAvailable = await slot_service_1.SlotService.areAllSlotsAvailable(bookingData.slotIds)),
-                (partner = await auth_service_1.AuthService.getUserById(bookingData.partnerId)),
-                (user = await auth_service_1.AuthService.getUserById(bookingData.userId)),
+            const [allSlotsAvailable, partner, user] = await Promise.all([
+                slot_service_1.SlotService.areAllSlotsAvailable(data.slotIds),
+                auth_service_1.AuthService.getUserById(data.partnerId),
+                auth_service_1.AuthService.getUserById(data.userId),
             ]);
             if (!allSlotsAvailable) {
                 return res.status(400).json({
@@ -84,16 +83,20 @@ class BookingController {
             };
             const booking = {
                 userId: bookingData.userId,
-                partnerId: bookingData.partnerId,
-                venueId: bookingData.venueId,
-                facilityId: bookingData.facilityId,
-                slotIds: bookingData.slotIds,
-                activityId: bookingData.activityId,
+                type: booking_model_1.BookingType.Venue,
+                bookingData: {
+                    type: booking_model_1.BookingType.Venue,
+                    facilityId: data.facilityId,
+                    slotIds: data.slotIds,
+                    activityId: data.activityId,
+                    partnerId: data.partnerId,
+                    venueId: data.venueId,
+                    duration: duration,
+                    numberOfSlots: numberOfSlots,
+                    startTime: startTime,
+                    endTime: endTime,
+                },
                 amount: bookingData.amount,
-                duration: duration,
-                numberOfSlots: numberOfSlots,
-                startTime: startTime,
-                endTime: endTime,
                 bookedDate: new Date(bookingData.bookedDate),
                 bookingStatus: booking_model_1.BookingStatus.Pending,
                 paymentStatus: booking_model_1.PaymentStatus.Initiated,
@@ -105,7 +108,7 @@ class BookingController {
                     isRefunded: false,
                 },
             };
-            const createdBooking = await booking_service_1.BookingService.createBookingBeforePayment(booking);
+            const createdBooking = await booking_service_1.BookingService.createVenueBookingBeforePayment(booking);
             return res.status(201).json({
                 message: "Booking created successfully",
                 data: createdBooking.id,
@@ -126,9 +129,6 @@ class BookingController {
                 return res.status(400).json({ message: "Booking ID is required" });
             }
             const booking = await booking_service_1.BookingService.getBookingById(bookingId);
-            if (!booking) {
-                return res.status(404).json({ message: "Booking not found" });
-            }
             if (booking.paymentStatus !== booking_model_1.PaymentStatus.Initiated ||
                 booking.bookingStatus !== booking_model_1.BookingStatus.Pending) {
                 return res.status(400).json({
@@ -155,9 +155,7 @@ class BookingController {
                     const order = await payment_service_1.PaymentService.createPaymentRazorpay({
                         amount: booking.amount,
                         bookingId: bookingId,
-                        venueId: booking.venueId,
                         customerId: booking.customerDetails.customerId,
-                        partnerId: booking.partnerId,
                         currency: payment_model_1.Currency.INR,
                     });
                     orderData = {
@@ -174,7 +172,8 @@ class BookingController {
                 bookingId: bookingId,
                 amount: booking.amount,
                 currency: payment_model_1.Currency.INR,
-                paymentMethod: payment_model_1.PaymentMethod.Razorpay,
+                paymentMethod: booking.paymentDetails.paymentMethod,
+                userId: booking.userId,
             });
             if (!transaction) {
             }
@@ -202,7 +201,9 @@ class BookingController {
             if (!booking) {
                 return res.status(404).json({ message: "Booking not found" });
             }
-            const paymentMethod = booking.paymentDetails?.paymentMethod || payment_model_1.PaymentMethod.Razorpay;
+            const paymentMethod = booking.paymentDetails?.paymentMethod === payment_model_1.PaymentMethod.Razorpay
+                ? payment_model_1.PaymentMethod.Razorpay
+                : payment_model_1.PaymentMethod.Wallet;
             let verified = false;
             if (paymentMethod == payment_model_1.PaymentMethod.Wallet) {
                 const transaction = await payment_service_1.PaymentService.getTransactionByOrderId(orderId);
@@ -236,6 +237,8 @@ class BookingController {
                     amount: booking.amount,
                     orderId,
                     paymentId,
+                    paymentMethod,
+                    type: booking.type,
                 });
                 throw new Error("Payment verification failed");
             }
@@ -245,6 +248,8 @@ class BookingController {
                 amount: booking.amount,
                 orderId,
                 paymentId,
+                paymentMethod,
+                type: booking.type,
             });
             return res.status(200).json({ message: "Payment verified successfully" });
         }
@@ -281,6 +286,19 @@ class BookingController {
                 return res.status(400).json({ message: "User ID is required" });
             }
             const bookings = await booking_service_1.BookingService.getBookingsByUserId(userId);
+            await Promise.all(bookings.map(async (booking) => {
+                let venue = null;
+                let event = null;
+                if (booking.type === booking_model_1.BookingType.Venue) {
+                    venue = await venue_service_1.VenueService.getVenue(booking.bookingData.venueId);
+                    booking.venue = venue;
+                }
+                else if (booking.type === booking_model_1.BookingType.Event) {
+                    const eventId = booking.bookingData.eventId;
+                    event = await event_services_1.EventService.getEventById(eventId);
+                    booking.event = event;
+                }
+            }));
             return res.status(200).json({
                 data: bookings,
                 total: bookings.length,

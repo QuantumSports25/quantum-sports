@@ -1,7 +1,10 @@
 export interface Payment {
     orderId: string;
+    userId: string;
     bookingId?: string;
     membershipId?: string;
+    shopOrderId?: string;
+    name?: string;
     paymentAmount: number;
     paymentCurrency: Currency;
     paymentMethod: PaymentMethod;
@@ -43,5 +46,16 @@ export declare enum OrderStatus {
 export declare enum PaymentMethod {
     Razorpay = "Razorpay",
     Wallet = "Wallet"
+}
+export interface IUiTransaction {
+    id: string;
+    amount: number;
+    currency: Currency;
+    paymentMethod: PaymentMethod;
+    bookingId?: string;
+    membershipId?: string;
+    name: string;
+    captured?: boolean;
+    capturedAt?: Date;
 }
 //# sourceMappingURL=payment.model.d.ts.map

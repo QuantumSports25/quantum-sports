@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import { MembershipPlan, MembershipRole } from "../../models/membership.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class MembershipPlanService {
   static async getAllMembershipPlans(

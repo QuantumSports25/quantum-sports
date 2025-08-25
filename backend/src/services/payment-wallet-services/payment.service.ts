@@ -1,9 +1,9 @@
 import Razorpay from "razorpay";
 import { Currency, Payment, PaymentMethod } from "../../models/payment.model";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import { createHmac } from "crypto";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 const razorpayKey = process.env["RAZORPAY_KEY_ID"];
 const razorpaySecret = process.env["RAZORPAY_KEY_SECRET"];
 

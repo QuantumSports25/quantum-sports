@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import {
   BookingGrowthData,
   BookingPaymentStats,
@@ -8,7 +8,7 @@ import {
 } from "../../models/stats.model";
 import { BookingStatus } from "../../models/booking.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class StatsService {
   /**

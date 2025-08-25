@@ -2,10 +2,11 @@ import { Request, Response } from "express";
 import { Venue } from "../../models/venue.model";
 import { AppError } from "../../types";
 import { PartnerVenueMapService } from "../../services/venue-services/partnerVenueMap.service";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../../config/db";
 import { VenueService } from "../../services/venue-services/venue.service";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class CreateVenueController {
   static async createVenue(req: Request, res: Response) {

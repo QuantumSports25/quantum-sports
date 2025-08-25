@@ -8,5 +8,8 @@ export declare class AuthController {
     static partnerLogin(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static adminLogin(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getAllUsersByRole(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static getProfile(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static updateProfile(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static changePassword(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 }
 //# sourceMappingURL=auth.controller.d.ts.map

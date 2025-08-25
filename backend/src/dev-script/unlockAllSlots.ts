@@ -1,8 +1,8 @@
-import { SlotAvailability } from "../controllers/event-controller/models/venue.model";
+import { SlotAvailability } from "../models/venue.model";
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../config/db";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class DevScript {
   static unlockAllSlots = async (req: Request, res: Response) => {

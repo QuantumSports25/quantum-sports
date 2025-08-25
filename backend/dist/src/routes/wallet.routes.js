@@ -8,5 +8,6 @@ router.get('/balance/:userId', auth_middleware_1.authMiddleware, wallet_controll
 router.get('/user/:userId', auth_middleware_1.authMiddleware, wallet_controller_1.WalletController.getUserWallet);
 router.post('/add-credits', auth_middleware_1.authMiddleware, wallet_controller_1.WalletController.addCredits);
 router.post('/deduct-credits', auth_middleware_1.authMiddleware, wallet_controller_1.WalletController.deductCredits);
+router.get('/history', auth_middleware_1.authMiddleware, wallet_controller_1.WalletController.getWalletHistory);
 exports.default = router;
 //# sourceMappingURL=wallet.routes.js.map

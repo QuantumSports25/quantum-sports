@@ -1,10 +1,11 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../../config/db";
 import { Event, Category, SortDirection } from "../../models/event.model";
 import { Location } from "../../models/venue.model";
 import { Booking, EventBooking } from "../../models/booking.model";
 import { BookingService } from "../booking-services/booking.service";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class EventService {
   static async createEvent(event: Event) {

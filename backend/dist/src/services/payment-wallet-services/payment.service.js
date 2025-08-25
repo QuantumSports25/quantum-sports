@@ -39,7 +39,7 @@ class PaymentService {
             throw error;
         }
     }
-    static async createTransaction({ orderId, bookingId, membershipId, amount, currency = payment_model_1.Currency.INR, paymentMethod = payment_model_1.PaymentMethod.Razorpay, }) {
+    static async createTransaction({ orderId, bookingId, membershipId, shopOrderId, amount, currency = payment_model_1.Currency.INR, paymentMethod = payment_model_1.PaymentMethod.Razorpay, userId }) {
         try {
             const transactionData = {
                 orderId: orderId,
@@ -48,12 +48,16 @@ class PaymentService {
                 paymentMethod: paymentMethod,
                 isRefunded: false,
                 paymentDate: new Date(),
+                userId: userId,
             };
             if (bookingId) {
                 transactionData.bookingId = bookingId;
             }
             if (membershipId) {
                 transactionData.membershipId = membershipId;
+            }
+            if (shopOrderId) {
+                transactionData.shopOrderId = shopOrderId;
             }
             const transaction = await prisma.transactionHistory.create({
                 data: transactionData,
@@ -99,6 +103,8 @@ class PaymentService {
                 paymentMethod: transaction.paymentMethod,
                 isRefunded: transaction.isRefunded,
                 paymentDate: transaction.paymentDate,
+                name: transaction.name,
+                userId: transaction.userId,
             };
             return transactionData;
         }

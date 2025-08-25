@@ -4,27 +4,30 @@ export declare class PaymentService {
         amount: number;
         bookingId?: string;
         membershipId?: string;
-        venueId?: string;
         customerId: string;
-        partnerId?: string;
         currency: Currency;
     }): Promise<import("razorpay/dist/types/orders").Orders.RazorpayOrder>;
-    static createTransaction({ orderId, bookingId, membershipId, amount, currency, paymentMethod, }: {
+    static createTransaction({ orderId, bookingId, membershipId, shopOrderId, amount, currency, paymentMethod, userId }: {
         orderId: string;
         bookingId?: string;
         membershipId?: string;
+        shopOrderId?: string;
         amount: number;
         currency: Currency;
         paymentMethod: PaymentMethod;
+        userId: string;
     }): Promise<{
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
+        membershipId: string | null;
         bookingId: string | null;
         orderId: string;
-        membershipId: string | null;
+        paymentMethod: string;
+        shopOrderId: string | null;
         paymentAmount: import("@prisma/client/runtime/library").Decimal;
         paymentCurrency: string;
-        paymentMethod: string;
         paymentDate: Date;
         isRefunded: boolean;
         refundDate: Date | null;

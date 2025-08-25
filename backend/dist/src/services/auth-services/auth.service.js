@@ -274,7 +274,11 @@ class AuthService {
                 name: user.name,
                 email: user.email,
                 phone: user?.phone ?? "",
-                role: user.role === "partner" ? user_model_1.UserRole.PARTNER : user_model_1.UserRole.USER,
+                role: user.role === "partner"
+                    ? user_model_1.UserRole.PARTNER
+                    : user.role === "admin"
+                        ? user_model_1.UserRole.ADMIN
+                        : user_model_1.UserRole.USER,
             };
             return userData;
         }
@@ -283,20 +287,105 @@ class AuthService {
             throw new Error("Failed to retrieve user: " + error);
         }
     }
-    static async getAllUsers(page, offset, role) {
+    static async updateUserProfile(userId, data) {
+        try {
+            const updated = await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    ...(typeof data.name === "string" ? { name: data.name } : {}),
+                    ...(typeof data.phone === "string" ? { phone: data.phone } : {}),
+                },
+            });
+            return {
+                id: updated.id,
+                name: updated.name,
+                email: updated.email,
+                phone: updated?.phone ?? "",
+                role: updated.role === "partner"
+                    ? user_model_1.UserRole.PARTNER
+                    : updated.role === "admin"
+                        ? user_model_1.UserRole.ADMIN
+                        : user_model_1.UserRole.USER,
+            };
+        }
+        catch (error) {
+            console.error("Update User Profile Error:", error);
+            throw new Error("Failed to update profile");
+        }
+    }
+    static async changeUserPassword(userId, currentPassword, newPassword) {
+        try {
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            if (!user || !user.password) {
+                throw new Error("User not found");
+            }
+            const isValid = await bcryptjs_1.default.compare(currentPassword, user.password);
+            if (!isValid) {
+                throw new Error("Current password is incorrect");
+            }
+            if (newPassword.length < 6) {
+                throw new Error("Password must be at least 6 characters long");
+            }
+            const hashed = await bcryptjs_1.default.hash(newPassword, 10);
+            await prisma.user.update({
+                where: { id: userId },
+                data: { password: hashed },
+            });
+        }
+        catch (error) {
+            console.error("Change Password Error:", error);
+            throw error instanceof Error ? error : new Error("Failed to change password");
+        }
+    }
+    static async getAllUsers(limit, offset, role) {
         try {
             const users = await prisma.user.findMany({
                 skip: offset,
-                take: page,
+                take: limit,
                 ...(role ? { where: { role } } : {}),
             });
-            const allUsers = users.map((user) => ({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                phone: user?.phone ?? "",
-                role: user.role === "partner" ? user_model_1.UserRole.PARTNER : user_model_1.UserRole.USER,
-            }));
+            const userIds = users.map((u) => u.id);
+            const memberships = userIds.length
+                ? await prisma.membership.findMany({
+                    where: {
+                        isActive: true,
+                        userId: { in: userIds },
+                    },
+                    orderBy: { createdAt: "desc" },
+                    include: { plan: true },
+                })
+                : [];
+            const latestMembershipByUserId = new Map();
+            for (const m of memberships) {
+                if (!latestMembershipByUserId.has(m.userId)) {
+                    latestMembershipByUserId.set(m.userId, m);
+                }
+            }
+            console.log("Retrieved Users:", users);
+            const allUsers = users.map((user) => {
+                let membership;
+                const latestActive = latestMembershipByUserId.get(user.id);
+                if (latestActive) {
+                    membership = {
+                        id: latestActive.id,
+                        planId: latestActive.planId,
+                        planName: latestActive.plan?.name || "unknown",
+                        amount: latestActive.plan?.amount ?? 0,
+                        credits: latestActive.plan?.credits ?? 0,
+                        startedAt: latestActive.startedAt,
+                        expiresAt: latestActive.expiresAt,
+                        isActive: latestActive.isActive,
+                    };
+                }
+                return {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user?.phone ?? "",
+                    role: user.role === "partner" ? user_model_1.UserRole.PARTNER : user_model_1.UserRole.USER,
+                    membership,
+                };
+            });
             return allUsers;
         }
         catch (error) {

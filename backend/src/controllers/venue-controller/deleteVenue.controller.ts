@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import { AppError } from "../../types";
 import { PartnerVenueMapService } from "../../services/venue-services/partnerVenueMap.service";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../../config/db";
 import { VenueService } from "../../services/venue-services/venue.service";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 export class DeleteVenueController {
   static async deleteVenue(req: Request, res: Response) {

@@ -1,8 +1,8 @@
 
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../config/db";
 import { Activity } from "../../models/venue.model";
 
-const prisma = new PrismaClient();
+// Use shared Prisma client
 
 class ActivityService {
   static async createActivity(activity: Activity) {

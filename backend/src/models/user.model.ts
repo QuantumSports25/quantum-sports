@@ -9,7 +9,7 @@ export interface User {
   phone?: string;
   partnerDetails?: partnerDetails;
   membership?: MembershipSummary;
-  shippingAddress: ShoppingAddress[];
+  shippingAddress?: ShoppingAddress[];
   createdAt?: Date;
   updatedAt?: Date;
 }

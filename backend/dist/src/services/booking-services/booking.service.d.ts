@@ -1,24 +1,32 @@
 import { Prisma } from "@prisma/client";
-import { Booking } from "../../models/booking.model";
+import { Booking, BookingStatus, BookingType, PaymentStatus } from "../../models/booking.model";
+import { PaymentMethod } from "../../models/payment.model";
 export declare class BookingService {
-    static createBookingBeforePayment(booking: Booking): Promise<{
+    static createBooking: (booking: Booking) => {
+        userId: string;
+        type: BookingType;
+        bookingData: Prisma.InputJsonValue;
+        amount: number;
+        bookedDate: Date;
+        confirmedAt: Date | null;
+        cancelledAt: Date | null;
+        bookingStatus: BookingStatus;
+        paymentStatus: PaymentStatus;
+        customerDetails: Prisma.InputJsonValue;
+        paymentDetails: Prisma.InputJsonValue;
+    };
+    static createVenueBookingBeforePayment(booking: Booking): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        venueId: string;
-        partnerId: string;
-        activityId: string;
-        facilityId: string;
+        paymentDetails: Prisma.JsonValue | null;
         amount: Prisma.Decimal;
-        duration: number;
-        startTime: string;
-        endTime: string;
-        numberOfSlots: number;
+        type: string | null;
+        bookingData: Prisma.JsonValue | null;
         bookedDate: Date;
         confirmedAt: Date | null;
         cancelledAt: Date | null;
-        paymentDetails: Prisma.JsonValue | null;
         bookingStatus: import(".prisma/client").$Enums.BookingStatus;
         paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
         customerDetails: Prisma.JsonValue;
@@ -28,28 +36,22 @@ export declare class BookingService {
         slots: {
             id: string;
             amount: Prisma.Decimal;
+            date: Date;
             startTime: string;
             endTime: string;
-            date: Date;
         }[];
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        venueId: string;
-        partnerId: string;
-        activityId: string;
-        facilityId: string;
+        paymentDetails: Prisma.JsonValue | null;
         amount: Prisma.Decimal;
-        duration: number;
-        startTime: string;
-        endTime: string;
-        numberOfSlots: number;
+        type: string | null;
+        bookingData: Prisma.JsonValue | null;
         bookedDate: Date;
         confirmedAt: Date | null;
         cancelledAt: Date | null;
-        paymentDetails: Prisma.JsonValue | null;
         bookingStatus: import(".prisma/client").$Enums.BookingStatus;
         paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
         customerDetails: Prisma.JsonValue;
@@ -59,59 +61,49 @@ export declare class BookingService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        venueId: string;
-        partnerId: string;
-        activityId: string;
-        facilityId: string;
+        paymentDetails: Prisma.JsonValue | null;
         amount: Prisma.Decimal;
-        duration: number;
-        startTime: string;
-        endTime: string;
-        numberOfSlots: number;
+        type: string | null;
+        bookingData: Prisma.JsonValue | null;
         bookedDate: Date;
         confirmedAt: Date | null;
         cancelledAt: Date | null;
-        paymentDetails: Prisma.JsonValue | null;
         bookingStatus: import(".prisma/client").$Enums.BookingStatus;
         paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
         customerDetails: Prisma.JsonValue;
     }>;
-    static handleBooking({ success, bookingId, amount, orderId, paymentId, }: {
+    static handleBooking({ success, bookingId, amount, orderId, paymentId, paymentMethod, type, }: {
         success: boolean;
         bookingId: string;
         amount: number;
         orderId: string;
         paymentId: string;
+        paymentMethod: PaymentMethod;
+        type: BookingType;
     }): Promise<void>;
     static handleSlotAfterBooking(bookingId: string, success: boolean): Promise<void>;
-    static handleTransactionAfterBooking(orderId: string, paymentId: string, success: boolean): Promise<void>;
-    static handleBookingUpdate(bookingId: string, success: boolean, amount: number, orderId: string, paymentId: string): Promise<void>;
+    static handleTransactionAfterBooking(bookingId: string, orderId: string, paymentId: string, success: boolean, paymentMethod: PaymentMethod): Promise<void>;
+    static handleBookingUpdate(bookingId: string, success: boolean, amount: number, orderId: string, paymentId: string, paymentMethod: PaymentMethod): Promise<void>;
     static getBookingsByPartnerId(partnerId: string): Promise<({
         slots: {
             id: string;
             amount: Prisma.Decimal;
+            date: Date;
             startTime: string;
             endTime: string;
-            date: Date;
         }[];
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        venueId: string;
-        partnerId: string;
-        activityId: string;
-        facilityId: string;
+        paymentDetails: Prisma.JsonValue | null;
         amount: Prisma.Decimal;
-        duration: number;
-        startTime: string;
-        endTime: string;
-        numberOfSlots: number;
+        type: string | null;
+        bookingData: Prisma.JsonValue | null;
         bookedDate: Date;
         confirmedAt: Date | null;
         cancelledAt: Date | null;
-        paymentDetails: Prisma.JsonValue | null;
         bookingStatus: import(".prisma/client").$Enums.BookingStatus;
         paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
         customerDetails: Prisma.JsonValue;

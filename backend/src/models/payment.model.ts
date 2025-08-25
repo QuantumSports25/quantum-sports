@@ -3,6 +3,7 @@ export interface Payment {
   userId: string;
   bookingId?: string;
   membershipId?: string;
+  shopOrderId?: string;
   name?: string;
   paymentAmount: number;
   paymentCurrency: Currency;

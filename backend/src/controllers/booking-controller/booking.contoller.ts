@@ -8,7 +8,7 @@ import {
   PaymentStatus,
   VenueBooking,
 } from "../../models/booking.model";
-import { customerDetails } from "../../models/booking.model";
+import { CustomerDetails } from "../../models/booking.model";
 import { Currency, Order, PaymentMethod } from "../../models/payment.model";
 import { PaymentService } from "../../services/payment-wallet-services/payment.service";
 import { SlotService } from "../../services/venue-services/slot.service";
@@ -105,7 +105,7 @@ export class BookingController {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const customerDetails: customerDetails = {
+      const customerDetails: CustomerDetails = {
         customerId: user.id,
         customerName: user.name,
         customerEmail: user.email ?? "",

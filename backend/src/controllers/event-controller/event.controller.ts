@@ -7,7 +7,7 @@ import {
   Booking,
   BookingStatus,
   BookingType,
-  customerDetails,
+  CustomerDetails,
   PaymentStatus,
 } from "../../models/booking.model";
 import { PaymentMethod } from "../../models/payment.model";
@@ -274,7 +274,7 @@ export class EventController {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const customerDetails: customerDetails = {
+      const customerDetails: CustomerDetails = {
         customerId: user.id,
         customerName: user.name,
         customerEmail: user.email ?? "",

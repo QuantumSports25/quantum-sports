@@ -1,3 +1,5 @@
+import { ShoppingAddress } from "./shop.model";
+
 export interface User {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export interface User {
   phone?: string;
   partnerDetails?: partnerDetails;
   membership?: MembershipSummary;
+  shippingAddress: ShoppingAddress[];
   createdAt?: Date;
   updatedAt?: Date;
 }

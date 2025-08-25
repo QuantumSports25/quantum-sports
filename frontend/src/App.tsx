@@ -52,6 +52,7 @@ import ShopPage from "./pages/ShopPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import ShopCheckoutPage from "./pages/ShopCheckoutPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 
 // Import route tracking hook
 import { useRouteTracker } from "./hooks/useRouteTracker";
@@ -109,6 +110,7 @@ function App() {
             <Route path="/login-otp" element={<OTPLoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/venues" element={<VenuesPage />} />
             <Route path="/venues/:id" element={<VenueDetailPage />} />
             <Route path="/membership" element={<MembershipPage />} />

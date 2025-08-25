@@ -365,12 +365,12 @@ export class AuthService {
         name: user.name,
         email: user.email,
         phone: user?.phone ?? "",
-        role:
-          user.role === "partner"
-            ? UserRole.PARTNER
-            : user.role === "admin"
+        role: user.role === "partner"
+          ? UserRole.PARTNER
+          : user.role === "admin"
             ? UserRole.ADMIN
             : UserRole.USER,
+        shippingAddress: []
       };
 
       return userData;
@@ -398,6 +398,7 @@ export class AuthService {
         name: updated.name,
         email: updated.email,
         phone: updated?.phone ?? "",
+        shippingAddress: [],
         role:
           updated.role === "partner"
             ? UserRole.PARTNER

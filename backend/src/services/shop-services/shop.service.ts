@@ -14,11 +14,33 @@ import {
 } from "../../models/booking.model";
 import { PaymentMethod } from "../../models/payment.model";
 import { withRetries } from "../../utils/retryFunction";
-import { forEach } from "lodash";
 
 const prisma = new PrismaClient();
 
 export class ShopService {
+
+  static async updateProduct(id: string, product: Product) {
+    try {
+      const updatedProduct = await prisma.product.update({
+        where: { id },
+        data: {
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          inventory: product.inventory,
+          category: product.category,
+          updatedAt: new Date(),
+          sellerId: product.sellerId,
+          images: product.images,
+        },
+      });
+      return updatedProduct;
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
+  }
+
   static async getAllProducts(page: number, pageSize: number) {
     try {
       const products = await prisma.product.findMany({
@@ -459,7 +481,7 @@ export class ShopService {
   static async lockProductInventory(products: ShopProduct[], userId: string) {
     try {
       await prisma.$transaction(async (tx) => {
-        forEach(products, async (product) => {
+        for (const product of products) {
           // Fetch current product
           const dbProduct = await tx.product.findUnique({
             where: { id: product.productId },
@@ -502,7 +524,7 @@ export class ShopService {
               lock: lockArr as unknown as Prisma.InputJsonValue,
             },
           });
-        });
+        }
       });
       return true;
     } catch (error) {

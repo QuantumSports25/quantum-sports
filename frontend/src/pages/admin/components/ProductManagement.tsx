@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Package, 
-  DollarSign, 
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Package,
+  DollarSign,
   Eye,
   Filter,
   ChevronLeft,
   ChevronRight,
   Upload,
-  X
-} from 'lucide-react';
-import { AdminProduct, adminShopService, CreateProductRequest } from '../../../services/adminShopService';
+  X,
+} from "lucide-react";
+import {
+  AdminProduct,
+  adminShopService,
+  CreateProductRequest,
+} from "../../../services/adminShopService";
 
 interface ProductFormData {
   name: string;
@@ -26,21 +30,223 @@ interface ProductFormData {
 }
 
 const initialFormData: ProductFormData = {
-  name: '',
-  description: '',
-  price: '',
-  inventory: '',
+  name: "",
+  description: "",
+  price: "",
+  inventory: "",
   category: [],
   images: [],
-  sellerId: 'default-admin-seller'
+  sellerId: "default-admin-seller",
 };
+
+interface ProductFormProps {
+  isEdit?: boolean;
+  formData: ProductFormData;
+  error: string | null;
+  formLoading: boolean;
+  categories: string[];
+  onClose: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onInputChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => void;
+  onCategoryChange: (category: string) => void;
+  onImageAdd: () => void;
+  onImageRemove: (index: number) => void;
+}
+
+const ProductForm = React.memo(
+  ({
+    isEdit = false,
+    formData,
+    error,
+    formLoading,
+    categories,
+    onClose,
+    onSubmit,
+    onInputChange,
+    onCategoryChange,
+    onImageAdd,
+    onImageRemove,
+  }: ProductFormProps) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-white">
+            {isEdit ? "Edit Product" : "Create New Product"}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-red-900/20 border border-red-500 rounded-lg p-3 mb-4">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Product Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={onInputChange}
+              required
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter product name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Description *
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={onInputChange}
+              required
+              rows={3}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter product description"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Price (₹) *
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={onInputChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Inventory
+              </label>
+              <input
+                type="number"
+                name="inventory"
+                value={formData.inventory}
+                onChange={onInputChange}
+                min="0"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Categories
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {categories.map((category) => (
+                <label
+                  key={category}
+                  className="flex items-center space-x-2 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.category.includes(category)}
+                    onChange={() => onCategoryChange(category)}
+                    className="text-blue-500 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-300 text-sm capitalize">
+                    {category}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Images
+            </label>
+            <div className="space-y-2">
+              {formData.images.map((image, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 bg-gray-700 p-2 rounded"
+                >
+                  <img
+                    src={image}
+                    alt={`Preview ${index + 1}`}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                  <span className="text-gray-300 text-sm flex-1 truncate">
+                    {image}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onImageRemove(index)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={onImageAdd}
+                className="w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <Upload className="w-4 h-4 mx-auto mb-1" />
+                Add Image URL
+              </button>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {formLoading
+                ? "Saving..."
+                : isEdit
+                ? "Update Product"
+                : "Create Product"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+);
 
 const ProductManagement: React.FC = () => {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -50,36 +256,14 @@ const ProductManagement: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [categories] = useState(adminShopService.getCategories());
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchProducts();
-    }, 300); // Debounce search
-    
-    return () => clearTimeout(timeoutId);
-  }, [currentPage, selectedCategory]);
-
-  // Separate effect for search query with debouncing
-  useEffect(() => {
-    if (searchQuery === '') {
-      fetchProducts();
-      return;
-    }
-    
-    const timeoutId = setTimeout(() => {
-      fetchProducts();
-    }, 500); // Debounce search input
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
   const fetchProducts = React.useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await adminShopService.getAllProducts(
-        currentPage, 
-        10, 
-        searchQuery, 
+        currentPage,
+        10,
+        searchQuery,
         selectedCategory
       );
       setProducts(response.products);
@@ -91,6 +275,28 @@ const ProductManagement: React.FC = () => {
       setLoading(false);
     }
   }, [currentPage, searchQuery, selectedCategory]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPage, selectedCategory, fetchProducts]);
+
+  // Separate effect for search query with debouncing
+  useEffect(() => {
+    if (searchQuery === "") {
+      fetchProducts();
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, 500); // Debounce search input
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, fetchProducts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +315,9 @@ const ProductManagement: React.FC = () => {
   };
 
   const handleEditProduct = (product: AdminProduct) => {
-    setError('Product editing is not available in the current backend implementation');
+    setError(
+      "Product editing is not available in the current backend implementation"
+    );
     return;
     // Code below would be used when backend supports editing
     // setFormData({
@@ -126,11 +334,13 @@ const ProductManagement: React.FC = () => {
   };
 
   const handleDeleteProduct = async (product: AdminProduct) => {
-    setError('Product deletion is not available in the current backend implementation');
+    setError(
+      "Product deletion is not available in the current backend implementation"
+    );
     return;
     // Code below would be used when backend supports deletion
     // if (!product.id) return;
-    // 
+    //
     // if (!window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
     //   return;
     // }
@@ -146,237 +356,94 @@ const ProductManagement: React.FC = () => {
     // }
   };
 
-  const handleFormSubmit = React.useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.description.trim() || !formData.price) {
-      setError('Please fill in all required fields');
-      return;
-    }
+  const handleFormSubmit = React.useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    try {
-      setFormLoading(true);
-      setError(null);
+      if (
+        !formData.name.trim() ||
+        !formData.description.trim() ||
+        !formData.price
+      ) {
+        setError("Please fill in all required fields");
+        return;
+      }
 
-      const productData: CreateProductRequest = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        price: parseFloat(formData.price),
-        inventory: parseInt(formData.inventory) || 0,
-        category: formData.category,
-        images: formData.images,
-        sellerId: formData.sellerId
-      };
+      try {
+        setFormLoading(true);
+        setError(null);
 
-      // Only create new products since update is not available in current backend
-      await adminShopService.createProduct(productData);
+        const productData: CreateProductRequest = {
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          price: parseFloat(formData.price),
+          inventory: parseInt(formData.inventory) || 0,
+          category: formData.category,
+          images: formData.images,
+          sellerId: formData.sellerId,
+        };
 
-      setShowCreateModal(false);
-      setShowEditModal(false);
-      await fetchProducts();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setFormLoading(false);
-    }
-  }, [formData, fetchProducts]);
+        // Only create new products since update is not available in current backend
+        await adminShopService.createProduct(productData);
 
-  const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
+        setShowCreateModal(false);
+        setShowEditModal(false);
+        await fetchProducts();
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setFormLoading(false);
+      }
+    },
+    [formData, fetchProducts]
+  );
+
+  const handleInputChange = React.useCallback(
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >
+    ) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    },
+    []
+  );
 
   const handleCategoryChange = React.useCallback((category: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       category: prev.category.includes(category)
-        ? prev.category.filter(c => c !== category)
-        : [...prev.category, category]
+        ? prev.category.filter((c) => c !== category)
+        : [...prev.category, category],
     }));
   }, []);
 
   const handleImageAdd = React.useCallback(() => {
-    const imageUrl = prompt('Enter image URL:');
+    const imageUrl = prompt("Enter image URL:");
     if (imageUrl) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, imageUrl]
+        images: [...prev.images, imageUrl],
       }));
     }
   }, []);
 
   const handleImageRemove = React.useCallback((index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: prev.images.filter((_, i) => i !== index),
     }));
   }, []);
 
-  const ProductForm = React.memo(({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">
-            {isEdit ? 'Edit Product' : 'Create New Product'}
-          </h2>
-          <button
-            onClick={() => {
-              setShowCreateModal(false);
-              setShowEditModal(false);
-              setError(null);
-            }}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-red-900/20 border border-red-500 rounded-lg p-3 mb-4">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Product Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter product name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description *
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-              rows={3}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter product description"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Price (₹) *
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                required
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Inventory
-              </label>
-              <input
-                type="number"
-                name="inventory"
-                value={formData.inventory}
-                onChange={handleInputChange}
-                min="0"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Categories
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {categories.map((category) => (
-                <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.category.includes(category)}
-                    onChange={() => handleCategoryChange(category)}
-                    className="text-blue-500 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-300 text-sm capitalize">{category}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Images
-            </label>
-            <div className="space-y-2">
-              {formData.images.map((image, index) => (
-                <div key={index} className="flex items-center gap-2 bg-gray-700 p-2 rounded">
-                  <img src={image} alt={`Preview ${index + 1}`} className="w-12 h-12 object-cover rounded" />
-                  <span className="text-gray-300 text-sm flex-1 truncate">{image}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleImageRemove(index)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleImageAdd}
-                className="w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
-              >
-                <Upload className="w-4 h-4 mx-auto mb-1" />
-                Add Image URL
-              </button>
-            </div>
-          </div>
-
-          <div className="flex space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreateModal(false);
-                setShowEditModal(false);
-                setError(null);
-              }}
-              className="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={formLoading}
-              className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {formLoading ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  ));
+  const handleModalClose = React.useCallback(() => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setError(null);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -400,31 +467,33 @@ const ProductManagement: React.FC = () => {
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-400">Total Products</p>
+              <p className="text-sm font-medium text-gray-400">
+                Total Products
+              </p>
               <p className="text-2xl font-bold text-white">{totalCount}</p>
             </div>
             <Package className="h-8 w-8 text-blue-400" />
           </div>
         </div>
-        
+
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-400">In Stock</p>
               <p className="text-2xl font-bold text-white">
-                {products.filter(p => p.inventory > 0).length}
+                {products.filter((p) => p.inventory > 0).length}
               </p>
             </div>
             <Eye className="h-8 w-8 text-green-400" />
           </div>
         </div>
-        
+
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-400">Out of Stock</p>
               <p className="text-2xl font-bold text-white">
-                {products.filter(p => p.inventory === 0).length}
+                {products.filter((p) => p.inventory === 0).length}
               </p>
             </div>
             <DollarSign className="h-8 w-8 text-red-400" />
@@ -434,7 +503,10 @@ const ProductManagement: React.FC = () => {
 
       {/* Filters */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+        <form
+          onSubmit={handleSearch}
+          className="flex flex-col sm:flex-row gap-4"
+        >
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -450,7 +522,7 @@ const ProductManagement: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <select
               value={selectedCategory}
@@ -464,7 +536,7 @@ const ProductManagement: React.FC = () => {
                 </option>
               ))}
             </select>
-            
+
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -499,8 +571,12 @@ const ProductManagement: React.FC = () => {
         ) : products.length === 0 ? (
           <div className="p-8 text-center">
             <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-400 mb-2">No products found</h3>
-            <p className="text-gray-500">Get started by creating your first product.</p>
+            <h3 className="text-lg font-medium text-gray-400 mb-2">
+              No products found
+            </h3>
+            <p className="text-gray-500">
+              Get started by creating your first product.
+            </p>
           </div>
         ) : (
           <>
@@ -530,11 +606,14 @@ const ProductManagement: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
+                    <tr
+                      key={product.id}
+                      className="hover:bg-gray-700/50 transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <img
-                            src={product.images[0] || '/api/placeholder/40/40'}
+                            src={product.images[0] || "/api/placeholder/40/40"}
                             alt={product.name}
                             className="w-10 h-10 rounded-lg object-cover mr-3"
                           />
@@ -552,18 +631,25 @@ const ProductManagement: React.FC = () => {
                         ₹{product.price.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          product.inventory > 0 
-                            ? 'bg-green-900/20 text-green-400'
-                            : 'bg-red-900/20 text-red-400'
-                        }`}>
-                          {product.inventory > 0 ? `${product.inventory} in stock` : 'Out of stock'}
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            product.inventory > 0
+                              ? "bg-green-900/20 text-green-400"
+                              : "bg-red-900/20 text-red-400"
+                          }`}
+                        >
+                          {product.inventory > 0
+                            ? `${product.inventory} in stock`
+                            : "Out of stock"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                         <div className="flex flex-wrap gap-1">
                           {product.category.slice(0, 2).map((cat) => (
-                            <span key={cat} className="bg-gray-700 px-2 py-1 rounded text-xs capitalize">
+                            <span
+                              key={cat}
+                              className="bg-gray-700 px-2 py-1 rounded text-xs capitalize"
+                            >
                               {cat}
                             </span>
                           ))}
@@ -575,7 +661,9 @@ const ProductManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'N/A'}
+                        {product.createdAt
+                          ? new Date(product.createdAt).toLocaleDateString()
+                          : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
@@ -608,14 +696,18 @@ const ProductManagement: React.FC = () => {
               <div className="bg-gray-900 px-6 py-3 flex items-center justify-between border-t border-gray-700">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
                   >
@@ -625,41 +717,60 @@ const ProductManagement: React.FC = () => {
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-gray-400">
-                      Showing <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{' '}
-                      <span className="font-medium">{Math.min(currentPage * 10, totalCount)}</span> of{' '}
-                      <span className="font-medium">{totalCount}</span> results
+                      Showing{" "}
+                      <span className="font-medium">
+                        {(currentPage - 1) * 10 + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-medium">
+                        {Math.min(currentPage * 10, totalCount)}
+                      </span>{" "}
+                      of <span className="font-medium">{totalCount}</span>{" "}
+                      results
                     </p>
                   </div>
                   <div>
                     <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                       <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
                         disabled={currentPage === 1}
                         className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </button>
-                      
+
                       {/* Page numbers */}
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
-                        return (
-                          <button
-                            key={pageNumber}
-                            onClick={() => setCurrentPage(pageNumber)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === pageNumber
-                                ? 'z-10 bg-blue-600 border-blue-500 text-white'
-                                : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
-                            }`}
-                          >
-                            {pageNumber}
-                          </button>
-                        );
-                      })}
-                      
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          const pageNumber = Math.max(
+                            1,
+                            Math.min(currentPage - 2 + i, totalPages - 4 + i)
+                          );
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(pageNumber)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                currentPage === pageNumber
+                                  ? "z-10 bg-blue-600 border-blue-500 text-white"
+                                  : "bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        }
+                      )}
+
                       <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages)
+                          )
+                        }
                         disabled={currentPage === totalPages}
                         className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
                       >
@@ -675,8 +786,36 @@ const ProductManagement: React.FC = () => {
       </div>
 
       {/* Modals */}
-      {showCreateModal && <ProductForm />}
-      {showEditModal && <ProductForm isEdit />}
+      {showCreateModal && (
+        <ProductForm
+          isEdit={false}
+          formData={formData}
+          error={error}
+          formLoading={formLoading}
+          categories={categories}
+          onClose={handleModalClose}
+          onSubmit={handleFormSubmit}
+          onInputChange={handleInputChange}
+          onCategoryChange={handleCategoryChange}
+          onImageAdd={handleImageAdd}
+          onImageRemove={handleImageRemove}
+        />
+      )}
+      {showEditModal && (
+        <ProductForm
+          isEdit={true}
+          formData={formData}
+          error={error}
+          formLoading={formLoading}
+          categories={categories}
+          onClose={handleModalClose}
+          onSubmit={handleFormSubmit}
+          onInputChange={handleInputChange}
+          onCategoryChange={handleCategoryChange}
+          onImageAdd={handleImageAdd}
+          onImageRemove={handleImageRemove}
+        />
+      )}
     </div>
   );
 };

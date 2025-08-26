@@ -25,7 +25,7 @@ interface PaymentMethod {
 }
 
 const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'razorpay', name: 'Credit/Debit Card', description: 'Pay securely with your card' },
+  { id: 'razorpay', name: 'Razorpay', description: 'Pay securely with your razorpay' },
   { id: 'wallet', name: 'Wallet', description: 'Pay using your wallet balance' }
 ];
 
@@ -69,16 +69,8 @@ const ShopCheckoutPage: React.FC = () => {
     return cartItems.reduce((total, item) => total + (item.product.discountPrice * item.quantity), 0);
   };
 
-  const getShipping = () => {
-    return getSubtotal() > 2000 ? 0 : 99; // Free shipping over ₹2000
-  };
-
-  const getTax = () => {
-    return Math.round(getSubtotal() * 0.18); // 18% GST
-  };
-
   const getTotal = () => {
-    return getSubtotal() + getShipping() + getTax();
+    return getSubtotal();
   };
 
   const validateForm = (): string | null => {
@@ -449,14 +441,6 @@ const ShopCheckoutPage: React.FC = () => {
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span>₹{getSubtotal().toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span>{getShipping() === 0 ? 'Free' : `₹${getShipping()}`}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Tax (GST 18%)</span>
-                  <span>₹{getTax().toLocaleString()}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">

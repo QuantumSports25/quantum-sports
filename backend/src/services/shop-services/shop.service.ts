@@ -497,7 +497,7 @@ export class ShopService {
           // Prepare new lock array
           let lockArr = dbProduct.lock as unknown as ShopInventoryLock[];
           let found = false;
-          lockArr = (lockArr as []).map((lock: ShopInventoryLock) => {
+          lockArr = (lockArr ?? []).map((lock: ShopInventoryLock) => {
             if (lock?.userId === userId) {
               found = true;
               return {

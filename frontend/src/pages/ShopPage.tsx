@@ -1,118 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart,  Search, Star, Heart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart,  Search, Star, Heart, Plus, Minus, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 import { useNavigate } from 'react-router-dom';
+import { shopService, ShopProduct } from '../services/shopService';
+import { Product as TypesProduct } from '../types';
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
+// Using the Product type from types/index.ts for consistency with cart store
+interface ShopPageProduct extends TypesProduct {
+  sellerId: string;
   originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-  reviewCount: number;
-  description: string;
-  inStock: boolean;
   isNew?: boolean;
   isSale?: boolean;
 }
 
-interface CartItem extends Product {
-  quantity: number;
-}
-
 const ShopPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
+  const { items: cartItems, addItem, removeItem, updateQuantity, totalAmount } = useCartStore();
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [products, setProducts] = useState<ShopPageProduct[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ShopPageProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('name');
-  // const [showFilters, setShowFilters] = useState<boolean>(false);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock product data - replace with API call
+  // Fetch products from API
   useEffect(() => {
-    const mockProducts: Product[] = [
-      {
-        id: '1',
-        name: 'Premium Tennis Racket',
-        price: 2499,
-        originalPrice: 2999,
-        image: '/api/placeholder/300/300',
-        category: 'tennis',
-        rating: 4.8,
-        reviewCount: 124,
-        description: 'Professional grade tennis racket with carbon fiber frame',
-        inStock: true,
-        isSale: true
-      },
-      {
-        id: '2',
-        name: 'Football Boots Pro',
-        price: 3999,
-        image: '/api/placeholder/300/300',
-        category: 'football',
-        rating: 4.6,
-        reviewCount: 89,
-        description: 'High-performance football boots for professional players',
-        inStock: true,
-        isNew: true
-      },
-      {
-        id: '3',
-        name: 'Basketball Jersey',
-        price: 1299,
-        originalPrice: 1599,
-        image: '/api/placeholder/300/300',
-        category: 'basketball',
-        rating: 4.4,
-        reviewCount: 67,
-        description: 'Premium quality basketball jersey with moisture-wicking fabric',
-        inStock: true,
-        isSale: true
-      },
-      {
-        id: '4',
-        name: 'Badminton Shuttlecocks (12 pack)',
-        price: 899,
-        image: '/api/placeholder/300/300',
-        category: 'badminton',
-        rating: 4.7,
-        reviewCount: 156,
-        description: 'Tournament grade feather shuttlecocks',
-        inStock: true
-      },
-      {
-        id: '5',
-        name: 'Cricket Bat Professional',
-        price: 4999,
-        image: '/api/placeholder/300/300',
-        category: 'cricket',
-        rating: 4.9,
-        reviewCount: 203,
-        description: 'English willow cricket bat for professional play',
-        inStock: false
-      },
-      {
-        id: '6',
-        name: 'Swimming Goggles',
-        price: 799,
-        originalPrice: 999,
-        image: '/api/placeholder/300/300',
-        category: 'swimming',
-        rating: 4.3,
-        reviewCount: 45,
-        description: 'Anti-fog swimming goggles with UV protection',
-        inStock: true,
-        isSale: true
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const fetchedProducts = await shopService.getAllProducts(1, 50); // Get first 50 products
+        
+        if (!fetchedProducts || fetchedProducts.length === 0) {
+          setError('No products available at the moment.');
+          setProducts([]);
+          setFilteredProducts([]);
+          return;
+        }
+        
+        // Transform backend products to frontend format compatible with cart store
+        const transformedProducts: ShopPageProduct[] = fetchedProducts.map((product: ShopProduct) => ({
+          id: product.id || '',
+          name: product.name || 'Unknown Product',
+          description: product.description || 'No description available',
+          images: product.images && product.images.length > 0 ? product.images : ['/api/placeholder/300/300'],
+          markedPrice: product.price || 0,
+          discountPrice: product.price || 0, // Using same price for now
+          category: (product.category && product.category.length > 0) ? product.category[0] : 'general',
+          inStock: (product.inventory || 0) > 0,
+          shippingCharges: (product.price || 0) > 2000 ? 0 : 99, // Free shipping over 2000
+          rating: product.rating || 4.0,
+          totalReviews: product.reviewCount || 0,
+          // Shop page specific fields
+          sellerId: product.sellerId || '',
+          originalPrice: undefined,
+          isNew: false,
+          isSale: false
+        }));
+        
+        setProducts(transformedProducts);
+        setFilteredProducts(transformedProducts);
+      } catch (err: any) {
+        console.error('Error fetching products:', err);
+        setError(err.message || 'Failed to load products. Please try again.');
+        // Fallback to empty array
+        setProducts([]);
+        setFilteredProducts([]);
+      } finally {
+        setLoading(false);
       }
-    ];
-    setProducts(mockProducts);
-    setFilteredProducts(mockProducts);
+    };
+
+    fetchProducts();
   }, []);
 
   const categories = [
@@ -146,9 +109,9 @@ const ShopPage: React.FC = () => {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'price-low':
-          return a.price - b.price;
+          return a.discountPrice - b.discountPrice;
         case 'price-high':
-          return b.price - a.price;
+          return b.discountPrice - a.discountPrice;
         case 'rating':
           return b.rating - a.rating;
         case 'name':
@@ -160,36 +123,47 @@ const ShopPage: React.FC = () => {
     setFilteredProducts(filtered);
   }, [products, selectedCategory, searchQuery, sortBy]);
 
-  const addToCart = (product: Product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+  const addToCart = (product: ShopPageProduct) => {
+    try {
+      if (!product.inStock) {
+        setError('This product is currently out of stock');
+        return;
       }
-      return [...prevCart, { ...product, quantity: 1 }];
-    });
+      
+      // Convert ShopPageProduct to Product type for cart store
+      const cartProduct: TypesProduct = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        images: product.images,
+        markedPrice: product.markedPrice,
+        discountPrice: product.discountPrice,
+        category: product.category,
+        inStock: product.inStock,
+        shippingCharges: product.shippingCharges,
+        rating: product.rating,
+        totalReviews: product.totalReviews
+      };
+      addItem(cartProduct, 1);
+      
+      // Clear any previous errors
+      if (error) {
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      setError('Failed to add item to cart');
+    }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-  };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
+
+  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
     if (newQuantity === 0) {
-      removeFromCart(productId);
+      removeItem(productId);
       return;
     }
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.id === productId
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-    );
+    updateQuantity(productId, newQuantity);
   };
 
   const toggleWishlist = (productId: string) => {
@@ -201,22 +175,22 @@ const ShopPage: React.FC = () => {
   };
 
   const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return totalAmount;
   };
 
   const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
   const handleCheckout = () => {
-    if (cart.length === 0) return;
+    if (cartItems.length === 0) return;
     
     if (!isAuthenticated) {
       navigate('/login', { state: { from: '/shop/checkout' } });
       return;
     }
     
-    navigate('/shop/checkout', { state: { cartItems: cart } });
+    navigate('/shop/checkout');
   };
 
   return (
@@ -300,17 +274,85 @@ const ShopPage: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:w-3/4">
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                <span className="ml-2 text-lg text-gray-600">Loading products...</span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+                <div className="flex items-center">
+                  <div className="text-red-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-red-800 font-medium">Error loading products</p>
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    // Retry fetching products
+                    shopService.getAllProducts(1, 50)
+                      .then(fetchedProducts => {
+                        if (!fetchedProducts || fetchedProducts.length === 0) {
+                          setError('No products available at the moment.');
+                          return;
+                        }
+                        const transformedProducts: ShopPageProduct[] = fetchedProducts.map((product: ShopProduct) => ({
+                          id: product.id || '',
+                          name: product.name || 'Unknown Product',
+                          description: product.description || 'No description available',
+                          images: product.images && product.images.length > 0 ? product.images : ['/api/placeholder/300/300'],
+                          markedPrice: product.price || 0,
+                          discountPrice: product.price || 0,
+                          category: (product.category && product.category.length > 0) ? product.category[0] : 'general',
+                          inStock: (product.inventory || 0) > 0,
+                          shippingCharges: (product.price || 0) > 2000 ? 0 : 99,
+                          rating: product.rating || 4.0,
+                          totalReviews: product.reviewCount || 0,
+                          sellerId: product.sellerId || '',
+                          originalPrice: undefined,
+                          isNew: false,
+                          isSale: false
+                        }));
+                        setProducts(transformedProducts);
+                        setFilteredProducts(transformedProducts);
+                      })
+                      .catch(err => {
+                        setError(err.message || 'Failed to load products. Please try again.');
+                      })
+                      .finally(() => {
+                        setLoading(false);
+                      });
+                  }}
+                  className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
             {/* Results Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {selectedCategory === 'all' ? 'All Products' : categories.find(c => c.id === selectedCategory)?.name}
-                <span className="text-gray-500 font-normal ml-2">
-                  ({filteredProducts.length} products)
-                </span>
-              </h2>
+            {!loading && !error && (
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {selectedCategory === 'all' ? 'All Products' : categories.find(c => c.id === selectedCategory)?.name}
+                  <span className="text-gray-500 font-normal ml-2">
+                    ({filteredProducts.length} products)
+                  </span>
+                </h2>
               
               {/* Cart Summary */}
-              {cart.length > 0 && (
+              {cartItems.length > 0 && (
                 <div className="flex items-center gap-4">
                   <div className="bg-primary-500 text-white px-4 py-2 rounded-xl flex items-center gap-2">
                     <ShoppingCart className="w-5 h-5" />
@@ -325,10 +367,12 @@ const ShopPage: React.FC = () => {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            )}
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {!loading && !error && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
@@ -337,7 +381,7 @@ const ShopPage: React.FC = () => {
                   {/* Product Image */}
                   <div className="relative overflow-hidden">
                     <img
-                      src={product.image}
+                      src={product.images[0] || '/api/placeholder/300/300'}
                       alt={product.name}
                       className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -401,14 +445,14 @@ const ShopPage: React.FC = () => {
                         ))}
                       </div>
                       <span className="text-sm text-gray-600">
-                        {product.rating} ({product.reviewCount})
+                        {product.rating} ({product.totalReviews})
                       </span>
                     </div>
 
                     {/* Price */}
                     <div className="flex items-center gap-2 mb-4">
                       <span className="text-2xl font-bold text-gray-900">
-                        ₹{product.price.toLocaleString()}
+                        ₹{product.discountPrice.toLocaleString()}
                       </span>
                       {product.originalPrice && (
                         <span className="text-lg text-gray-500 line-through">
@@ -418,19 +462,19 @@ const ShopPage: React.FC = () => {
                     </div>
 
                     {/* Add to Cart */}
-                    {cart.find(item => item.id === product.id) ? (
+                    {cartItems.find(item => item.product.id === product.id) ? (
                       <div className="flex items-center justify-between bg-gray-50 rounded-xl p-2">
                         <button
-                          onClick={() => updateQuantity(product.id, cart.find(item => item.id === product.id)!.quantity - 1)}
+                          onClick={() => handleUpdateQuantity(product.id, cartItems.find(item => item.product.id === product.id)!.quantity - 1)}
                           className="p-2 hover:bg-gray-200 rounded-lg transition-colors duration-200"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="font-semibold">
-                          {cart.find(item => item.id === product.id)?.quantity}
+                          {cartItems.find(item => item.product.id === product.id)?.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(product.id, cart.find(item => item.id === product.id)!.quantity + 1)}
+                          onClick={() => handleUpdateQuantity(product.id, cartItems.find(item => item.product.id === product.id)!.quantity + 1)}
                           className="p-2 hover:bg-gray-200 rounded-lg transition-colors duration-200"
                         >
                           <Plus className="w-4 h-4" />
@@ -453,10 +497,11 @@ const ShopPage: React.FC = () => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             {/* Empty State */}
-            {filteredProducts.length === 0 && (
+            {!loading && !error && filteredProducts.length === 0 && (
               <div className="text-center py-16">
                 <div className="text-gray-400 mb-4">
                   <Search className="w-16 h-16 mx-auto" />

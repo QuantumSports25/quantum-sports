@@ -7,6 +7,7 @@ import {
   UserCheck,
   BarChart3,
   PartyPopper,
+  Package,
   LucideIcon,
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ export const adminMenuItems: MenuItem[] = [
   { id: 'venues', label: 'Venues', icon: Building, path: '/admin/dashboard/venues' },
   { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/dashboard/bookings' },
   { id: 'events', label: 'Events', icon: PartyPopper, path: '/admin/dashboard/events' },
+  { id: 'products', label: 'Products', icon: Package, path: '/admin/dashboard/products' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/dashboard/settings' },
 ];
 

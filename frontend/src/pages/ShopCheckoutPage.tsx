@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Truck, Shield, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, CreditCard, Truck, Shield, Check, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
+import { shopService, ShippingAddress, CreateOrderRequest, ShopCartProduct } from '../services/shopService';
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
+// Using CartItem from cart store directly
 
 interface CheckoutFormData {
   email: string;
@@ -22,15 +18,26 @@ interface CheckoutFormData {
   phone: string;
 }
 
+interface PaymentMethod {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+  { id: 'razorpay', name: 'Credit/Debit Card', description: 'Pay securely with your card' },
+  { id: 'wallet', name: 'Wallet', description: 'Pay using your wallet balance' }
+];
+
 const ShopCheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAuthenticated } = useAuthStore();
+  const { items: cartItems, clearCart } = useCartStore();
   
-  // Get cart data from location state or localStorage
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('razorpay');
+  const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || '',
@@ -44,15 +51,11 @@ const ShopCheckoutPage: React.FC = () => {
   });
 
   useEffect(() => {
-    // Get cart data from location state or redirect back to shop
-    const cartData = location.state?.cartItems;
-    if (cartData && cartData.length > 0) {
-      setCartItems(cartData);
-    } else {
-      // If no cart data, redirect to shop
+    // Check if cart has items, if not redirect to shop
+    if (cartItems.length === 0) {
       navigate('/shop');
     }
-  }, [location.state, navigate]);
+  }, [cartItems.length, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -63,7 +66,7 @@ const ShopCheckoutPage: React.FC = () => {
   };
 
   const getSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => total + (item.product.discountPrice * item.quantity), 0);
   };
 
   const getShipping = () => {
@@ -78,30 +81,142 @@ const ShopCheckoutPage: React.FC = () => {
     return getSubtotal() + getShipping() + getTax();
   };
 
+  const validateForm = (): string | null => {
+    if (!formData.firstName.trim()) return 'First name is required';
+    if (!formData.lastName.trim()) return 'Last name is required';
+    if (!formData.email.trim()) return 'Email is required';
+    if (!formData.phone.trim()) return 'Phone number is required';
+    if (!formData.address.trim()) return 'Address is required';
+    if (!formData.city.trim()) return 'City is required';
+    if (!formData.state.trim()) return 'State is required';
+    if (!formData.zipCode.trim()) return 'ZIP code is required';
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) return 'Please enter a valid email address';
+    
+    // Basic phone validation (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phone.replace(/\D/g, ''))) return 'Please enter a valid 10-digit phone number';
+    
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       navigate('/login', { state: { from: '/shop/checkout' } });
       return;
     }
 
+    // Validate form
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError('Your cart is empty');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      setLoading(false);
-      setOrderPlaced(true);
+    try {
+      // Debug: Log current user and auth state
+      console.log('Checkout - User:', user);
+      console.log('Checkout - Is Authenticated:', isAuthenticated);
+      console.log('Checkout - Auth Token:', useAuthStore.getState().token);
       
-      // Clear cart and redirect after success
-      setTimeout(() => {
-        navigate('/shop', { 
-          state: { 
-            message: 'Order placed successfully! You will receive a confirmation email shortly.' 
-          } 
+      // Prepare shipping address
+      const shippingAddress: ShippingAddress = {
+        addressLine1: formData.address,
+        addressLine2: '',
+        city: formData.city,
+        postalCode: formData.zipCode,
+        country: 'India'
+      };
+
+      // Prepare cart products for order
+      const orderProducts: ShopCartProduct[] = cartItems.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        name: item.product.name
+      }));
+
+      // Create order request
+      const paymentMethodValue = selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay';
+      console.log('Selected payment method:', selectedPaymentMethod);
+      console.log('Converted payment method:', paymentMethodValue);
+      
+      const orderRequest: CreateOrderRequest = {
+        userId: user.id,
+        products: orderProducts,
+        shippingAddress,
+        totalAmount: getTotal(),
+        totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+        sellerId: 'default-seller-id', // TODO: Get seller ID from product when available
+        paymentMethod: paymentMethodValue
+      };
+
+      // Create order before payment
+      console.log('About to create order with request:', orderRequest);
+      const order = await shopService.createOrderBeforePayment(orderRequest);
+      console.log('Order created successfully:', order);
+
+      // Create payment
+      const paymentResponse = await shopService.createOrderPayment(order.id!);
+      
+      if (selectedPaymentMethod === 'wallet') {
+        // For wallet payment, verify immediately
+        await shopService.verifyPaymentAndOrder(order.id!, {
+          orderId: paymentResponse.data.id
         });
-      }, 3000);
-    }, 2000);
+        
+        setOrderPlaced(true);
+        clearCart(); // Clear cart after successful order
+        
+        // Redirect after success
+        setTimeout(() => {
+          navigate('/shop', { 
+            state: { 
+              message: 'Order placed successfully! You will receive a confirmation email shortly.' 
+            } 
+          });
+        }, 3000);
+      } else {
+        // For Razorpay, you would integrate with Razorpay SDK here
+        // For now, we'll simulate success
+        console.log('Razorpay payment would be initiated here with order ID:', paymentResponse.data.id);
+        
+        // Mock successful payment verification
+        await shopService.verifyPaymentAndOrder(order.id!, {
+          paymentId: 'mock_payment_' + Date.now(),
+          signature: 'mock_signature',
+          orderId: paymentResponse.data.id
+        });
+        
+        setOrderPlaced(true);
+        clearCart(); // Clear cart after successful order
+        
+        // Redirect after success
+        setTimeout(() => {
+          navigate('/shop', { 
+            state: { 
+              message: 'Order placed successfully! You will receive a confirmation email shortly.' 
+            } 
+          });
+        }, 3000);
+      }
+    } catch (err: any) {
+      console.error('Error placing order:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to place order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (orderPlaced) {
@@ -264,14 +379,43 @@ const ShopCheckoutPage: React.FC = () => {
               {/* Payment Method */}
               <div className="bg-white rounded-2xl shadow-soft p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Method</h2>
-                <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl">
-                  <CreditCard className="w-6 h-6 text-primary-500" />
-                  <div>
-                    <div className="font-medium text-gray-900">Secure Payment</div>
-                    <div className="text-sm text-gray-600">Payment will be processed securely</div>
-                  </div>
+                <div className="space-y-3">
+                  {PAYMENT_METHODS.map((method) => (
+                    <label key={method.id} className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={method.id}
+                        checked={selectedPaymentMethod === method.id}
+                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                        className="w-4 h-4 text-primary-500 focus:ring-primary-500"
+                      />
+                      <CreditCard className="w-6 h-6 text-primary-500" />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{method.name}</div>
+                        <div className="text-sm text-gray-600">{method.description}</div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </div>
+
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                  <div className="flex items-center">
+                    <div className="text-red-600">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-red-800 font-medium">Payment Error</p>
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </form>
           </div>
 
@@ -285,16 +429,16 @@ const ShopCheckoutPage: React.FC = () => {
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-3">
                     <img
-                      src={item.image}
-                      alt={item.name}
+                      src={item.product.images[0] || '/api/placeholder/300/300'}
+                      alt={item.product.name}
                       className="w-16 h-16 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 text-sm">{item.name}</h3>
+                      <h3 className="font-medium text-gray-900 text-sm">{item.product.name}</h3>
                       <div className="text-sm text-gray-600">Qty: {item.quantity}</div>
                     </div>
                     <div className="font-semibold text-gray-900">
-                      ₹{(item.price * item.quantity).toLocaleString()}
+                      ₹{(item.product.discountPrice * item.quantity).toLocaleString()}
                     </div>
                   </div>
                 ))}
@@ -348,8 +492,8 @@ const ShopCheckoutPage: React.FC = () => {
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Processing...
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing Payment...
                   </div>
                 ) : (
                   `Place Order - ₹${getTotal().toLocaleString()}`

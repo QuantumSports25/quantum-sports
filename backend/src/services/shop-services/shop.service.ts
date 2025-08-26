@@ -18,6 +18,29 @@ import { withRetries } from "../../utils/retryFunction";
 const prisma = new PrismaClient();
 
 export class ShopService {
+
+  static async updateProduct(id: string, product: Product) {
+    try {
+      const updatedProduct = await prisma.product.update({
+        where: { id },
+        data: {
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          inventory: product.inventory,
+          category: product.category,
+          updatedAt: new Date(),
+          sellerId: product.sellerId,
+          images: product.images,
+        },
+      });
+      return updatedProduct;
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
+  }
+
   static async getAllProducts(page: number, pageSize: number) {
     try {
       const products = await prisma.product.findMany({

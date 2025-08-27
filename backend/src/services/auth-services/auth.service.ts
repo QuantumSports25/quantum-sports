@@ -1,8 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { EmailService } from "./email.service";
 import { User, UserRole, MembershipSummary } from "../../models/user.model";
+import { ShoppingAddress } from "../../models/shop.model";
 
 const prisma = new PrismaClient();
 
@@ -365,12 +366,13 @@ export class AuthService {
         name: user.name,
         email: user.email,
         phone: user?.phone ?? "",
-        role: user.role === "partner"
-          ? UserRole.PARTNER
-          : user.role === "admin"
+        role:
+          user.role === "partner"
+            ? UserRole.PARTNER
+            : user.role === "admin"
             ? UserRole.ADMIN
             : UserRole.USER,
-        shippingAddress: []
+        shippingAddress: [],
       };
 
       return userData;
@@ -439,7 +441,9 @@ export class AuthService {
       });
     } catch (error) {
       console.error("Change Password Error:", error);
-      throw error instanceof Error ? error : new Error("Failed to change password");
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to change password");
     }
   }
 
@@ -506,6 +510,26 @@ export class AuthService {
     } catch (error) {
       console.error("Get All Users Error:", error);
       throw new Error("Failed to retrieve users: " + error);
+    }
+  }
+
+  static async updateAddress(
+    userId: string,
+    address: ShoppingAddress[]
+  ): Promise<void> {
+    try {
+      await prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          shippingAddress: address as unknown as Prisma.JsonArray,
+        },
+      });
+
+    } catch (error) {
+      console.error("Add Address Error:", error);
+      throw new Error("Failed to add address");
     }
   }
 }

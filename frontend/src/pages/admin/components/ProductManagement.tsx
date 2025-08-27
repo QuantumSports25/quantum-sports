@@ -244,6 +244,39 @@ const ProductManagement: React.FC = () => {
       if (imageUrl) setLocalImages(prev => [...prev, imageUrl]);
     };
 
+    const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.target as HTMLInputElement;
+      const files = Array.from(input.files || []);
+      if (!files.length) return;
+
+      const MAX = 5 * 1024; // 5KB
+      const tooLarge = files.filter((f) => f.size > MAX);
+      if (tooLarge.length) {
+        setError(`These files exceed 5KB and were skipped: ${tooLarge.map(f => f.name).join(', ')}`);
+      }
+      const okFiles = files.filter((f) => f.size <= MAX);
+      if (!okFiles.length) {
+        if (input) input.value = '';
+        return;
+      }
+
+      const readAsDataURL = (file: File) => new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+
+      try {
+        const dataUrls = await Promise.all(okFiles.map(readAsDataURL));
+        setLocalImages((prev) => [...prev, ...dataUrls]);
+      } catch (err) {
+        setError('Failed to read one or more files');
+      } finally {
+        if (input) input.value = '';
+      }
+    };
+
     const onSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!localName.trim() || !localDescription.trim() || !localPrice) {
@@ -397,6 +430,20 @@ const ProductManagement: React.FC = () => {
                 <Upload className="w-4 h-4 mx-auto mb-1" />
                 Add Image URL
               </button>
+              <input
+                id="product-image-input"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFilesSelected}
+                className="hidden"
+              />
+              <label
+                htmlFor="product-image-input"
+                className="mt-2 block w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors text-center cursor-pointer"
+              >
+                Upload from device (≤5KB)
+              </label>
             </div>
           </div>
 

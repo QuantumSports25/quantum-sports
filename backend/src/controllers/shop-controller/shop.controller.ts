@@ -12,6 +12,7 @@ import { AuthService } from "../../services/auth-services/auth.service";
 import { WalletService } from "../../services/payment-wallet-services/wallet.services";
 import { PaymentService } from "../../services/payment-wallet-services/payment.service";
 import { AppError } from "../../types";
+import { merge } from "lodash";
 
 export class ShopController {
   static async createProducts(req: Request, res: Response) {
@@ -46,6 +47,31 @@ export class ShopController {
       return res.status(500).json({ error: "Failed to create product" });
     }
   }
+
+  static async updateProduct(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const productData = req.body as Product;
+
+      if (!id) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const existingProduct = await ShopService.getProductByIds([id]);
+      if (!existingProduct) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      const product =  merge({}, existingProduct, productData);
+
+      const updatedProduct = await ShopService.updateProduct(id, product);
+      return res.status(200).json(updatedProduct);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      return res.status(500).json({ error: "Failed to update product" });
+    }
+  }
+
 
   static async getProductsById(req: Request, res: Response) {
     try {

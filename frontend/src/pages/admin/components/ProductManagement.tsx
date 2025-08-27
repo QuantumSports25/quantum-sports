@@ -51,6 +51,7 @@ const ProductManagement: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
   const [formLoading, setFormLoading] = useState(false);
   const [categories] = useState(adminShopService.getCategories());
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Orders state (Admin view)
   const [orders, setOrders] = useState<ShopOrder[]>([]);
@@ -136,115 +137,167 @@ const ProductManagement: React.FC = () => {
   };
 
   const handleEditProduct = (product: AdminProduct) => {
-    setError('Product editing is not available in the current backend implementation');
-    return;
-    // Code below would be used when backend supports editing
-    // setFormData({
-    //   name: product.name,
-    //   description: product.description,
-    //   price: product.price.toString(),
-    //   inventory: product.inventory.toString(),
-    //   category: product.category,
-    //   images: product.images,
-    //   sellerId: product.sellerId
-    // });
-    // setEditingProduct(product);
-    // setShowEditModal(true);
+    setFormData({
+      name: product.name,
+      description: product.description,
+      price: String(product.price),
+      inventory: String(product.inventory),
+      category: product.category,
+      images: product.images,
+      sellerId: product.sellerId,
+    });
+    setEditingProductId(product.id || null);
+    setShowCreateModal(false);
+    // Flag edit mode using showEditModal
+    setShowEditModal(true);
   };
 
   const handleDeleteProduct = async (product: AdminProduct) => {
-    setError('Product deletion is not available in the current backend implementation');
-    return;
-    // Code below would be used when backend supports deletion
-    // if (!product.id) return;
-    // 
-    // if (!window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
-    //   return;
-    // }
-    //
-    // try {
-    //   setLoading(true);
-    //   await adminShopService.deleteProduct(product.id);
-    //   await fetchProducts();
-    // } catch (err: any) {
-    //   setError(err.message);
-    // } finally {
-    //   setLoading(false);
-    // }
+    if (!product.id) return;
+    if (!window.confirm(`Delete "${product.name}"? This action cannot be undone.`)) return;
+    try {
+      setLoading(true);
+      await adminShopService.deleteProduct(product.id);
+      await fetchProducts();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleFormSubmit = React.useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name.trim() || !formData.description.trim() || !formData.price) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
+  const handleFormSubmit = React.useCallback(async (productData: CreateProductRequest) => {
     try {
       setFormLoading(true);
       setError(null);
 
-      const productData: CreateProductRequest = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        price: parseFloat(formData.price),
-        inventory: parseInt(formData.inventory) || 0,
-        category: formData.category,
-        images: formData.images,
-        sellerId: formData.sellerId
-      };
-
-      // Only create new products since update is not available in current backend
-      await adminShopService.createProduct(productData);
+      if (showEditModal) {
+        if (!editingProductId) throw new Error('Missing product ID to update');
+        await adminShopService.updateProduct(editingProductId, productData);
+      } else {
+        await adminShopService.createProduct(productData);
+      }
 
       setShowCreateModal(false);
       setShowEditModal(false);
+      setEditingProductId(null);
       await fetchProducts();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setFormLoading(false);
     }
-  }, [formData, fetchProducts]);
+  }, [editingProductId, showEditModal, fetchProducts]);
 
-  const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
+  // const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  //   const { name, value } = e.target;
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  // }, []);
 
-  const handleCategoryChange = React.useCallback((category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      category: prev.category.includes(category)
-        ? prev.category.filter(c => c !== category)
-        : [...prev.category, category]
-    }));
-  }, []);
+  // const handleCategoryChange = React.useCallback((category: string) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     category: prev.category.includes(category)
+  //       ? prev.category.filter(c => c !== category)
+  //       : [...prev.category, category]
+  //   }));
+  // }, []);
 
-  const handleImageAdd = React.useCallback(() => {
-    const imageUrl = prompt('Enter image URL:');
-    if (imageUrl) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, imageUrl]
-      }));
-    }
-  }, []);
+  // const handleImageAdd = React.useCallback(() => {
+  //   const imageUrl = prompt('Enter image URL:');
+  //   if (imageUrl) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       images: [...prev.images, imageUrl]
+  //     }));
+  //   }
+  // }, []);
 
-  const handleImageRemove = React.useCallback((index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  }, []);
+  // const handleImageRemove = React.useCallback((index: number) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     images: prev.images.filter((_, i) => i !== index)
+  //   }));
+  // }, []);
 
-  const ProductForm = React.memo(({ isEdit = false }: { isEdit?: boolean }) => (
+  const ProductForm: React.FC<{ isEdit?: boolean }> = ({ isEdit = false }) => {
+    const [localName, setLocalName] = useState(formData.name);
+    const [localDescription, setLocalDescription] = useState(formData.description);
+    const [localPrice, setLocalPrice] = useState(formData.price);
+    const [localInventory, setLocalInventory] = useState(formData.inventory);
+    const [localCategory, setLocalCategory] = useState<string[]>(formData.category);
+    const [localImages, setLocalImages] = useState<string[]>(formData.images);
+
+    const toggleLocalCategory = (category: string) => {
+      setLocalCategory(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
+    };
+
+    const removeLocalImage = (index: number) => {
+      setLocalImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const addLocalImage = () => {
+      const imageUrl = prompt('Enter image URL:');
+      if (imageUrl) setLocalImages(prev => [...prev, imageUrl]);
+    };
+
+    const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.target as HTMLInputElement;
+      const files = Array.from(input.files || []);
+      if (!files.length) return;
+
+      const MAX = 5 * 1024; // 5KB
+      const tooLarge = files.filter((f) => f.size > MAX);
+      if (tooLarge.length) {
+        setError(`These files exceed 5KB and were skipped: ${tooLarge.map(f => f.name).join(', ')}`);
+      }
+      const okFiles = files.filter((f) => f.size <= MAX);
+      if (!okFiles.length) {
+        if (input) input.value = '';
+        return;
+      }
+
+      const readAsDataURL = (file: File) => new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+
+      try {
+        const dataUrls = await Promise.all(okFiles.map(readAsDataURL));
+        setLocalImages((prev) => [...prev, ...dataUrls]);
+      } catch (err) {
+        setError('Failed to read one or more files');
+      } finally {
+        if (input) input.value = '';
+      }
+    };
+
+    const onSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!localName.trim() || !localDescription.trim() || !localPrice) {
+        setError('Please fill in all required fields');
+        return;
+      }
+      const productData: CreateProductRequest = {
+        name: localName.trim(),
+        description: localDescription.trim(),
+        price: parseFloat(localPrice),
+        inventory: parseInt(localInventory) || 0,
+        category: localCategory,
+        images: localImages,
+        sellerId: formData.sellerId,
+      };
+      await handleFormSubmit(productData);
+    };
+
+    return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">
             {isEdit ? 'Edit Product' : 'Create New Product'}
@@ -267,7 +320,7 @@ const ProductManagement: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Product Name *
@@ -275,8 +328,8 @@ const ProductManagement: React.FC = () => {
             <input
               type="text"
               name="name"
-              value={formData.name}
-              onChange={handleInputChange}
+              value={localName}
+              onChange={(e) => setLocalName(e.target.value)}
               required
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter product name"
@@ -289,8 +342,8 @@ const ProductManagement: React.FC = () => {
             </label>
             <textarea
               name="description"
-              value={formData.description}
-              onChange={handleInputChange}
+              value={localDescription}
+              onChange={(e) => setLocalDescription(e.target.value)}
               required
               rows={3}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -306,8 +359,8 @@ const ProductManagement: React.FC = () => {
               <input
                 type="number"
                 name="price"
-                value={formData.price}
-                onChange={handleInputChange}
+                value={localPrice}
+                onChange={(e) => setLocalPrice(e.target.value)}
                 required
                 min="0"
                 step="0.01"
@@ -323,8 +376,8 @@ const ProductManagement: React.FC = () => {
               <input
                 type="number"
                 name="inventory"
-                value={formData.inventory}
-                onChange={handleInputChange}
+                value={localInventory}
+                onChange={(e) => setLocalInventory(e.target.value)}
                 min="0"
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0"
@@ -341,8 +394,8 @@ const ProductManagement: React.FC = () => {
                 <label key={category} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.category.includes(category)}
-                    onChange={() => handleCategoryChange(category)}
+                    checked={localCategory.includes(category)}
+                    onChange={() => toggleLocalCategory(category)}
                     className="text-blue-500 focus:ring-blue-500"
                   />
                   <span className="text-gray-300 text-sm capitalize">{category}</span>
@@ -356,13 +409,13 @@ const ProductManagement: React.FC = () => {
               Images
             </label>
             <div className="space-y-2">
-              {formData.images.map((image, index) => (
+              {localImages.map((image, index) => (
                 <div key={index} className="flex items-center gap-2 bg-gray-700 p-2 rounded">
                   <img src={image} alt={`Preview ${index + 1}`} className="w-12 h-12 object-cover rounded" />
                   <span className="text-gray-300 text-sm flex-1 truncate">{image}</span>
                   <button
                     type="button"
-                    onClick={() => handleImageRemove(index)}
+                    onClick={() => removeLocalImage(index)}
                     className="text-red-400 hover:text-red-300"
                   >
                     <X className="w-4 h-4" />
@@ -371,12 +424,26 @@ const ProductManagement: React.FC = () => {
               ))}
               <button
                 type="button"
-                onClick={handleImageAdd}
+                onClick={addLocalImage}
                 className="w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
               >
                 <Upload className="w-4 h-4 mx-auto mb-1" />
                 Add Image URL
               </button>
+              <input
+                id="product-image-input"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFilesSelected}
+                className="hidden"
+              />
+              <label
+                htmlFor="product-image-input"
+                className="mt-2 block w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors text-center cursor-pointer"
+              >
+                Upload from device (≤5KB)
+              </label>
             </div>
           </div>
 
@@ -403,7 +470,8 @@ const ProductManagement: React.FC = () => {
         </form>
       </div>
     </div>
-  ));
+  );
+  };
 
   return (
     <div className="space-y-6">
@@ -630,17 +698,15 @@ const ProductManagement: React.FC = () => {
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => handleEditProduct(product)}
-                              className="text-gray-500 p-1 cursor-not-allowed opacity-50"
-                              title="Edit not available in current backend"
-                              disabled
+                              className="text-gray-300 hover:text-white p-1"
+                              title="Edit product"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteProduct(product)}
-                              className="text-gray-500 p-1 cursor-not-allowed opacity-50"
-                              title="Delete not available in current backend"
-                              disabled
+                              className="text-red-400 hover:text-red-300 p-1"
+                              title="Delete product"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

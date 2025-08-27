@@ -102,20 +102,25 @@ export const adminShopService = {
   // Update an existing product - not available in existing backend, return error message
   updateProduct: async (id: string, productData: UpdateProductRequest): Promise<AdminProduct> => {
     try {
-      throw new Error('Product update functionality is not available in the current backend implementation');
+      const response = await api.put(`/shop/update-product/${id}`, productData);
+      return response.data;
     } catch (error: any) {
       console.error('Error updating product:', error);
-      throw new Error(error.message || 'Update functionality not available');
+      throw new Error(error.response?.data?.error || 'Failed to update product');
     }
   },
 
   // Delete a product - not available in existing backend, return error message
   deleteProduct: async (id: string): Promise<{ message: string }> => {
     try {
-      throw new Error('Product delete functionality is not available in the current backend implementation');
+      const response = await api.delete(`/shop/delete-product/${id}`);
+      if (response.status === 204) {
+        return { message: 'Product deleted' };
+      }
+      return response.data || { message: 'Product deleted' };
     } catch (error: any) {
       console.error('Error deleting product:', error);
-      throw new Error(error.message || 'Delete functionality not available');
+      throw new Error(error.response?.data?.error || 'Failed to delete product');
     }
   },
 

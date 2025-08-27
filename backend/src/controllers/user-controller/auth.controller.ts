@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { AuthService } from "../../services/auth-services/auth.service";
-import { UserRole } from "../../models/user.model";
 // no-op
 
 export class AuthController {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut, Settings, BarChart3, Shield, ChevronDown, Wallet, Calendar, Phone } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, BarChart3, Shield, ChevronDown, Wallet, Calendar, Phone, Package } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 const Header: React.FC = () => {
@@ -212,6 +212,17 @@ const Header: React.FC = () => {
                             <span>Wallet</span>
                           </Link>
                           <Link
+                            to="/orders"
+                            onClick={closeUserMenu}
+                            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActivePath('/orders')
+                              ? 'bg-blue-900/50 text-blue-400'
+                              : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                              }`}
+                          >
+                            <Package className="h-4 w-4" />
+                            <span>My Orders</span>
+                          </Link>
+                          <Link
                             to="/bookings"
                             onClick={closeUserMenu}
                             className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActivePath('/bookings')
@@ -354,6 +365,16 @@ const Header: React.FC = () => {
                       }`}
                   >
                     Wallet
+                  </Link>
+                  <Link
+                    to="/orders"
+                    onClick={closeMenu}
+                    className={`block px-4 py-3 rounded-xl font-medium transition-all duration-200 touch-manipulation ${isActivePath('/orders')
+                      ? 'bg-blue-900/50 text-blue-400 border border-blue-700/50'
+                      : 'text-gray-300 hover:bg-gray-800/50 hover:text-white active:bg-gray-700/50'
+                      }`}
+                  >
+                    My Orders
                   </Link>
                   <Link
                     to="/bookings"

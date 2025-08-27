@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Truck, Shield, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, Shield,  Loader2 } from 'lucide-react';
+import ShopOrderSuccessModal from '../components/modals/ShopOrderSuccessModal';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { shopService, ShippingAddress, CreateOrderRequest, ShopCartProduct } from '../services/shopService';
@@ -36,6 +37,7 @@ const ShopCheckoutPage: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderSuccessDetails, setOrderSuccessDetails] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('razorpay');
   const [error, setError] = useState<string | null>(null);
   
@@ -185,14 +187,18 @@ const ShopCheckoutPage: React.FC = () => {
         });
 
         setOrderPlaced(true);
+        setOrderSuccessDetails({
+          orderId,
+          paymentMethod: paymentMethodValue,
+          subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
+          shipping: getShipping(),
+          tax: getTax(),
+          total: getTotal(),
+          items: orderProducts,
+          shippingAddress,
+          orderDate: new Date(),
+        });
         clearCart();
-        setTimeout(() => {
-          navigate('/shop', {
-            state: {
-              message: 'Order placed successfully! You will receive a confirmation email shortly.',
-            },
-          });
-        }, 3000);
         return;
       }
 
@@ -234,14 +240,19 @@ const ShopCheckoutPage: React.FC = () => {
             });
 
             setOrderPlaced(true);
+            setOrderSuccessDetails({
+              orderId,
+              paymentId: response.razorpay_payment_id,
+              paymentMethod: paymentMethodValue,
+              subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
+              shipping: getShipping(),
+              tax: getTax(),
+              total: getTotal(),
+              items: orderProducts,
+              shippingAddress,
+              orderDate: new Date(),
+            });
             clearCart();
-            setTimeout(() => {
-              navigate('/shop', {
-                state: {
-                  message: 'Order placed successfully! You will receive a confirmation email shortly.',
-                },
-              });
-            }, 3000);
           } catch (verifyErr: any) {
             console.error('Payment verification failed:', verifyErr);
             setError(verifyErr?.message || 'Payment verification failed');
@@ -264,20 +275,9 @@ const ShopCheckoutPage: React.FC = () => {
 
   if (orderPlaced) {
     return (
-      <div className="min-h-screen bg-gray-50 mt-16 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-large p-8 max-w-md w-full mx-4 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-8 h-8 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Placed Successfully!</h2>
-          <p className="text-gray-600 mb-6">
-            Thank you for your purchase. You will receive a confirmation email shortly.
-          </p>
-          <div className="text-sm text-gray-500">
-            Redirecting to shop in a few seconds...
-          </div>
-        </div>
-      </div>
+      <>
+        <ShopOrderSuccessModal isOpen={true} onClose={() => navigate('/shop')} details={orderSuccessDetails} />
+      </>
     );
   }
 

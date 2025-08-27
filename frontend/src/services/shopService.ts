@@ -50,6 +50,10 @@ export interface ShopOrder {
   paymentDetails?: {
     paymentAmount: number;
     paymentMethod: string;
+    paymentDate?: string | Date;
+    isRefunded?: boolean;
+    razorpayOrderId?: string;
+    razorpayPaymentId?: string;
   };
   customerDetails?: {
     customerId: string;

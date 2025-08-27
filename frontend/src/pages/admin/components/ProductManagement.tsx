@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Package, 
-  DollarSign, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Package,
+  DollarSign,
   Eye,
   Filter,
   ChevronLeft,
@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { AdminProduct, adminShopService, CreateProductRequest } from '../../../services/adminShopService';
+import { shopService, ShopOrder } from '../../../services/shopService';
 
 interface ProductFormData {
   name: string;
@@ -36,6 +37,7 @@ const initialFormData: ProductFormData = {
 };
 
 const ProductManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,14 +52,23 @@ const ProductManagement: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [categories] = useState(adminShopService.getCategories());
 
+  // Orders state (Admin view)
+  const [orders, setOrders] = useState<ShopOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchProducts();
-    }, 300); // Debounce search
-    
+      if (activeTab === 'products') {
+        fetchProducts();
+      } else {
+        fetchOrders();
+      }
+    }, 300);
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, selectedCategory]);
+  }, [currentPage, selectedCategory, activeTab]);
 
   // Separate effect for search query with debouncing
   useEffect(() => {
@@ -65,11 +76,11 @@ const ProductManagement: React.FC = () => {
       fetchProducts();
       return;
     }
-    
+
     const timeoutId = setTimeout(() => {
       fetchProducts();
     }, 500); // Debounce search input
-    
+
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
@@ -79,9 +90,9 @@ const ProductManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       const response = await adminShopService.getAllProducts(
-        currentPage, 
-        10, 
-        searchQuery, 
+        currentPage,
+        10,
+        searchQuery,
         selectedCategory
       );
       setProducts(response.products);
@@ -93,6 +104,20 @@ const ProductManagement: React.FC = () => {
       setLoading(false);
     }
   }, [currentPage, searchQuery, selectedCategory]);
+
+  const fetchOrders = React.useCallback(async () => {
+    try {
+      setOrdersLoading(true);
+      setOrdersError(null);
+      // For now fetch first 50 orders
+      const resp = await shopService.getAllShopOrders(1, 50);
+      setOrders(resp || []);
+    } catch (err: any) {
+      setOrdersError(err.message || 'Failed to load orders');
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +175,7 @@ const ProductManagement: React.FC = () => {
 
   const handleFormSubmit = React.useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim() || !formData.description.trim() || !formData.price) {
       setError('Please fill in all required fields');
       return;
@@ -385,98 +410,120 @@ const ProductManagement: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Product Management</h2>
-          <p className="text-gray-400 mt-1">Manage your shop inventory</p>
+          <h2 className="text-2xl font-bold text-white">Shop Management</h2>
+          <p className="text-gray-400 mt-1">Manage products and view orders</p>
         </div>
+        {activeTab === 'products' && (
+          <button
+            onClick={handleCreateProduct}
+            className="mt-4 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Product</span>
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
         <button
-          onClick={handleCreateProduct}
-          className="mt-4 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          onClick={() => setActiveTab('products')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'products' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Product</span>
+          Products
+        </button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'orders' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+        >
+          Orders
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-400">Total Products</p>
-              <p className="text-2xl font-bold text-white">{totalCount}</p>
+      {/* Stats Cards - only for Products tab */}
+      {activeTab === 'products' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400">Total Products</p>
+                <p className="text-2xl font-bold text-white">{totalCount}</p>
+              </div>
+              <Package className="h-8 w-8 text-blue-400" />
             </div>
-            <Package className="h-8 w-8 text-blue-400" />
           </div>
-        </div>
-        
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-400">In Stock</p>
-              <p className="text-2xl font-bold text-white">
-                {products.filter(p => p.inventory > 0).length}
-              </p>
-            </div>
-            <Eye className="h-8 w-8 text-green-400" />
-          </div>
-        </div>
-        
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-400">Out of Stock</p>
-              <p className="text-2xl font-bold text-white">
-                {products.filter(p => p.inventory === 0).length}
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-red-400" />
-          </div>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => {
-                  e.persist();
-                  setSearchQuery(e.target.value);
-                }}
-                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400">In Stock</p>
+                <p className="text-2xl font-bold text-white">
+                  {products.filter(p => p.inventory > 0).length}
+                </p>
+              </div>
+              <Eye className="h-8 w-8 text-green-400" />
             </div>
           </div>
-          
-          <div className="flex gap-2">
-            <select
-              value={selectedCategory}
-              onChange={(e) => handleCategoryFilter(e.target.value)}
-              className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category} className="capitalize">
-                  {category}
-                </option>
-              ))}
-            </select>
-            
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filter</span>
-            </button>
+
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-400">Out of Stock</p>
+                <p className="text-2xl font-bold text-white">
+                  {products.filter(p => p.inventory === 0).length}
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-red-400" />
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
+
+      {/* Filters (Products tab only) */}
+      {activeTab === 'products' && (
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    e.persist();
+                    setSearchQuery(e.target.value);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                value={selectedCategory}
+                onChange={(e) => handleCategoryFilter(e.target.value)}
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category} className="capitalize">
+                    {category}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <Filter className="w-4 h-4" />
+                <span>Filter</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
@@ -492,189 +539,292 @@ const ProductManagement: React.FC = () => {
       )}
 
       {/* Products Table */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <p className="text-gray-400 mt-2">Loading products...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="p-8 text-center">
-            <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-400 mb-2">No products found</h3>
-            <p className="text-gray-500">Get started by creating your first product.</p>
-          </div>
-        ) : (
-          <>
+      {activeTab === 'products' && (
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <p className="text-gray-400 mt-2">Loading products...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="p-8 text-center">
+              <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-400 mb-2">No products found</h3>
+              <p className="text-gray-500">Get started by creating your first product.</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-900">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Inventory
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Categories
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {products.map((product) => (
+                      <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img
+                              src={product.images[0] || '/api/placeholder/40/40'}
+                              alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover mr-3"
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-white">
+                                {product.name}
+                              </div>
+                              <div className="text-sm text-gray-400 max-w-xs truncate">
+                                {product.description}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                          ₹{product.price.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${product.inventory > 0
+                              ? 'bg-green-900/20 text-green-400'
+                              : 'bg-red-900/20 text-red-400'
+                            }`}>
+                            {product.inventory > 0 ? `${product.inventory} in stock` : 'Out of stock'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          <div className="flex flex-wrap gap-1">
+                            {product.category.slice(0, 2).map((cat) => (
+                              <span key={cat} className="bg-gray-700 px-2 py-1 rounded text-xs capitalize">
+                                {cat}
+                              </span>
+                            ))}
+                            {product.category.length > 2 && (
+                              <span className="text-gray-500 text-xs">
+                                +{product.category.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handleEditProduct(product)}
+                              className="text-gray-500 p-1 cursor-not-allowed opacity-50"
+                              title="Edit not available in current backend"
+                              disabled
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(product)}
+                              className="text-gray-500 p-1 cursor-not-allowed opacity-50"
+                              title="Delete not available in current backend"
+                              disabled
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="bg-gray-900 px-6 py-3 flex items-center justify-between border-t border-gray-700">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-400">
+                        Showing <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{' '}
+                        <span className="font-medium">{Math.min(currentPage * 10, totalCount)}</span> of{' '}
+                        <span className="font-medium">{totalCount}</span> results
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+
+                        {/* Page numbers */}
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(pageNumber)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
+                                  ? 'z-10 bg-blue-600 border-blue-500 text-white'
+                                  : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
+                                }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        })}
+
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Orders List */}
+      {activeTab === 'orders' && (
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+          {ordersLoading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <p className="text-gray-400 mt-2">Loading orders...</p>
+            </div>
+          ) : ordersError ? (
+            <div className="p-8 text-center text-red-400">{ordersError}</div>
+          ) : orders.length === 0 ? (
+            <div className="p-8 text-center text-gray-400">No orders yet.</div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Inventory
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Categories
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Order ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Items</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Payment</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img
-                            src={product.images[0] || '/api/placeholder/40/40'}
-                            alt={product.name}
-                            className="w-10 h-10 rounded-lg object-cover mr-3"
-                          />
-                          <div>
-                            <div className="text-sm font-medium text-white">
-                              {product.name}
-                            </div>
-                            <div className="text-sm text-gray-400 max-w-xs truncate">
-                              {product.description}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        ₹{product.price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          product.inventory > 0 
-                            ? 'bg-green-900/20 text-green-400'
-                            : 'bg-red-900/20 text-red-400'
-                        }`}>
-                          {product.inventory > 0 ? `${product.inventory} in stock` : 'Out of stock'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        <div className="flex flex-wrap gap-1">
-                          {product.category.slice(0, 2).map((cat) => (
-                            <span key={cat} className="bg-gray-700 px-2 py-1 rounded text-xs capitalize">
-                              {cat}
-                            </span>
-                          ))}
-                          {product.category.length > 2 && (
-                            <span className="text-gray-500 text-xs">
-                              +{product.category.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
+                  {orders.map((o) => (
+                    <React.Fragment key={o.id}>
+                      <tr className="hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-3 font-mono text-sm text-white">{o.id}</td>
+                        <td className="px-6 py-3 text-sm text-gray-300">{o.customerDetails?.customerName || o.userId}</td>
+                        <td className="px-6 py-3 text-sm text-gray-300">{o.totalItems}</td>
+                        <td className="px-6 py-3 text-sm text-white">₹{o.totalAmount?.toLocaleString?.() ?? o.totalAmount}</td>
+                        <td className="px-6 py-3 text-sm text-gray-300">{o.paymentStatus}</td>
+                        <td className="px-6 py-3 text-sm text-gray-300">{o.orderStatus}</td>
+                        <td className="px-6 py-3 text-right text-sm">
                           <button
-                            onClick={() => handleEditProduct(product)}
-                            className="text-gray-500 p-1 cursor-not-allowed opacity-50"
-                            title="Edit not available in current backend"
-                            disabled
+                            onClick={() => setExpandedOrderId(expandedOrderId === o.id ? null : (o.id as string))}
+                            className="text-blue-400 hover:text-blue-300"
                           >
-                            <Edit className="w-4 h-4" />
+                            {expandedOrderId === o.id ? 'Hide' : 'View'}
                           </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product)}
-                            className="text-gray-500 p-1 cursor-not-allowed opacity-50"
-                            title="Delete not available in current backend"
-                            disabled
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                      {expandedOrderId === o.id && (
+                        <tr className="bg-gray-900/40">
+                          <td className="px-6 py-4" colSpan={7}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                              <div>
+                                <h4 className="font-semibold text-white mb-2">Customer Details</h4>
+                                <div className="text-gray-300 space-y-1">
+                                  <p>Name: {o.customerDetails?.customerName || '-'}</p>
+                                  <p>Email: {o.customerDetails?.customerEmail || '-'}</p>
+                                  <p>Phone: {o.customerDetails?.customerPhone || '-'}</p>
+                                  <p>User ID: {o.userId}</p>
+                                </div>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-white mb-2">Shipping Address</h4>
+                                <div className="text-gray-300 space-y-1">
+                                  <p>{o.shippingAddress.addressLine1}</p>
+                                  {o.shippingAddress.addressLine2 && <p>{o.shippingAddress.addressLine2}</p>}
+                                  <p>{o.shippingAddress.city} - {o.shippingAddress.postalCode}</p>
+                                  <p>{o.shippingAddress.country}</p>
+                                </div>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-white mb-2">Products</h4>
+                                <ul className="text-gray-300 list-disc list-inside space-y-1">
+                                  {o.products.map((p) => (
+                                    <li key={p.productId}>{p.name} × {p.quantity}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-white mb-2">Payment</h4>
+                                <div className="text-gray-300 space-y-1">
+                                  <p>Method: {o.paymentDetails?.paymentMethod || '-'}</p>
+                                  <p>Amount: ₹{(o.paymentDetails?.paymentAmount ?? o.totalAmount).toLocaleString?.() ?? o.totalAmount}</p>
+                                  {((o as any).paymentDetails?.razorpayOrderId) && <p>Rz Order ID: {(o as any).paymentDetails.razorpayOrderId}</p>}
+                                  {((o as any).paymentDetails?.razorpayPaymentId) && <p>Rz Payment ID: {(o as any).paymentDetails.razorpayPaymentId}</p>}
+                                  {((o as any).paymentDetails?.paymentDate) && <p>Date: {new Date((o as any).paymentDetails.paymentDate).toLocaleString()}</p>}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
+                              <p><span className="text-gray-400">Order Status:</span> {o.orderStatus}</p>
+                              <p><span className="text-gray-400">Payment Status:</span> {o.paymentStatus}</p>
+                              <p><span className="text-gray-400">Created:</span> {new Date(o.createdAt as any).toLocaleString()}</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="bg-gray-900 px-6 py-3 flex items-center justify-between border-t border-gray-700">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">
-                      Showing <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{' '}
-                      <span className="font-medium">{Math.min(currentPage * 10, totalCount)}</span> of{' '}
-                      <span className="font-medium">{totalCount}</span> results
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      
-                      {/* Page numbers */}
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
-                        return (
-                          <button
-                            key={pageNumber}
-                            onClick={() => setCurrentPage(pageNumber)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === pageNumber
-                                ? 'z-10 bg-blue-600 border-blue-500 text-white'
-                                : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
-                            }`}
-                          >
-                            {pageNumber}
-                          </button>
-                        );
-                      })}
-                      
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </nav>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
       {showCreateModal && <ProductForm />}

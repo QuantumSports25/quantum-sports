@@ -52,6 +52,8 @@ import ShopPage from "./pages/ShopPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import ShopCheckoutPage from "./pages/ShopCheckoutPage";
+import MyOrdersPage from "./pages/MyOrdersPage";
+import OrderDetailsPage from "./pages/OrderDetailsPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 
 // Import route tracking hook
@@ -116,6 +118,22 @@ function App() {
             <Route path="/membership" element={<MembershipPage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/shop/checkout" element={<ShopCheckoutPage />} />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <MyOrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:orderId"
+              element={
+                <ProtectedRoute>
+                  <OrderDetailsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:eventId" element={<EventDetailsPage />} />
             <Route path="/terms" element={<TermsPage />} />

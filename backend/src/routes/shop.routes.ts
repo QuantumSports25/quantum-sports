@@ -12,6 +12,7 @@ router.get('/get-shop-order/:id', authMiddleware, ShopController.getShopOrderByI
 router.get('/get-products', ShopController.getAllProducts);
 router.post('/get-product-by-ids', ShopController.getProductsById);
 router.delete('/delete-product/:id', authMiddleware, ShopController.deleteProduct);
+router.post('/unlock-inventory/:id', authMiddleware, ShopController.unlockInventoryByOrderId);
 
 
 //payment

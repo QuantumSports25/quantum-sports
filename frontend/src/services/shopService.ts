@@ -190,5 +190,15 @@ export const shopService = {
     const response = await api.get(`/shop/get-shop-order/${orderId}`);
     return response.data;
   },
+
+  // Unlock inventory by order ID
+  unlockInventoryByOrderId: async (orderId: string): Promise<void> => {
+    try {
+      await api.post(`/shop/unlock-inventory/${orderId}`);
+    } catch (error: any) {
+      console.error('Error unlocking inventory:', error);
+      throw new Error(error.response?.data?.error || 'Failed to unlock inventory');
+    }
+  }
 };
 

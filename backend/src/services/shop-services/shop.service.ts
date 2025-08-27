@@ -303,7 +303,7 @@ export class ShopService {
               await this.unlockProductInventory(
                 shopOrder.products,
                 shopOrder.userId,
-                false
+                success
               );
 
               await tx.transactionHistory.update({
@@ -575,8 +575,15 @@ export class ShopService {
             const updateData: any = {
               lock: newLockArr as unknown as Prisma.InputJsonValue,
             };
-            if (success && userLock) {
+            if (!success && userLock) {
               updateData.inventory = { increment: userLock.quantity };
+            }
+
+            if(success && !userLock) {
+              const foundProduct = productsData.find((p) => p.productId === product.id);
+              if (foundProduct) {
+                updateData.inventory = { decrement: foundProduct.quantity };
+              }
             }
 
             await tx.product.update({

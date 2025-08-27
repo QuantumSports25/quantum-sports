@@ -66,7 +66,7 @@ export const eventService = {
         page: params?.page ?? 1,
         limit: params?.limit ?? 20,
         sort: params?.sort ?? "desc",
-        date: params?.date ?? "1970-01-01T00:00:00.000Z",
+        date: params?.date ?? new Date().toISOString(),
         archived: params?.archived ?? false,
       },
     });

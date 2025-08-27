@@ -5,6 +5,7 @@ import ShopOrderSuccessModal from '../components/modals/ShopOrderSuccessModal';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { shopService, ShippingAddress, CreateOrderRequest, ShopCartProduct } from '../services/shopService';
+import { useMutation } from '@tanstack/react-query';
 
 // Using CartItem from cart store directly
 
@@ -40,6 +41,8 @@ const ShopCheckoutPage: React.FC = () => {
   const [orderSuccessDetails, setOrderSuccessDetails] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('razorpay');
   const [error, setError] = useState<string | null>(null);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [backendSubtotal,setBackendSubtotal] = useState(0);
   
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || '',
@@ -52,12 +55,86 @@ const ShopCheckoutPage: React.FC = () => {
     phone: user?.phone || ''
   });
 
+  // Mutations
+  const createOrderMutation = useMutation({
+    mutationFn: (orderRequest: CreateOrderRequest) => shopService.createOrderBeforePayment(orderRequest),
+    onError: (error: any) => {
+      console.error('Order creation failed:', error);
+      setError(error?.response?.data?.error || error.message || 'Failed to create order');
+    }
+  });
+
+  const createPaymentMutation = useMutation({
+    mutationFn: (orderId: string) => shopService.createOrderPayment(orderId),
+    onError: async (error: any, orderId: string) => {
+      console.error('Payment creation failed:', error);
+      // Unlock inventory if payment creation fails
+      if (orderId) {
+        await unlockInventoryMutation.mutateAsync(orderId);
+      }
+      setError(error?.response?.data?.error || error.message || 'Failed to create payment');
+    }
+  });
+
+  const verifyPaymentMutation = useMutation({
+    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: any }) => 
+      shopService.verifyPaymentAndOrder(orderId, paymentData),
+    onSuccess: (data, { orderId, paymentData }) => {
+      setOrderPlaced(true);
+      setOrderSuccessDetails({
+        orderId,
+        paymentId: paymentData.paymentId,
+        paymentMethod: selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay',
+        subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
+        total: backendSubtotal,
+        items: cartItems.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          name: item.product.name
+        })),
+        shippingAddress: {
+          addressLine1: formData.address,
+          addressLine2: '',
+          city: formData.city,
+          postalCode: formData.zipCode,
+          country: 'India'
+        },
+        orderDate: new Date(),
+      });
+      clearCart();
+      setCurrentOrderId(null);
+    },
+    onError: async (error: any, { orderId }) => {
+      console.error('Payment verification failed:', error);
+      // Unlock inventory if payment verification fails
+      if (orderId) {
+        await unlockInventoryMutation.mutateAsync(orderId);
+      }
+      setError(error?.response?.data?.error || error.message || 'Payment verification failed');
+    }
+  });
+
+  const unlockInventoryMutation = useMutation({
+    mutationFn: (orderId: string) => shopService.unlockInventoryByOrderId(orderId),
+    onError: (error: any) => {
+      console.error('Failed to unlock inventory:', error);
+      // Don't show this error to user, just log it
+    }
+  });
+
   useEffect(() => {
     // Check if cart has items, if not redirect to shop
     if (cartItems.length === 0) {
       navigate('/shop');
     }
-  }, [cartItems.length, navigate]);
+
+    const backendSubtotal = cartItems.reduce(
+        (sum, item) => sum + (item.product.markedPrice * item.quantity),
+        0
+      );
+
+    setBackendSubtotal(backendSubtotal);
+  }, [cartItems, cartItems.length, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -67,21 +144,6 @@ const ShopCheckoutPage: React.FC = () => {
     }));
   };
 
-  const getSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.product.discountPrice * item.quantity), 0);
-  };
-
-  const getShipping = () => {
-    return getSubtotal() > 2000 ? 0 : 99; // Free shipping over ₹2000
-  };
-
-  const getTax = () => {
-    return Math.round(getSubtotal() * 0.18); // 18% GST
-  };
-
-  const getTotal = () => {
-    return getSubtotal() + getShipping() + getTax();
-  };
 
   const validateForm = (): string | null => {
     if (!formData.firstName.trim()) return 'First name is required';
@@ -128,11 +190,6 @@ const ShopCheckoutPage: React.FC = () => {
     setError(null);
     
     try {
-      // Debug: Log current user and auth state
-      console.log('Checkout - User:', user);
-      console.log('Checkout - Is Authenticated:', isAuthenticated);
-      console.log('Checkout - Auth Token:', useAuthStore.getState().token);
-      
       // Prepare shipping address
       const shippingAddress: ShippingAddress = {
         addressLine1: formData.address,
@@ -151,14 +208,7 @@ const ShopCheckoutPage: React.FC = () => {
 
       // Create order request
       const paymentMethodValue = selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay';
-      console.log('Selected payment method:', selectedPaymentMethod);
-      console.log('Converted payment method:', paymentMethodValue);
       
-      // Compute subtotal based on backend product price (exclude discounts/shipping/tax)
-      const backendSubtotal = cartItems.reduce(
-        (sum, item) => sum + (item.product.markedPrice * item.quantity),
-        0
-      );
 
       const orderRequest: CreateOrderRequest = {
         userId: user.id,
@@ -166,43 +216,48 @@ const ShopCheckoutPage: React.FC = () => {
         shippingAddress,
         totalAmount: backendSubtotal,
         totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-        sellerId: 'default-seller-id', // TODO: Get seller ID from product when available
+        sellerId: 'default-seller-id', 
         paymentMethod: paymentMethodValue
       };
 
-      // Create order before payment
-      console.log('About to create order with request:', orderRequest);
-      const created = await shopService.createOrderBeforePayment(orderRequest);
+      // Step 1: Create order using mutation
+      const created = await createOrderMutation.mutateAsync(orderRequest);
       const orderId = typeof created === 'string' ? created : created?.id;
       if (!orderId) throw new Error('Failed to create order');
+      
+      setCurrentOrderId(orderId);
       console.log('Order created successfully:', orderId);
 
-      // Create payment order on backend
-      const paymentResponse = await shopService.createOrderPayment(orderId);
+      // Step 2: Create payment order using mutation
+      const paymentResponse = await createPaymentMutation.mutateAsync(orderId);
 
       if (selectedPaymentMethod === 'wallet') {
         // Wallet flow: backend already deducted credits and created transaction
-        await shopService.verifyPaymentAndOrder(orderId, {
-          orderId: paymentResponse.data.id,
-        });
-
-        setOrderPlaced(true);
-        setOrderSuccessDetails({
+        await verifyPaymentMutation.mutateAsync({
           orderId,
-          paymentMethod: paymentMethodValue,
-          subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
-          shipping: getShipping(),
-          tax: getTax(),
-          total: getTotal(),
-          items: orderProducts,
-          shippingAddress,
-          orderDate: new Date(),
+          paymentData: {
+            orderId: paymentResponse.data.id,
+          }
         });
-        clearCart();
         return;
       }
 
-      // Razorpay flow
+      // Step 3: Razorpay flow
+      await handleRazorpayPayment(orderId, paymentResponse, backendSubtotal);
+
+    } catch (err: any) {
+      console.error('Error in checkout process:', err);
+      // Error handling is done in individual mutations
+      if (!error) { // Only set error if not already set by mutation
+        setError(err.response?.data?.error || err.message || 'Failed to place order. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRazorpayPayment = async (orderId: string, paymentResponse: any, amount: number) => {
+    try {
       // Ensure Razorpay script is loaded
       await new Promise<void>((resolve, reject) => {
         if ((window as any).Razorpay) return resolve();
@@ -221,7 +276,7 @@ const ShopCheckoutPage: React.FC = () => {
 
       const razorpayOptions: any = {
         key: keyId,
-        amount: backendSubtotal * 100,
+        amount: amount * 100,
         currency: 'INR',
         name: 'Quantum Sports',
         description: 'Shop Order Payment',
@@ -232,46 +287,71 @@ const ShopCheckoutPage: React.FC = () => {
           contact: user?.phone,
         },
         handler: async (response: any) => {
-          try {
-            await shopService.verifyPaymentAndOrder(orderId, {
+          await verifyPaymentMutation.mutateAsync({
+            orderId,
+            paymentData: {
               paymentId: response.razorpay_payment_id,
               orderId: response.razorpay_order_id,
               signature: response.razorpay_signature,
-            });
-
-            setOrderPlaced(true);
-            setOrderSuccessDetails({
-              orderId,
-              paymentId: response.razorpay_payment_id,
-              paymentMethod: paymentMethodValue,
-              subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
-              shipping: getShipping(),
-              tax: getTax(),
-              total: getTotal(),
-              items: orderProducts,
-              shippingAddress,
-              orderDate: new Date(),
-            });
-            clearCart();
-          } catch (verifyErr: any) {
-            console.error('Payment verification failed:', verifyErr);
-            setError(verifyErr?.message || 'Payment verification failed');
-          }
+            }
+          });
         },
       };
 
       const razorpay = new (window as any).Razorpay(razorpayOptions);
-      razorpay.on('payment.failed', (resp: any) => {
+      
+      razorpay.on('payment.failed', async (resp: any) => {
+        console.error('Razorpay payment failed:', resp);
+        // Unlock inventory on payment failure
+        if (orderId) {
+          await unlockInventoryMutation.mutateAsync(orderId);
+        }
         setError(`Payment failed: ${resp.error?.description || 'Unknown error'}`);
       });
+
+      // Handle modal close without payment
+      razorpay.on('payment.cancelled', async () => {
+        console.log('Payment cancelled by user');
+        // Unlock inventory on payment cancellation
+        if (orderId) {
+          await unlockInventoryMutation.mutateAsync(orderId);
+        }
+        setError('Payment was cancelled');
+      });
+
       razorpay.open();
     } catch (err: any) {
-      console.error('Error placing order:', err);
-      setError(err.response?.data?.error || err.message || 'Failed to place order. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Razorpay setup failed:', err);
+      // Unlock inventory if Razorpay setup fails
+      if (orderId) {
+        await unlockInventoryMutation.mutateAsync(orderId);
+      }
+      setError(err.message || 'Failed to initialize payment');
     }
   };
+
+  // Cleanup function to unlock inventory if user navigates away
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (currentOrderId && !orderPlaced) {
+        await unlockInventoryMutation.mutateAsync(currentOrderId);
+      }
+    };
+
+    const handlePopState = async () => {
+      if (currentOrderId && !orderPlaced) {
+        await unlockInventoryMutation.mutateAsync(currentOrderId);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [currentOrderId, orderPlaced, unlockInventoryMutation]);
 
   if (orderPlaced) {
     return (
@@ -489,22 +569,11 @@ const ShopCheckoutPage: React.FC = () => {
 
               {/* Price Breakdown */}
               <div className="border-t border-gray-200 pt-4 space-y-3">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>₹{getSubtotal().toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span>{getShipping() === 0 ? 'Free' : `₹${getShipping()}`}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Tax (GST 18%)</span>
-                  <span>₹{getTax().toLocaleString()}</span>
-                </div>
+                
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>₹{getTotal().toLocaleString()}</span>
+                    <span>₹{backendSubtotal?.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -536,10 +605,10 @@ const ShopCheckoutPage: React.FC = () => {
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing Payment...
+                    Processing Payment...l̥
                   </div>
                 ) : (
-                  `Place Order - ₹${getTotal().toLocaleString()}`
+                  `Place Order - ₹${backendSubtotal?.toLocaleString()}`
                 )}
               </button>
             </div>

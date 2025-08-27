@@ -99,17 +99,11 @@ export const useCartStore = create<CartStore>()(
           (total, item) => total + (item.product.discountPrice * item.quantity),
           0
         );
-        
-        const shippingCharges = state.items.reduce(
-          (total, item) => total + item.product.shippingCharges,
-          0
-        );
 
-        const totalAmount = subtotal + shippingCharges - state.discount;
+        const totalAmount = subtotal;
 
         set({
-          totalAmount: Math.max(0, totalAmount),
-          shippingCharges,
+          totalAmount: Math.max(0, totalAmount)
         });
       },
     }),

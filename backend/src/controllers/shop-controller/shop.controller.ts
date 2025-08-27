@@ -156,8 +156,17 @@ export class ShopController {
 
   static async createOrderBeforePayment(req: Request, res: Response) {
     try {
+      console.log('=== createOrderBeforePayment called ===');
+      console.log('Request params:', req.params);
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      
       const orderData = req.body as ShopOrder;
-      const paymentMethod = req.params["paymentMethod"] as PaymentMethod;
+      const paymentMethod = orderData.paymentDetails?.paymentMethod as PaymentMethod || PaymentMethod.Razorpay;
+
+      console.log('Extracted payment method:', paymentMethod);
+      console.log('Payment method type:', typeof paymentMethod);
+      console.log('Available PaymentMethod values:', Object.values(PaymentMethod));
+      console.log('Payment method validation result:', Object.values(PaymentMethod).includes(paymentMethod));
 
       if (
         !orderData.userId ||
@@ -322,7 +331,7 @@ export class ShopController {
 
       const transaction = await PaymentService.createTransaction({
         orderId: orderData.id,
-        bookingId: shopOrder.id as string,
+        shopOrderId: shopOrder.id as string,
         amount: shopOrder.totalAmount,
         currency: Currency.INR,
         paymentMethod: shopOrder.paymentDetails.paymentMethod as PaymentMethod,

@@ -13,6 +13,8 @@ import {
   Upload,
   X
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { AdminProduct, adminShopService, CreateProductRequest } from '../../../services/adminShopService';
 import { shopService, ShopOrder } from '../../../services/shopService';
 
@@ -48,10 +50,13 @@ const ProductManagement: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
   const [formLoading, setFormLoading] = useState(false);
   const [categories] = useState(adminShopService.getCategories());
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [productToDelete, setProductToDelete] = useState<AdminProduct | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Orders state (Admin view)
   const [orders, setOrders] = useState<ShopOrder[]>([]);
@@ -152,17 +157,27 @@ const ProductManagement: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleDeleteProduct = async (product: AdminProduct) => {
+  const handleDeleteProduct = (product: AdminProduct) => {
     if (!product.id) return;
-    if (!window.confirm(`Delete "${product.name}"? This action cannot be undone.`)) return;
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete?.id) return;
     try {
-      setLoading(true);
-      await adminShopService.deleteProduct(product.id);
+      setDeleteLoading(true);
+      await adminShopService.deleteProduct(productToDelete.id);
+      toast.success(`Deleted "${productToDelete.name}"`);
+      setShowDeleteModal(false);
+      setProductToDelete(null);
       await fetchProducts();
     } catch (err: any) {
-      setError(err.message);
+      const message = err?.message || 'Failed to delete product';
+      setError(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
     }
   };
 
@@ -174,8 +189,10 @@ const ProductManagement: React.FC = () => {
       if (showEditModal) {
         if (!editingProductId) throw new Error('Missing product ID to update');
         await adminShopService.updateProduct(editingProductId, productData);
+        toast.success('Product updated');
       } else {
         await adminShopService.createProduct(productData);
+        toast.success('Product created');
       }
 
       setShowCreateModal(false);
@@ -183,7 +200,9 @@ const ProductManagement: React.FC = () => {
       setEditingProductId(null);
       await fetchProducts();
     } catch (err: any) {
-      setError(err.message);
+      const message = err?.message || 'Failed to save product';
+      setError(message);
+      toast.error(message);
     } finally {
       setFormLoading(false);
     }
@@ -895,6 +914,16 @@ const ProductManagement: React.FC = () => {
       {/* Modals */}
       {showCreateModal && <ProductForm />}
       {showEditModal && <ProductForm isEdit />}
+      <ConfirmDeleteModal
+        open={Boolean(showDeleteModal && productToDelete)}
+        title="Delete Product"
+        description={productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : ''}
+        loading={deleteLoading}
+        onConfirm={confirmDeleteProduct}
+        onClose={() => { setShowDeleteModal(false); setProductToDelete(null); }}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

@@ -72,6 +72,26 @@ export class ShopController {
     }
   }
 
+  static async deleteProduct(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({ error: "Missing product ID" });
+      }
+
+      const existingProduct = await ShopService.getProductByIds([id]);
+      if (!existingProduct) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      await ShopService.deleteProduct(id);
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      return res.status(500).json({ error: "Failed to delete product" });
+    }
+  }
 
   static async getProductsById(req: Request, res: Response) {
     try {

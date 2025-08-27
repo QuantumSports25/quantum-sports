@@ -41,6 +41,17 @@ export class ShopService {
     }
   }
 
+  static async deleteProduct(id: string) {
+    try {
+      await prisma.product.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      throw error;
+    }
+  }
+
   static async getAllProducts(page: number, pageSize: number) {
     try {
       const products = await prisma.product.findMany({

@@ -11,6 +11,7 @@ router.get('/get-shop-orders', authMiddleware, ShopController.getAllShopOrders);
 router.get('/get-shop-order/:id', authMiddleware, ShopController.getShopOrderById);
 router.get('/get-products', ShopController.getAllProducts);
 router.post('/get-product-by-ids', ShopController.getProductsById);
+router.delete('/delete-product/:id', authMiddleware, ShopController.deleteProduct);
 
 
 //payment

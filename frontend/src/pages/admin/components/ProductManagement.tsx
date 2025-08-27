@@ -13,6 +13,8 @@ import {
   Upload,
   X
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { AdminProduct, adminShopService, CreateProductRequest } from '../../../services/adminShopService';
 import { shopService, ShopOrder } from '../../../services/shopService';
 
@@ -48,10 +50,13 @@ const ProductManagement: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
   const [formLoading, setFormLoading] = useState(false);
   const [categories] = useState(adminShopService.getCategories());
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [productToDelete, setProductToDelete] = useState<AdminProduct | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Orders state (Admin view)
   const [orders, setOrders] = useState<ShopOrder[]>([]);
@@ -152,17 +157,27 @@ const ProductManagement: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleDeleteProduct = async (product: AdminProduct) => {
+  const handleDeleteProduct = (product: AdminProduct) => {
     if (!product.id) return;
-    if (!window.confirm(`Delete "${product.name}"? This action cannot be undone.`)) return;
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete?.id) return;
     try {
-      setLoading(true);
-      await adminShopService.deleteProduct(product.id);
+      setDeleteLoading(true);
+      await adminShopService.deleteProduct(productToDelete.id);
+      toast.success(`Deleted "${productToDelete.name}"`);
+      setShowDeleteModal(false);
+      setProductToDelete(null);
       await fetchProducts();
     } catch (err: any) {
-      setError(err.message);
+      const message = err?.message || 'Failed to delete product';
+      setError(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
     }
   };
 
@@ -174,8 +189,10 @@ const ProductManagement: React.FC = () => {
       if (showEditModal) {
         if (!editingProductId) throw new Error('Missing product ID to update');
         await adminShopService.updateProduct(editingProductId, productData);
+        toast.success('Product updated');
       } else {
         await adminShopService.createProduct(productData);
+        toast.success('Product created');
       }
 
       setShowCreateModal(false);
@@ -183,7 +200,9 @@ const ProductManagement: React.FC = () => {
       setEditingProductId(null);
       await fetchProducts();
     } catch (err: any) {
-      setError(err.message);
+      const message = err?.message || 'Failed to save product';
+      setError(message);
+      toast.error(message);
     } finally {
       setFormLoading(false);
     }
@@ -296,181 +315,181 @@ const ProductManagement: React.FC = () => {
     };
 
     return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">
-            {isEdit ? 'Edit Product' : 'Create New Product'}
-          </h2>
-          <button
-            onClick={() => {
-              setShowCreateModal(false);
-              setShowEditModal(false);
-              setError(null);
-            }}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-red-900/20 border border-red-500 rounded-lg p-3 mb-4">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Product Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={localName}
-              onChange={(e) => setLocalName(e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter product name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description *
-            </label>
-            <textarea
-              name="description"
-              value={localDescription}
-              onChange={(e) => setLocalDescription(e.target.value)}
-              required
-              rows={3}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter product description"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Price (₹) *
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={localPrice}
-                onChange={(e) => setLocalPrice(e.target.value)}
-                required
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Inventory
-              </label>
-              <input
-                type="number"
-                name="inventory"
-                value={localInventory}
-                onChange={(e) => setLocalInventory(e.target.value)}
-                min="0"
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Categories
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {categories.map((category) => (
-                <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localCategory.includes(category)}
-                    onChange={() => toggleLocalCategory(category)}
-                    className="text-blue-500 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-300 text-sm capitalize">{category}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Images
-            </label>
-            <div className="space-y-2">
-              {localImages.map((image, index) => (
-                <div key={index} className="flex items-center gap-2 bg-gray-700 p-2 rounded">
-                  <img src={image} alt={`Preview ${index + 1}`} className="w-12 h-12 object-cover rounded" />
-                  <span className="text-gray-300 text-sm flex-1 truncate">{image}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeLocalImage(index)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addLocalImage}
-                className="w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
-              >
-                <Upload className="w-4 h-4 mx-auto mb-1" />
-                Add Image URL
-              </button>
-              <input
-                id="product-image-input"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFilesSelected}
-                className="hidden"
-              />
-              <label
-                htmlFor="product-image-input"
-                className="mt-2 block w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors text-center cursor-pointer"
-              >
-                Upload from device (≤5KB)
-              </label>
-            </div>
-          </div>
-
-          <div className="flex space-x-3 pt-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white">
+              {isEdit ? 'Edit Product' : 'Create New Product'}
+            </h2>
             <button
-              type="button"
               onClick={() => {
                 setShowCreateModal(false);
                 setShowEditModal(false);
                 setError(null);
               }}
-              className="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="text-gray-400 hover:text-white"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={formLoading}
-              className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {formLoading ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
+              <X className="w-6 h-6" />
             </button>
           </div>
-        </form>
+
+          {error && (
+            <div className="bg-red-900/20 border border-red-500 rounded-lg p-3 mb-4">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Product Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={localName}
+                onChange={(e) => setLocalName(e.target.value)}
+                required
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter product name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Description *
+              </label>
+              <textarea
+                name="description"
+                value={localDescription}
+                onChange={(e) => setLocalDescription(e.target.value)}
+                required
+                rows={3}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter product description"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Price (₹) *
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={localPrice}
+                  onChange={(e) => setLocalPrice(e.target.value)}
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Inventory
+                </label>
+                <input
+                  type="number"
+                  name="inventory"
+                  value={localInventory}
+                  onChange={(e) => setLocalInventory(e.target.value)}
+                  min="0"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Categories
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {categories.map((category) => (
+                  <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={localCategory.includes(category)}
+                      onChange={() => toggleLocalCategory(category)}
+                      className="text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-300 text-sm capitalize">{category}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Images
+              </label>
+              <div className="space-y-2">
+                {localImages.map((image, index) => (
+                  <div key={index} className="flex items-center gap-2 bg-gray-700 p-2 rounded">
+                    <img src={image} alt={`Preview ${index + 1}`} className="w-12 h-12 object-cover rounded" />
+                    <span className="text-gray-300 text-sm flex-1 truncate">{image}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeLocalImage(index)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addLocalImage}
+                  className="w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  <Upload className="w-4 h-4 mx-auto mb-1" />
+                  Add Image URL
+                </button>
+                <input
+                  id="product-image-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFilesSelected}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="product-image-input"
+                  className="mt-2 block w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors text-center cursor-pointer"
+                >
+                  Upload from device (≤5KB)
+                </label>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setShowEditModal(false);
+                  setError(null);
+                }}
+                className="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={formLoading}
+                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {formLoading ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  );
+    );
   };
 
   return (
@@ -671,8 +690,8 @@ const ProductManagement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${product.inventory > 0
-                              ? 'bg-green-900/20 text-green-400'
-                              : 'bg-red-900/20 text-red-400'
+                            ? 'bg-green-900/20 text-green-400'
+                            : 'bg-red-900/20 text-red-400'
                             }`}>
                             {product.inventory > 0 ? `${product.inventory} in stock` : 'Out of stock'}
                           </span>
@@ -763,8 +782,8 @@ const ProductManagement: React.FC = () => {
                               key={pageNumber}
                               onClick={() => setCurrentPage(pageNumber)}
                               className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
-                                  ? 'z-10 bg-blue-600 border-blue-500 text-white'
-                                  : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
+                                ? 'z-10 bg-blue-600 border-blue-500 text-white'
+                                : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
                                 }`}
                             >
                               {pageNumber}
@@ -895,6 +914,16 @@ const ProductManagement: React.FC = () => {
       {/* Modals */}
       {showCreateModal && <ProductForm />}
       {showEditModal && <ProductForm isEdit />}
+      <ConfirmDeleteModal
+        open={Boolean(showDeleteModal && productToDelete)}
+        title="Delete Product"
+        description={productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : ''}
+        loading={deleteLoading}
+        onConfirm={confirmDeleteProduct}
+        onClose={() => { setShowDeleteModal(false); setProductToDelete(null); }}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

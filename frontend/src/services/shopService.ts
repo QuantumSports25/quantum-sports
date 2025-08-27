@@ -135,7 +135,7 @@ export const shopService = {
       
       console.log('Order payload:', orderPayload);
       
-      const response = await api.post('/shop/create-shop-order-before-payment', orderPayload);
+      const response = await api.post(`/shop/create-shop-order-before-payment/${paymentMethod}`, orderPayload);
       return response.data; // backend may return just the order id (string)
     } catch (error: any) {
       console.error('Error creating order:', error);

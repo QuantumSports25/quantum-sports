@@ -331,7 +331,7 @@ export class ShopController {
 
       const transaction = await PaymentService.createTransaction({
         orderId: orderData.id,
-        bookingId: shopOrder.id as string,
+        shopOrderId: shopOrder.id as string,
         amount: shopOrder.totalAmount,
         currency: Currency.INR,
         paymentMethod: shopOrder.paymentDetails.paymentMethod as PaymentMethod,

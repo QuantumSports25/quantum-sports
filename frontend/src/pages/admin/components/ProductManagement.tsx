@@ -56,6 +56,7 @@ const ProductManagement: React.FC = () => {
     }, 300); // Debounce search
     
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, selectedCategory]);
 
   // Separate effect for search query with debouncing
@@ -70,6 +71,7 @@ const ProductManagement: React.FC = () => {
     }, 500); // Debounce search input
     
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const fetchProducts = React.useCallback(async () => {

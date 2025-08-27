@@ -113,7 +113,7 @@ export const shopService = {
   },
 
   // Create order before payment
-  createOrderBeforePayment: async (orderData: CreateOrderRequest): Promise<ShopOrder> => {
+  createOrderBeforePayment: async (orderData: CreateOrderRequest): Promise<ShopOrder | string> => {
     try {
       console.log('Creating order with data:', orderData);
       
@@ -132,7 +132,7 @@ export const shopService = {
       console.log('Order payload:', orderPayload);
       
       const response = await api.post('/shop/create-shop-order-before-payment', orderPayload);
-      return response.data;
+      return response.data; // backend may return just the order id (string)
     } catch (error: any) {
       console.error('Error creating order:', error);
       console.error('Error response:', error.response);

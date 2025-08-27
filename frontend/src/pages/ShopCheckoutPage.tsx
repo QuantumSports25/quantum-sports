@@ -152,11 +152,17 @@ const ShopCheckoutPage: React.FC = () => {
       console.log('Selected payment method:', selectedPaymentMethod);
       console.log('Converted payment method:', paymentMethodValue);
       
+      // Compute subtotal based on backend product price (exclude discounts/shipping/tax)
+      const backendSubtotal = cartItems.reduce(
+        (sum, item) => sum + (item.product.markedPrice * item.quantity),
+        0
+      );
+
       const orderRequest: CreateOrderRequest = {
         userId: user.id,
         products: orderProducts,
         shippingAddress,
-        totalAmount: getTotal(),
+        totalAmount: backendSubtotal,
         totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
         sellerId: 'default-seller-id', // TODO: Get seller ID from product when available
         paymentMethod: paymentMethodValue
@@ -164,53 +170,90 @@ const ShopCheckoutPage: React.FC = () => {
 
       // Create order before payment
       console.log('About to create order with request:', orderRequest);
-      const order = await shopService.createOrderBeforePayment(orderRequest);
-      console.log('Order created successfully:', order);
+      const created = await shopService.createOrderBeforePayment(orderRequest);
+      const orderId = typeof created === 'string' ? created : created?.id;
+      if (!orderId) throw new Error('Failed to create order');
+      console.log('Order created successfully:', orderId);
 
-      // Create payment
-      const paymentResponse = await shopService.createOrderPayment(order.id!);
-      
+      // Create payment order on backend
+      const paymentResponse = await shopService.createOrderPayment(orderId);
+
       if (selectedPaymentMethod === 'wallet') {
-        // For wallet payment, verify immediately
-        await shopService.verifyPaymentAndOrder(order.id!, {
-          orderId: paymentResponse.data.id
+        // Wallet flow: backend already deducted credits and created transaction
+        await shopService.verifyPaymentAndOrder(orderId, {
+          orderId: paymentResponse.data.id,
         });
-        
+
         setOrderPlaced(true);
-        clearCart(); // Clear cart after successful order
-        
-        // Redirect after success
+        clearCart();
         setTimeout(() => {
-          navigate('/shop', { 
-            state: { 
-              message: 'Order placed successfully! You will receive a confirmation email shortly.' 
-            } 
+          navigate('/shop', {
+            state: {
+              message: 'Order placed successfully! You will receive a confirmation email shortly.',
+            },
           });
         }, 3000);
-      } else {
-        // For Razorpay, you would integrate with Razorpay SDK here
-        // For now, we'll simulate success
-        console.log('Razorpay payment would be initiated here with order ID:', paymentResponse.data.id);
-        
-        // Mock successful payment verification
-        await shopService.verifyPaymentAndOrder(order.id!, {
-          paymentId: 'mock_payment_' + Date.now(),
-          signature: 'mock_signature',
-          orderId: paymentResponse.data.id
-        });
-        
-        setOrderPlaced(true);
-        clearCart(); // Clear cart after successful order
-        
-        // Redirect after success
-        setTimeout(() => {
-          navigate('/shop', { 
-            state: { 
-              message: 'Order placed successfully! You will receive a confirmation email shortly.' 
-            } 
-          });
-        }, 3000);
+        return;
       }
+
+      // Razorpay flow
+      // Ensure Razorpay script is loaded
+      await new Promise<void>((resolve, reject) => {
+        if ((window as any).Razorpay) return resolve();
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+        document.body.appendChild(script);
+      });
+
+      const keyId = process.env.REACT_APP_RAZORPAY_KEY_ID;
+      if (!keyId) {
+        throw new Error('Razorpay key not configured');
+      }
+
+      const razorpayOptions: any = {
+        key: keyId,
+        amount: backendSubtotal * 100,
+        currency: 'INR',
+        name: 'Quantum Sports',
+        description: 'Shop Order Payment',
+        order_id: paymentResponse.data.id,
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+          contact: user?.phone,
+        },
+        handler: async (response: any) => {
+          try {
+            await shopService.verifyPaymentAndOrder(orderId, {
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+            });
+
+            setOrderPlaced(true);
+            clearCart();
+            setTimeout(() => {
+              navigate('/shop', {
+                state: {
+                  message: 'Order placed successfully! You will receive a confirmation email shortly.',
+                },
+              });
+            }, 3000);
+          } catch (verifyErr: any) {
+            console.error('Payment verification failed:', verifyErr);
+            setError(verifyErr?.message || 'Payment verification failed');
+          }
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(razorpayOptions);
+      razorpay.on('payment.failed', (resp: any) => {
+        setError(`Payment failed: ${resp.error?.description || 'Unknown error'}`);
+      });
+      razorpay.open();
     } catch (err: any) {
       console.error('Error placing order:', err);
       setError(err.response?.data?.error || err.message || 'Failed to place order. Please try again.');

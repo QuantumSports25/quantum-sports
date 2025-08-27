@@ -425,16 +425,16 @@ const ProductManagement: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 w-full">
         <button
           onClick={() => setActiveTab('products')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'products' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+          className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'products' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
         >
           Products
         </button>
         <button
           onClick={() => setActiveTab('orders')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'orders' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+          className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'orders' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
         >
           Orders
         </button>

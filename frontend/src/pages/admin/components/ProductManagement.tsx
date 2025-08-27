@@ -189,39 +189,39 @@ const ProductManagement: React.FC = () => {
     }
   }, [editingProductId, showEditModal, fetchProducts]);
 
-  const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
+  // const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  //   const { name, value } = e.target;
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  // }, []);
 
-  const handleCategoryChange = React.useCallback((category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      category: prev.category.includes(category)
-        ? prev.category.filter(c => c !== category)
-        : [...prev.category, category]
-    }));
-  }, []);
+  // const handleCategoryChange = React.useCallback((category: string) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     category: prev.category.includes(category)
+  //       ? prev.category.filter(c => c !== category)
+  //       : [...prev.category, category]
+  //   }));
+  // }, []);
 
-  const handleImageAdd = React.useCallback(() => {
-    const imageUrl = prompt('Enter image URL:');
-    if (imageUrl) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, imageUrl]
-      }));
-    }
-  }, []);
+  // const handleImageAdd = React.useCallback(() => {
+  //   const imageUrl = prompt('Enter image URL:');
+  //   if (imageUrl) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       images: [...prev.images, imageUrl]
+  //     }));
+  //   }
+  // }, []);
 
-  const handleImageRemove = React.useCallback((index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  }, []);
+  // const handleImageRemove = React.useCallback((index: number) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     images: prev.images.filter((_, i) => i !== index)
+  //   }));
+  // }, []);
 
   const ProductForm: React.FC<{ isEdit?: boolean }> = ({ isEdit = false }) => {
     const [localName, setLocalName] = useState(formData.name);

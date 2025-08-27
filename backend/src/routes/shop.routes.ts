@@ -15,7 +15,7 @@ router.delete('/delete-product/:id', authMiddleware, ShopController.deleteProduc
 
 
 //payment
-router.post('/create-shop-order-before-payment', authMiddleware, ShopController.createOrderBeforePayment);
+router.post('/create-shop-order-before-payment/:paymentMethod', authMiddleware, ShopController.createOrderBeforePayment);
 router.post('/shop-order-payment/:id', authMiddleware, ShopController.createBookingPayment);
 router.post('/verify-shop-order/:id', authMiddleware, ShopController.verifyPaymentAndShopOrder);
 

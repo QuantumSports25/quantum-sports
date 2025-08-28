@@ -1,6 +1,15 @@
 import api from './api';
 import { LoginForm, RegisterForm, User, ApiResponse } from '../types';
 
+// Add ShippingAddress interface
+export interface ShippingAddress {
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+}
+
 export const authService = {
   // Login user
   login: async (credentials: LoginForm): Promise<ApiResponse<{ user: User; token: string }>> => {
@@ -88,6 +97,22 @@ export const authService = {
   // Logout (if needed for server-side logout)
   logout: async (): Promise<ApiResponse<string>> => {
     const response = await api.post('/auth/logout');
+    return response.data;
+  },
+
+  // Address management methods
+  getAddresses: async (): Promise<ApiResponse<ShippingAddress[]>> => {
+    const response = await api.get('/auth/profile/addresses');
+    return response.data;
+  },
+
+  addAddress: async (address: ShippingAddress): Promise<ApiResponse<string>> => {
+    const response = await api.post('/auth/profile/add-address', address);
+    return response.data;
+  },
+
+  removeAddress: async (address: ShippingAddress): Promise<ApiResponse<string>> => {
+    const response = await api.post('/auth/profile/remove-address', address);
     return response.data;
   },
 }; 

@@ -22,8 +22,6 @@ interface ShopOrderSuccessModalProps {
     paymentId?: string;
     paymentMethod: "Wallet" | "Razorpay";
     subtotal: number;
-    shipping: number;
-    tax: number;
     total: number;
     items: OrderItemSummary[];
     shippingAddress: ShippingAddress;
@@ -34,7 +32,23 @@ interface ShopOrderSuccessModalProps {
 const ShopOrderSuccessModal: React.FC<ShopOrderSuccessModalProps> = ({ isOpen, onClose, details }) => {
   if (!isOpen) return null;
 
-  const { orderId, paymentId, paymentMethod, subtotal, shipping, tax, total, items, shippingAddress, orderDate } = details;
+  const { orderId, paymentId, paymentMethod, subtotal, total, items, shippingAddress, orderDate } = details;
+
+  // Safely format numbers with fallbacks
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return '₹0';
+    return `₹${value.toLocaleString()}`;
+  };
+
+  // Safely format date
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return 'N/A';
+    try {
+      return date.toLocaleString();
+    } catch {
+      return 'N/A';
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black bg-opacity-50 p-4 pt-20" onClick={onClose}>
@@ -66,7 +80,7 @@ const ShopOrderSuccessModal: React.FC<ShopOrderSuccessModalProps> = ({ isOpen, o
             )}
             <div>
               <p className="text-xs text-gray-600">Order Date</p>
-              <p className="text-gray-900">{orderDate.toLocaleString()}</p>
+              <p className="text-gray-900">{formatDate(orderDate)}</p>
             </div>
           </div>
 
@@ -77,12 +91,16 @@ const ShopOrderSuccessModal: React.FC<ShopOrderSuccessModalProps> = ({ isOpen, o
               <h3 className="font-semibold text-gray-900">Items</h3>
             </div>
             <ul className="divide-y divide-gray-100">
-              {items.map((item, idx) => (
-                <li key={idx} className="px-4 py-3 flex items-center justify-between">
-                  <span className="text-gray-800">{item.name}</span>
-                  <span className="text-gray-600">Qty: {item.quantity}</span>
-                </li>
-              ))}
+              {items && items.length > 0 ? (
+                items.map((item, idx) => (
+                  <li key={idx} className="px-4 py-3 flex items-center justify-between">
+                    <span className="text-gray-800">{item.name}</span>
+                    <span className="text-gray-600">Qty: {item.quantity}</span>
+                  </li>
+                ))
+              ) : (
+                <li className="px-4 py-3 text-gray-500">No items found</li>
+              )}
             </ul>
           </div>
 
@@ -96,12 +114,12 @@ const ShopOrderSuccessModal: React.FC<ShopOrderSuccessModalProps> = ({ isOpen, o
               <div className="flex items-start gap-2">
                 <Home className="w-4 h-4 text-gray-600 mt-0.5" />
                 <div>
-                  <p>{shippingAddress.addressLine1}</p>
-                  {shippingAddress.addressLine2 ? <p>{shippingAddress.addressLine2}</p> : null}
+                  <p>{shippingAddress?.addressLine1 || 'N/A'}</p>
+                  {shippingAddress?.addressLine2 ? <p>{shippingAddress.addressLine2}</p> : null}
                   <p>
-                    {shippingAddress.city} - {shippingAddress.postalCode}
+                    {shippingAddress?.city || 'N/A'} - {shippingAddress?.postalCode || 'N/A'}
                   </p>
-                  <p>{shippingAddress.country}</p>
+                  <p>{shippingAddress?.country || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -114,11 +132,18 @@ const ShopOrderSuccessModal: React.FC<ShopOrderSuccessModalProps> = ({ isOpen, o
               <h3 className="font-semibold text-gray-900">Payment Summary</h3>
             </div>
             <div className="px-4 py-3 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-600">Payment Method</span><span className="text-gray-900">{paymentMethod}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="text-gray-900">₹{subtotal.toLocaleString()}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="text-gray-900">{shipping === 0 ? "Free" : `₹${shipping}`}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Tax (GST)</span><span className="text-gray-900">₹{tax.toLocaleString()}</span></div>
-              <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-semibold"><span>Total Paid</span><span>₹{total.toLocaleString()}</span></div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Payment Method</span>
+                <span className="text-gray-900">{paymentMethod || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-900">{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-semibold">
+                <span>Total Paid</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
             </div>
           </div>
 

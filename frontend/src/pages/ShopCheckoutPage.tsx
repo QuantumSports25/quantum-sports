@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Truck, Shield,  Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, Shield, Loader2, Plus, MapPin, Trash2 } from 'lucide-react';
 import ShopOrderSuccessModal from '../components/modals/ShopOrderSuccessModal';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { shopService, ShippingAddress, CreateOrderRequest, ShopCartProduct } from '../services/shopService';
-import { useMutation } from '@tanstack/react-query';
+import { authService } from '../services/authService';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 // Using CartItem from cart store directly
 
@@ -15,7 +16,7 @@ interface CheckoutFormData {
   lastName: string;
   address: string;
   city: string;
-  state: string;
+  country: string;
   zipCode: string;
   phone: string;
 }
@@ -43,16 +44,25 @@ const ShopCheckoutPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [backendSubtotal,setBackendSubtotal] = useState(0);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || '',
-    firstName: user?.name?.split(' ')[0] || '',
-    lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+    firstName: user?.name ? user.name.split(' ')[0] : '',
+    lastName: user?.name ? user.name.split(' ').slice(1).join(' ') : '',
     address: '',
     city: '',
-    state: '',
+    country: 'India',
     zipCode: '',
     phone: user?.phone || ''
+  });
+
+  // Fetch saved addresses
+  const { data: savedAddresses, refetch: refetchAddresses } = useQuery({
+    queryKey: ['userAddresses'],
+    queryFn: authService.getAddresses,
+    enabled: isAuthenticated,
   });
 
   // Mutations
@@ -81,26 +91,31 @@ const ShopCheckoutPage: React.FC = () => {
       shopService.verifyPaymentAndOrder(orderId, paymentData),
     onSuccess: (data, { orderId, paymentData }) => {
       setOrderPlaced(true);
-      setOrderSuccessDetails({
-        orderId,
-        paymentId: paymentData.paymentId,
-        paymentMethod: selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay',
-        subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
-        total: backendSubtotal,
+      
+      // Ensure all values are properly defined before setting order details
+      const orderDetails = {
+        orderId: orderId || 'N/A',
+        paymentId: paymentData?.paymentId || undefined,
+        paymentMethod: (selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay') as 'Wallet' | 'Razorpay',
+        subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0) || 0,
+        total: backendSubtotal || 0,
         items: cartItems.map(item => ({
           productId: item.product.id,
           quantity: item.quantity,
           name: item.product.name
-        })),
+        })) || [],
         shippingAddress: {
-          addressLine1: formData.address,
+          addressLine1: formData.address || '',
           addressLine2: '',
-          city: formData.city,
-          postalCode: formData.zipCode,
-          country: 'India'
+          city: formData.city || '',
+          postalCode: formData.zipCode || '',
+          country: formData.country || 'India'
         },
         orderDate: new Date(),
-      });
+      };
+      
+      setOrderSuccessDetails(orderDetails);
+      console.log('Setting order success details:', orderDetails);
       clearCart();
       setCurrentOrderId(null);
     },
@@ -122,19 +137,57 @@ const ShopCheckoutPage: React.FC = () => {
     }
   });
 
+  // Address management mutations
+  const addAddressMutation = useMutation({
+    mutationFn: authService.addAddress,
+    onSuccess: () => {
+      refetchAddresses();
+      setShowAddressForm(false);
+      setError(null);
+    },
+    onError: (error: any) => {
+      setError(error?.response?.data?.error || error.message || 'Failed to add address');
+    }
+  });
+
+  const removeAddressMutation = useMutation({
+    mutationFn: authService.removeAddress,
+    onSuccess: () => {
+      refetchAddresses();
+      setSelectedAddressId(null);
+      setError(null);
+    },
+    onError: (error: any) => {
+      setError(error?.response?.data?.error || error.message || 'Failed to remove address');
+    }
+  });
+
   useEffect(() => {
     // Check if cart has items, if not redirect to shop
     if (cartItems.length === 0) {
       navigate('/shop');
     }
 
-    const backendSubtotal = cartItems.reduce(
+    const calculatedSubtotal = cartItems.reduce(
         (sum, item) => sum + (item.product.markedPrice * item.quantity),
         0
       );
 
-    setBackendSubtotal(backendSubtotal);
+    setBackendSubtotal(calculatedSubtotal);
   }, [cartItems, cartItems.length, navigate]);
+
+  // Update form data when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        firstName: user.name ? user.name.split(' ')[0] : prev.firstName,
+        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : prev.lastName,
+        phone: user.phone || prev.phone
+      }));
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -144,6 +197,32 @@ const ShopCheckoutPage: React.FC = () => {
     }));
   };
 
+  const handleAddressSelect = (address: ShippingAddress) => {
+    setFormData(prev => ({
+      ...prev,
+      address: address.addressLine1,
+      city: address.city,
+      country: address.country,
+      zipCode: address.postalCode,
+    }));
+    setSelectedAddressId(`${address.addressLine1}-${address.city}-${address.postalCode}`);
+  };
+
+  const handleSaveAddress = async () => {
+    const newAddress: ShippingAddress = {
+      addressLine1: formData.address,
+      addressLine2: '',
+      city: formData.city,
+      postalCode: formData.zipCode,
+      country: formData.country
+    };
+
+    await addAddressMutation.mutateAsync(newAddress);
+  };
+
+  const handleRemoveAddress = async (address: ShippingAddress) => {
+    await removeAddressMutation.mutateAsync(address);
+  };
 
   const validateForm = (): string | null => {
     if (!formData.firstName.trim()) return 'First name is required';
@@ -152,7 +231,7 @@ const ShopCheckoutPage: React.FC = () => {
     if (!formData.phone.trim()) return 'Phone number is required';
     if (!formData.address.trim()) return 'Address is required';
     if (!formData.city.trim()) return 'City is required';
-    if (!formData.state.trim()) return 'State is required';
+    if (!formData.country.trim()) return 'Country is required';
     if (!formData.zipCode.trim()) return 'ZIP code is required';
     
     // Basic email validation
@@ -196,7 +275,7 @@ const ShopCheckoutPage: React.FC = () => {
         addressLine2: '',
         city: formData.city,
         postalCode: formData.zipCode,
-        country: 'India'
+        country: formData.country
       };
 
       // Prepare cart products for order
@@ -353,7 +432,7 @@ const ShopCheckoutPage: React.FC = () => {
     };
   }, [currentOrderId, orderPlaced, unlockInventoryMutation]);
 
-  if (orderPlaced) {
+  if (orderPlaced && orderSuccessDetails) {
     return (
       <>
         <ShopOrderSuccessModal isOpen={true} onClose={() => navigate('/shop')} details={orderSuccessDetails} />
@@ -378,7 +457,7 @@ const ShopCheckoutPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
               {/* Contact Information */}
               <div className="bg-white rounded-2xl shadow-soft p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
@@ -438,9 +517,62 @@ const ShopCheckoutPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Saved Addresses */}
+              {savedAddresses?.data && savedAddresses.data.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-soft p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Saved Addresses</h2>
+                  <div className="space-y-3">
+                    {savedAddresses.data.map((address, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
+                          selectedAddressId === `${address.addressLine1}-${address.city}-${address.postalCode}`
+                            ? 'border-primary-500 bg-primary-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => handleAddressSelect(address)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <MapPin className="w-5 h-5 text-primary-500 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{address.addressLine1}</p>
+                              <p className="text-sm text-gray-600">
+                                {address.city}, {address.postalCode}, {address.country}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAddress(address);
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Shipping Address */}
               <div className="bg-white rounded-2xl shadow-soft p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Shipping Address</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Shipping Address</h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressForm(!showAddressForm)}
+                    className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {showAddressForm ? 'Cancel' : 'Save Address'}
+                  </button>
+                </div>
+                
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -471,12 +603,12 @@ const ShopCheckoutPage: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State *
+                        Country *
                       </label>
                       <input
                         type="text"
-                        name="state"
-                        value={formData.state}
+                        name="country"
+                        value={formData.country}
                         onChange={handleInputChange}
                         required
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -496,6 +628,27 @@ const ShopCheckoutPage: React.FC = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Save Address Button */}
+                  {showAddressForm && (
+                    <div className="pt-4">
+                      <button
+                        type="button"
+                        onClick={handleSaveAddress}
+                        disabled={addAddressMutation.isPending}
+                        className="px-6 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50"
+                      >
+                        {addAddressMutation.isPending ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Saving...
+                          </div>
+                        ) : (
+                          'Save Address'
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -573,7 +726,7 @@ const ShopCheckoutPage: React.FC = () => {
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>₹{backendSubtotal?.toLocaleString()}</span>
+                    <span>₹{(backendSubtotal || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -605,10 +758,10 @@ const ShopCheckoutPage: React.FC = () => {
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing Payment...l̥
+                    Processing Payment...
                   </div>
                 ) : (
-                  `Place Order - ₹${backendSubtotal?.toLocaleString()}`
+                  `Place Order - ₹${(backendSubtotal || 0).toLocaleString()}`
                 )}
               </button>
             </div>

@@ -372,7 +372,7 @@ export class AuthService {
             : user.role === "admin"
             ? UserRole.ADMIN
             : UserRole.USER,
-        shippingAddress: [],
+        shippingAddress: user?.shippingAddress as unknown as ShoppingAddress[] ?? [],
       };
 
       return userData;

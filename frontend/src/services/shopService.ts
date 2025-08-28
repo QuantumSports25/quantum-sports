@@ -1,5 +1,5 @@
 import api from './api';
-import { ApiResponse } from '../types';
+import { ApiResponse, ShippingAddress } from '../types';
 
 // Shop-specific types based on backend models
 export interface ShopProduct {
@@ -28,13 +28,7 @@ export interface ShopCartProduct {
   name: string;
 }
 
-export interface ShippingAddress {
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  postalCode: string;
-  country: string;
-}
+
 
 export interface ShopOrder {
   id?: string;

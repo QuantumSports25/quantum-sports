@@ -1,5 +1,5 @@
 import api from './api';
-import { LoginForm, RegisterForm, User, ApiResponse } from '../types';
+import { LoginForm, RegisterForm, User, ApiResponse, ShippingAddress } from '../types';
 
 export const authService = {
   // Login user
@@ -58,6 +58,24 @@ export const authService = {
   // Update user profile
   updateProfile: async (userData: Partial<User>): Promise<ApiResponse<User>> => {
     const response = await api.put('/auth/profile', userData);
+    return response.data;
+  },
+
+  // Add shipping address
+  addAddress: async (address: ShippingAddress): Promise<ApiResponse<string>> => {
+    const response = await api.post('/auth/profile/add-address', address);
+    return response.data;
+  },
+
+  // Remove shipping address
+  removeAddress: async (address: ShippingAddress): Promise<ApiResponse<string>> => {
+    const response = await api.post('/auth/profile/remove-address', address);
+    return response.data;
+  },
+
+  // Get all shipping addresses
+  getAllAddresses: async (): Promise<ApiResponse<ShippingAddress[]>> => {
+    const response = await api.get('/auth/profile/addresses');
     return response.data;
   },
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Truck, Shield,  Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, Shield, Loader2, Plus, MapPin, Edit, Trash2, Check } from 'lucide-react';
 import ShopOrderSuccessModal from '../components/modals/ShopOrderSuccessModal';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
-import { shopService, ShippingAddress, CreateOrderRequest, ShopCartProduct } from '../services/shopService';
-
-// Using CartItem from cart store directly
+import { shopService, CreateOrderRequest, ShopCartProduct } from '../services/shopService';
+import { authService } from '../services/authService';
+import { ShippingAddress } from '../types';
 
 interface CheckoutFormData {
   email: string;
@@ -23,11 +23,24 @@ interface PaymentMethod {
   id: string;
   name: string;
   description: string;
+  icon: React.ReactNode;
 }
 
 const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'razorpay', name: 'Credit/Debit Card', description: 'Pay securely with your card' },
-  { id: 'wallet', name: 'Wallet', description: 'Pay using your wallet balance' }
+  { 
+    id: 'razorpay', 
+    name: 'Credit/Debit Card', 
+    description: 'Pay securely with your card',
+    icon: <CreditCard className="w-6 h-6 text-primary-500" />
+  },
+  { 
+    id: 'wallet', 
+    name: 'Wallet', 
+    description: 'Pay using your wallet balance',
+    icon: <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">
+      <span className="text-white text-xs font-bold">₹</span>
+    </div>
+  }
 ];
 
 const ShopCheckoutPage: React.FC = () => {
@@ -40,6 +53,20 @@ const ShopCheckoutPage: React.FC = () => {
   const [orderSuccessDetails, setOrderSuccessDetails] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('razorpay');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Address management states
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressFormData, setAddressFormData] = useState<ShippingAddress>({
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    postalCode: '',
+    country: 'India'
+  });
+  const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(null);
   
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || '',
@@ -53,11 +80,96 @@ const ShopCheckoutPage: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('=== useEffect triggered ===');
+    console.log('cartItems.length:', cartItems.length);
+    console.log('isAuthenticated:', isAuthenticated);
+    
     // Check if cart has items, if not redirect to shop
     if (cartItems.length === 0) {
       navigate('/shop');
     }
-  }, [cartItems.length, navigate]);
+    
+    // Load saved addresses
+    if (isAuthenticated) {
+      console.log('Calling loadSavedAddresses from useEffect');
+      loadSavedAddresses();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems.length, navigate, isAuthenticated]);
+
+  // Debug effect to monitor address state changes
+  useEffect(() => {
+    console.log('savedAddresses state changed:', savedAddresses);
+  }, [savedAddresses]);
+
+  useEffect(() => {
+    console.log('selectedAddress state changed:', selectedAddress);
+  }, [selectedAddress]);
+
+  const loadSavedAddresses = async () => {
+    try {
+      console.log('=== Loading saved addresses ===');
+      console.log('Current selectedAddress state:', selectedAddress);
+      console.log('Current savedAddresses state:', savedAddresses);
+      
+      const response = await authService.getAllAddresses();
+      console.log('Addresses response:', response);
+      
+      if (response.success && response.data) {
+        console.log('Setting saved addresses:', response.data);
+        setSavedAddresses(response.data);
+        
+        // If we have a previously selected address, try to find it in the new list
+        if (selectedAddress && response.data.length > 0) {
+          const foundAddress = response.data.find(addr => isSameAddress(addr, selectedAddress));
+          if (foundAddress) {
+            setSelectedAddress(foundAddress);
+            // Update form data with the found address
+            setFormData(prev => ({
+              ...prev,
+              address: foundAddress.addressLine1,
+              city: foundAddress.city,
+              state: foundAddress.city,
+              zipCode: foundAddress.postalCode
+            }));
+          } else {
+            // If the previously selected address is not found, select the first one
+            setSelectedAddress(response.data[0]);
+            setFormData(prev => ({
+              ...prev,
+              address: response.data[0].addressLine1,
+              city: response.data[0].city,
+              state: response.data[0].city,
+              zipCode: response.data[0].postalCode
+            }));
+          }
+        } else if (response.data.length > 0 && !selectedAddress) {
+          // Auto-select first address if no address was previously selected
+          setSelectedAddress(response.data[0]);
+          setFormData(prev => ({
+            ...prev,
+            address: response.data[0].addressLine1,
+            city: response.data[0].city,
+            state: response.data[0].city,
+            zipCode: response.data[0].postalCode
+          }));
+        }
+      } else {
+        // Clear addresses if the response is not successful
+        console.log('No addresses found or response not successful');
+        console.log('Response details:', response);
+        setSavedAddresses([]);
+        setSelectedAddress(null);
+      }
+      
+      console.log('=== Finished loading addresses ===');
+    } catch (error) {
+      console.error('Failed to load addresses:', error);
+      // Clear addresses on error
+      setSavedAddresses([]);
+      setSelectedAddress(null);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,6 +177,152 @@ const ShopCheckoutPage: React.FC = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddressFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveAddress = async () => {
+    try {
+      if (!addressFormData.addressLine1 || !addressFormData.city || !addressFormData.postalCode) {
+        setError('Please fill in all required address fields');
+        return;
+      }
+
+      console.log('Saving address:', addressFormData);
+
+      if (editingAddress) {
+        // Remove old address first
+        console.log('Removing old address:', editingAddress);
+        await authService.removeAddress(editingAddress);
+      }
+      
+      // Prepare address data for backend - handle optional fields properly
+      const addressToSend = {
+        ...addressFormData,
+        // Only send addressLine2 if it has a value
+        ...(addressFormData.addressLine2?.trim() ? {} : { addressLine2: undefined })
+      };
+      
+      console.log('Address data to send to backend:', addressToSend);
+      
+      // Add new address
+      console.log('Adding new address to backend...');
+      const response = await authService.addAddress(addressToSend);
+      console.log('Backend response:', response);
+      
+      if (response.success) {
+        // The backend returns success message, not the address data
+        // So we use the addressFormData directly
+        const newAddress: ShippingAddress = {
+          ...addressFormData
+        };
+        
+        console.log('New address object:', newAddress);
+        
+        // Update the saved addresses list immediately
+        setSavedAddresses(prev => {
+          console.log('Previous addresses:', prev);
+          if (editingAddress) {
+            // Replace the edited address
+            const updated = prev.map(addr => 
+              isSameAddress(addr, editingAddress) ? newAddress : addr
+            );
+            console.log('Updated addresses (edit):', updated);
+            return updated;
+          } else {
+            // Add the new address
+            const updated = [...prev, newAddress];
+            console.log('Updated addresses (add):', updated);
+            return updated;
+          }
+        });
+        
+        // Select the newly saved address
+        setSelectedAddress(newAddress);
+        console.log('Selected new address:', newAddress);
+        
+        // Update form data with the selected address
+        setFormData(prev => ({
+          ...prev,
+          address: newAddress.addressLine1,
+          city: newAddress.city,
+          state: newAddress.city,
+          zipCode: newAddress.postalCode
+        }));
+        
+        // Reset form
+        setAddressFormData({
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          postalCode: '',
+          country: 'India'
+        });
+        setShowAddressForm(false);
+        setEditingAddress(null);
+        setError(null);
+        
+        // Show success message
+        setSuccessMessage(editingAddress ? 'Address updated successfully!' : 'Address saved successfully!');
+        setTimeout(() => setSuccessMessage(null), 3000); // Auto-hide after 3 seconds
+        
+        // Also reload addresses from server to ensure consistency
+        setTimeout(() => {
+          loadSavedAddresses();
+        }, 500);
+      } else {
+        throw new Error(response.message || 'Failed to save address');
+      }
+    } catch (error: any) {
+      console.error('Error saving address:', error);
+      setError(error.message || 'Failed to save address');
+    }
+  };
+
+  const handleEditAddress = (address: ShippingAddress) => {
+    setEditingAddress(address);
+    setAddressFormData(address);
+    setShowAddressForm(true);
+  };
+
+  const handleDeleteAddress = async (address: ShippingAddress) => {
+    try {
+      await authService.removeAddress(address);
+      await loadSavedAddresses();
+      // The loadSavedAddresses function will handle updating the selected address
+      // and form data automatically
+    } catch (error: any) {
+      setError(error.message || 'Failed to delete address');
+    }
+  };
+
+  const handleSelectAddress = (address: ShippingAddress) => {
+    setSelectedAddress(address);
+    // Update form data with selected address
+    setFormData(prev => ({
+      ...prev,
+      address: address.addressLine1,
+      city: address.city,
+      state: address.city, // Using city as state for now
+      zipCode: address.postalCode
+    }));
+    
+    // Clear any previous errors
+    setError(null);
+  };
+
+  // Helper function to compare addresses
+  const isSameAddress = (addr1: ShippingAddress, addr2: ShippingAddress): boolean => {
+    return addr1.addressLine1 === addr2.addressLine1 &&
+           addr1.city === addr2.city &&
+           addr1.postalCode === addr2.postalCode &&
+           addr1.country === addr2.country;
   };
 
   const getSubtotal = () => {
@@ -128,11 +386,6 @@ const ShopCheckoutPage: React.FC = () => {
     setError(null);
     
     try {
-      // Debug: Log current user and auth state
-      console.log('Checkout - User:', user);
-      console.log('Checkout - Is Authenticated:', isAuthenticated);
-      console.log('Checkout - Auth Token:', useAuthStore.getState().token);
-      
       // Prepare shipping address
       const shippingAddress: ShippingAddress = {
         addressLine1: formData.address,
@@ -151,10 +404,8 @@ const ShopCheckoutPage: React.FC = () => {
 
       // Create order request
       const paymentMethodValue = selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay';
-      console.log('Selected payment method:', selectedPaymentMethod);
-      console.log('Converted payment method:', paymentMethodValue);
       
-      // Compute subtotal based on backend product price (exclude discounts/shipping/tax)
+      // Compute subtotal based on backend product price
       const backendSubtotal = cartItems.reduce(
         (sum, item) => sum + (item.product.markedPrice * item.quantity),
         0
@@ -166,22 +417,20 @@ const ShopCheckoutPage: React.FC = () => {
         shippingAddress,
         totalAmount: backendSubtotal,
         totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-        sellerId: 'default-seller-id', // TODO: Get seller ID from product when available
+        sellerId: 'default-seller-id',
         paymentMethod: paymentMethodValue
       };
 
       // Create order before payment
-      console.log('About to create order with request:', orderRequest);
       const created = await shopService.createOrderBeforePayment(orderRequest);
       const orderId = typeof created === 'string' ? created : created?.id;
       if (!orderId) throw new Error('Failed to create order');
-      console.log('Order created successfully:', orderId);
 
       // Create payment order on backend
       const paymentResponse = await shopService.createOrderPayment(orderId);
 
       if (selectedPaymentMethod === 'wallet') {
-        // Wallet flow: backend already deducted credits and created transaction
+        // Wallet flow
         await shopService.verifyPaymentAndOrder(orderId, {
           orderId: paymentResponse.data.id,
         });
@@ -190,7 +439,7 @@ const ShopCheckoutPage: React.FC = () => {
         setOrderSuccessDetails({
           orderId,
           paymentMethod: paymentMethodValue,
-          subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
+          subtotal: backendSubtotal,
           shipping: getShipping(),
           tax: getTax(),
           total: getTotal(),
@@ -203,7 +452,6 @@ const ShopCheckoutPage: React.FC = () => {
       }
 
       // Razorpay flow
-      // Ensure Razorpay script is loaded
       await new Promise<void>((resolve, reject) => {
         if ((window as any).Razorpay) return resolve();
         const script = document.createElement('script');
@@ -244,7 +492,7 @@ const ShopCheckoutPage: React.FC = () => {
               orderId,
               paymentId: response.razorpay_payment_id,
               paymentMethod: paymentMethodValue,
-              subtotal: cartItems.reduce((sum, item) => sum + (item.product.markedPrice * item.quantity), 0),
+              subtotal: backendSubtotal,
               shipping: getShipping(),
               tax: getTax(),
               total: getTotal(),
@@ -360,7 +608,218 @@ const ShopCheckoutPage: React.FC = () => {
 
               {/* Shipping Address */}
               <div className="bg-white rounded-2xl shadow-soft p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Shipping Address</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Shipping Address</h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={loadSavedAddresses}
+                      className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      Refresh
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddressForm(!showAddressForm);
+                        setEditingAddress(null);
+                        setAddressFormData({
+                          addressLine1: '',
+                          addressLine2: '',
+                          city: '',
+                          postalCode: '',
+                          country: 'India'
+                        });
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {showAddressForm ? 'Cancel' : 'Add New Address'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Debug Info */}
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                  <div><strong>Debug Info:</strong></div>
+                  <div>Saved addresses count: {savedAddresses.length}</div>
+                  <div>Selected address: {selectedAddress ? 'Yes' : 'No'}</div>
+                  <div>Show form: {showAddressForm ? 'Yes' : 'No'}</div>
+                  <div>Editing: {editingAddress ? 'Yes' : 'No'}</div>
+                </div>
+
+                {/* Saved Addresses */}
+                {savedAddresses.length > 0 ? (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Saved Addresses</h3>
+                    <div className="space-y-3">
+                      {savedAddresses.map((address, index) => (
+                        <div
+                          key={index}
+                          className={`p-4 border rounded-xl cursor-pointer transition-all ${
+                            selectedAddress && isSameAddress(selectedAddress, address)
+                              ? 'border-primary-500 bg-primary-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => handleSelectAddress(address)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">
+                                  {address.addressLine1}
+                                  {address.addressLine2 && `, ${address.addressLine2}`}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {address.city}, {address.postalCode}, {address.country}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                               {selectedAddress && isSameAddress(selectedAddress, address) && (
+                                 <Check className="w-5 h-5 text-primary-500" />
+                               )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditAddress(address);
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded"
+                              >
+                                <Edit className="w-4 h-4 text-gray-500" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteAddress(address);
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="text-center text-gray-500">
+                      <MapPin className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm">No saved addresses yet</p>
+                      <p className="text-xs text-gray-400">Add your first address to get started</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Address Form */}
+                {showAddressForm && (
+                  <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                      {editingAddress ? 'Edit Address' : 'Add New Address'}
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Street Address *
+                        </label>
+                        <input
+                          type="text"
+                          name="addressLine1"
+                          value={addressFormData.addressLine1}
+                          onChange={handleAddressInputChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="Enter street address"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Apartment, suite, etc. (optional)
+                        </label>
+                        <input
+                          type="text"
+                          name="addressLine2"
+                          value={addressFormData.addressLine2}
+                          onChange={handleAddressInputChange}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="Enter apartment, suite, etc."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            City *
+                          </label>
+                          <input
+                            type="text"
+                            name="city"
+                            value={addressFormData.city}
+                            onChange={handleAddressInputChange}
+                            required
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="Enter city"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Postal Code *
+                          </label>
+                          <input
+                            type="text"
+                            name="postalCode"
+                            value={addressFormData.postalCode}
+                            onChange={handleAddressInputChange}
+                            required
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="Enter postal code"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={handleSaveAddress}
+                          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                        >
+                          {editingAddress ? 'Update Address' : 'Save Address'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddressForm(false);
+                            setEditingAddress(null);
+                          }}
+                          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Address Indicator */}
+                {selectedAddress && (
+                  <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-primary-700">
+                      <Check className="w-4 h-4" />
+                      <span className="text-sm font-medium">Using selected address:</span>
+                    </div>
+                    <div className="mt-2 text-sm text-primary-600">
+                      {selectedAddress.addressLine1}
+                      {selectedAddress.addressLine2 && `, ${selectedAddress.addressLine2}`}
+                      <br />
+                      {selectedAddress.city}, {selectedAddress.postalCode}, {selectedAddress.country}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Address Input */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -433,7 +892,7 @@ const ShopCheckoutPage: React.FC = () => {
                         onChange={(e) => setSelectedPaymentMethod(e.target.value)}
                         className="w-4 h-4 text-primary-500 focus:ring-primary-500"
                       />
-                      <CreditCard className="w-6 h-6 text-primary-500" />
+                      {method.icon}
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">{method.name}</div>
                         <div className="text-sm text-gray-600">{method.description}</div>
@@ -442,6 +901,23 @@ const ShopCheckoutPage: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Success Message Display */}
+              {successMessage && (
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+                  <div className="flex items-center">
+                    <div className="text-green-600">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-green-800 font-medium">Success</p>
+                      <p className="text-green-600 text-sm">{successMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Error Display */}
               {error && (
@@ -453,7 +929,7 @@ const ShopCheckoutPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="ml-3">
-                      <p className="text-red-800 font-medium">Payment Error</p>
+                      <p className="text-red-800 font-medium">Error</p>
                       <p className="text-red-600 text-sm">{error}</p>
                     </div>
                   </div>
@@ -524,7 +1000,6 @@ const ShopCheckoutPage: React.FC = () => {
               {/* Place Order Button */}
               <button
                 type="submit"
-                form="checkout-form"
                 onClick={handleSubmit}
                 disabled={loading}
                 className={`w-full mt-6 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 ${

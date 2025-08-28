@@ -24,6 +24,14 @@ export interface User {
   } | null;
 }
 
+export interface ShippingAddress {
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;

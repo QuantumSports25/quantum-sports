@@ -30,7 +30,7 @@ const HeroSection = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-blue-400" />
-                            <span>10,000+ Happy Members</span>
+                            <span>Exclusive Player Rewards</span>
                         </div>
                         <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-purple-400" />

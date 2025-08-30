@@ -22,17 +22,17 @@ const Footer: React.FC = () => {
 
   const socialLinks = [
     {
-      href: "https://facebook.com",
+      href: "https://www.facebook.com/people/Quantum-Pickleball-Pro/61564192682238/",
       icon: Facebook,
       hoverColor: "hover:bg-blue-600 hover:border-blue-500",
     },
     {
-      href: "https://twitter.com",
+      href: "https://x.com/PunitMohan66816",
       icon: Twitter,
       hoverColor: "hover:bg-sky-500 hover:border-sky-400",
     },
     {
-      href: "https://instagram.com",
+      href: " https://www.instagram.com/quantumpickleballpro/",
       icon: Instagram,
       hoverColor:
         "hover:bg-gradient-to-r hover:from-pink-500 hover:to-orange-500 hover:border-pink-400",

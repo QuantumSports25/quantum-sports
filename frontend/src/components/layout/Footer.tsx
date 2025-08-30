@@ -88,7 +88,7 @@ const Footer: React.FC = () => {
       icon: MapPin,
       iconColor: "text-blue-400",
       label: "Address",
-      value: "Kolkata, West Bengal, India",
+      value: " 4th Floor, 36/F, Topsia Rd, Kolkata, West Bengal 700039",
     },
     {
       icon: Phone,
@@ -100,7 +100,7 @@ const Footer: React.FC = () => {
       icon: Mail,
       iconColor: "text-purple-400",
       label: "Email",
-      value: "hello@quantum.com",
+      value: "quantum@eipickleball.com",
     },
   ];
 

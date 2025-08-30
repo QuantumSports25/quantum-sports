@@ -156,7 +156,7 @@ const HeroSection: React.FC = () => {
           {/* Badge */}
           <div className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-white/90 text-xs sm:text-sm font-medium mb-6 sm:mb-8 hover:bg-white/10 hover:border-white/20 transition-all duration-300 group">
             <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full mr-1.5 sm:mr-2 animate-pulse group-hover:animate-bounce"></span>
-            Book instantly across 1000+ venues
+            Book in Seconds, Play for Hours!
           </div>
 
           {/* Main Heading */}
@@ -304,26 +304,26 @@ const HeroSection: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12 animate-fade-in-up delay-400">
               <div className="text-center group hover:scale-105 transition-transform duration-300">
                 <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-blue-400 transition-colors duration-300">
-                  1000+
+                  0
                 </div>
                 <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
-                  Venues
+                  Hassle Guarantee
                 </div>
               </div>
               <div className="text-center group hover:scale-105 transition-transform duration-300">
                 <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-purple-400 transition-colors duration-300">
-                  50K+
+                  2K+
                 </div>
                 <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
-                  Happy Players
+                  Plus Players
                 </div>
               </div>
               <div className="text-center group hover:scale-105 transition-transform duration-300">
                 <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-pink-400 transition-colors duration-300">
-                  25+
+                  100%
                 </div>
                 <div className="text-white/70 text-sm sm:text-base group-hover:text-white/90 transition-colors duration-300">
-                  Cities
+                  Verified venues
                 </div>
               </div>
               <div className="text-center group hover:scale-105 transition-transform duration-300">

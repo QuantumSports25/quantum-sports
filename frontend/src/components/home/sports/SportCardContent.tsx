@@ -25,10 +25,10 @@ const SportCardContent: React.FC<SportCardContentProps> = ({ sport }) => (
     </p>
 
     {/* Stats */}
-    <SportStats sport={sport} />
+    {/* <SportStats sport={sport} /> */}
 
     {/* CTA Button */}
-    <BookingButton sportName={sport.name} />
+    {/* <BookingButton sportName={sport.name} /> */}
   </div>
 );
 

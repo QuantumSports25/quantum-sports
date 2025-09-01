@@ -12,7 +12,7 @@ import {
   ArrowUp,
   Zap,
   Shield,
-  Award,
+  // Award,
 } from "lucide-react";
 
 const Footer: React.FC = () => {

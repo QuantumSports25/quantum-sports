@@ -1,7 +1,7 @@
 import React from 'react';
 import { SportCard } from './types';
-import SportStats from './SportStats';
-import BookingButton from './BookingButton';
+// import SportStats from './SportStats';
+// import BookingButton from './BookingButton';
 
 interface SportCardContentProps {
   sport: SportCard;

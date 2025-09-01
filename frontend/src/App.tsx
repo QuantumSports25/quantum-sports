@@ -58,6 +58,8 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 
 // Import route tracking hook
 import { useRouteTracker } from "./hooks/useRouteTracker";
+// Import scroll to top hook
+import { useScrollToTop } from "./hooks/useScrollToTop";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -75,6 +77,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Track route changes (except for auth pages)
   useRouteTracker();
+  // Scroll to top on route changes
+  useScrollToTop();
 
   // Define routes where Header and Footer should be hidden
   const dashboardRoutes = ["/admin/dashboard", "/partner/dashboard"];

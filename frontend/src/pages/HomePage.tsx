@@ -10,7 +10,7 @@ import {
 
 const HomePage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-900 overflow-x-hidden">
       <HeroSection />
       <HowItWorksSection />
       <FeaturesSection />

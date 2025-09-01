@@ -6,6 +6,7 @@ export const useScrollAnimation = (cardsRef: React.MutableRefObject<HTMLDivEleme
   const [isSticky, setIsSticky] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateCardTransforms = useCallback((cardIndex: number) => {
     cardsRef.current.forEach((card, index) => {
@@ -37,6 +38,7 @@ export const useScrollAnimation = (cardsRef: React.MutableRefObject<HTMLDivEleme
       card.style.transform = `translateY(${translateY}px) scale(${scale})`;
       card.style.opacity = opacity.toString();
       card.style.zIndex = zIndex.toString();
+      card.style.transition = 'all 0.3s ease-out';
     });
   }, [cardsRef]);
 
@@ -46,6 +48,7 @@ export const useScrollAnimation = (cardsRef: React.MutableRefObject<HTMLDivEleme
       card.style.transform = 'translateY(20px) scale(0.95)';
       card.style.opacity = '0';
       card.style.zIndex = (sportsData.length - index).toString();
+      card.style.transition = 'all 0.3s ease-out';
     });
   }, [cardsRef]);
 
@@ -53,32 +56,45 @@ export const useScrollAnimation = (cardsRef: React.MutableRefObject<HTMLDivEleme
     const handleScroll = () => {
       if (!containerRef.current || !sectionRef.current) return;
 
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const containerTop = containerRect.top;
-      const containerBottom = containerRect.bottom;
-      
-      const shouldBeSticky = containerTop <= 0 && containerBottom > windowHeight;
-      setIsSticky(shouldBeSticky);
-
-      if (shouldBeSticky) {
-        const scrollProgress = Math.abs(containerTop) / (containerRect.height - windowHeight);
-        const cardIndex = Math.min(
-          sportsData.length - 1,
-          Math.floor(scrollProgress * sportsData.length)
-        );
-        setCurrentCard(cardIndex);
-        updateCardTransforms(cardIndex);
-      } else {
-        resetCards();
-        setCurrentCard(0);
+      // Clear previous timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
+
+      // Debounce scroll events for better performance
+      scrollTimeoutRef.current = setTimeout(() => {
+        const containerRect = containerRef.current!.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const containerTop = containerRect.top;
+        const containerBottom = containerRect.bottom;
+        
+        const shouldBeSticky = containerTop <= 0 && containerBottom > windowHeight;
+        setIsSticky(shouldBeSticky);
+
+        if (shouldBeSticky) {
+          const scrollProgress = Math.abs(containerTop) / (containerRect.height - windowHeight);
+          const cardIndex = Math.min(
+            sportsData.length - 1,
+            Math.floor(scrollProgress * sportsData.length)
+          );
+          setCurrentCard(cardIndex);
+          updateCardTransforms(cardIndex);
+        } else {
+          resetCards();
+          setCurrentCard(0);
+        }
+      }, 16); // ~60fps
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, [resetCards, updateCardTransforms]);
 
   return { currentCard, isSticky, containerRef, sectionRef };

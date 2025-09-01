@@ -20,6 +20,13 @@ const Footer: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleLinkClick = () => {
+    // Scroll to top when clicking footer links
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  };
+
   const socialLinks = [
     {
       href: "https://www.facebook.com/people/Quantum-Pickleball-Pro/61564192682238/",
@@ -184,6 +191,7 @@ const Footer: React.FC = () => {
                           <li key={linkIndex}>
                             <Link
                               to={link.to}
+                              onClick={handleLinkClick}
                               className="text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 flex items-center group"
                             >
                               <span

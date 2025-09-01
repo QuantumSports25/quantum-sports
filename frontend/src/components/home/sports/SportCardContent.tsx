@@ -1,7 +1,7 @@
 import React from 'react';
 import { SportCard } from './types';
-import SportStats from './SportStats';
-import BookingButton from './BookingButton';
+// import SportStats from './SportStats';
+// import BookingButton from './BookingButton';
 
 interface SportCardContentProps {
   sport: SportCard;
@@ -25,10 +25,10 @@ const SportCardContent: React.FC<SportCardContentProps> = ({ sport }) => (
     </p>
 
     {/* Stats */}
-    <SportStats sport={sport} />
+    {/* <SportStats sport={sport} /> */}
 
     {/* CTA Button */}
-    <BookingButton sportName={sport.name} />
+    {/* <BookingButton sportName={sport.name} /> */}
   </div>
 );
 

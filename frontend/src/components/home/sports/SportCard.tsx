@@ -13,11 +13,12 @@ interface SportCardProps {
 const SportCard: React.FC<SportCardProps> = ({ sport, index, cardRef }) => (
   <div
     ref={cardRef}
-    className="absolute inset-0 transition-all duration-1000 ease-out"
+    className="absolute inset-0 transition-all duration-300 ease-out"
     style={{
       opacity: 0,
       transform: 'translateY(20px) scale(0.95)',
       zIndex: sportsData.length - index,
+      willChange: 'transform, opacity',
     }}
   >
     {/* Background Image */}

@@ -11,13 +11,16 @@ const SportsSection: React.FC = () => {
   const { currentCard, isSticky, containerRef, sectionRef } = useScrollAnimation(cardsRef);
 
   return (
-    <div ref={containerRef} style={{ height: `${sportsData.length * 100}vh` }}>
+    <div ref={containerRef} style={{ height: `${sportsData.length * 100}vh` }} className="relative">
       <div
         ref={sectionRef}
         className={`${
           isSticky ? 'fixed top-0 left-0 w-full' : 'relative'
-        } h-screen overflow-hidden bg-gray-900`}
-        style={{ zIndex: isSticky ? 10 : 1 }}
+        } h-screen bg-gray-900 transition-all duration-300 ease-out`}
+        style={{ 
+          zIndex: isSticky ? 10 : 1,
+          willChange: isSticky ? 'transform' : 'auto'
+        }}
       >
         {/* Sport Cards */}
         {sportsData.map((sport, index) => (

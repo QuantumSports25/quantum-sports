@@ -12,7 +12,7 @@ import {
   ArrowUp,
   Zap,
   Shield,
-  Award,
+  // Award,
 } from "lucide-react";
 
 const Footer: React.FC = () => {
@@ -64,18 +64,18 @@ const Footer: React.FC = () => {
         { to: "/partner/register", label: "Become Partner" },
       ],
     },
-    {
-      title: "Company",
-      icon: Award,
-      iconColor: "text-green-400",
-      dotColor: "bg-green-400",
-      links: [
-        { to: "/", label: "About Us" },
-        { to: "/", label: "Careers" },
-        { to: "/", label: "Blog" },
-        { to: "/", label: "Press Kit" },
-      ],
-    },
+    // {
+    //   title: "Company",
+    //   icon: Award,
+    //   iconColor: "text-green-400",
+    //   dotColor: "bg-green-400",
+    //   links: [
+    //     { to: "/", label: "About Us" },
+    //     { to: "/", label: "Careers" },
+    //     { to: "/", label: "Blog" },
+    //     { to: "/", label: "Press Kit" },
+    //   ],
+    // },
     {
       title: "Support",
       icon: Shield,

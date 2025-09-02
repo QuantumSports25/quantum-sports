@@ -21,3 +21,32 @@ reportWebVitals();
 
 // Register the service worker for PWA capabilities (offline, installability)
 registerServiceWorker();
+
+// Suppress the browser's install prompt by default.
+// Enable again by either:
+//  - setting `localStorage.setItem('pwaInstallPromptEnabled', 'true')` and reloading, or
+//  - building with env `REACT_APP_ENABLE_INSTALL_PROMPT=true`.
+declare global {
+  interface Window {
+    deferredPWAInstallPrompt?: any;
+  }
+}
+
+const isInstallPromptEnabled = () => {
+  try {
+    const ls = localStorage.getItem('pwaInstallPromptEnabled');
+    if (ls !== null) return ls === 'true';
+  } catch {
+    // ignore storage errors (private mode, etc.)
+  }
+  return process.env.REACT_APP_ENABLE_INSTALL_PROMPT === 'true';
+};
+
+window.addEventListener('beforeinstallprompt', (e: Event) => {
+  if (!isInstallPromptEnabled()) {
+    // Prevent the mini-infobar or default prompt from appearing
+    e.preventDefault?.();
+    // Stash the event so it can be triggered later if needed
+    window.deferredPWAInstallPrompt = e as any;
+  }
+});

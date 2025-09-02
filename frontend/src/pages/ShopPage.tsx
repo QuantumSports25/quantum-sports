@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart,  Search, Star, Heart, Plus, Minus, Loader2 } from 'lucide-react';
+import { ShoppingCart, Search, Star, Heart, Plus, Minus, Loader2, Eye, Filter, Grid, List } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useNavigate } from 'react-router-dom';
 import { shopService, ShopProduct } from '../services/shopService';
 import { Product as TypesProduct } from '../types';
+import MiniCart from '../components/cart/MiniCart';
+import FloatingCartButton from '../components/cart/FloatingCartButton';
+import ProductQuickView from '../components/modals/ProductQuickView';
 
 // Using the Product type from types/index.ts for consistency with cart store
 interface ShopPageProduct extends TypesProduct {
@@ -26,6 +29,11 @@ const ShopPage: React.FC = () => {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMiniCartOpen, setIsMiniCartOpen] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<ShopPageProduct | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Fetch products from API
   useEffect(() => {
@@ -105,6 +113,11 @@ const ShopPage: React.FC = () => {
       );
     }
 
+    // Filter by price range
+    filtered = filtered.filter(product => 
+      product.discountPrice >= priceRange[0] && product.discountPrice <= priceRange[1]
+    );
+
     // Sort products
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -121,7 +134,7 @@ const ShopPage: React.FC = () => {
     });
 
     setFilteredProducts(filtered);
-  }, [products, selectedCategory, searchQuery, sortBy]);
+  }, [products, selectedCategory, searchQuery, sortBy, priceRange]);
 
   const addToCart = (product: ShopPageProduct) => {
     try {
@@ -193,6 +206,22 @@ const ShopPage: React.FC = () => {
     navigate('/shop/checkout');
   };
 
+  const openQuickView = (product: ShopPageProduct) => {
+    setQuickViewProduct(product);
+  };
+
+  const closeQuickView = () => {
+    setQuickViewProduct(null);
+  };
+
+  const openMiniCart = () => {
+    setIsMiniCartOpen(true);
+  };
+
+  const closeMiniCart = () => {
+    setIsMiniCartOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 mt-16">
       {/* Hero Section */}
@@ -224,6 +253,25 @@ const ShopPage: React.FC = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Price Range Filter */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Range</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>₹{priceRange[0].toLocaleString()}</span>
+                    <span>₹{priceRange[1].toLocaleString()}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10000"
+                    value={priceRange[1]}
+                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                   />
                 </div>
               </div>
@@ -274,6 +322,58 @@ const ShopPage: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:w-3/4">
+            {/* Mobile Filter Toggle */}
+            <div className="lg:hidden mb-6">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-soft"
+              >
+                <Filter className="w-5 h-5" />
+                <span>Filters</span>
+              </button>
+            </div>
+
+            {/* Mobile Filters */}
+            {showFilters && (
+              <div className="lg:hidden mb-6 bg-white rounded-2xl shadow-soft p-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Price Range</h3>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10000"
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    />
+                    <div className="flex justify-between text-sm text-gray-600 mt-1">
+                      <span>₹{priceRange[0].toLocaleString()}</span>
+                      <span>₹{priceRange[1].toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Categories</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                            selectedCategory === category.id
+                              ? 'bg-primary-500 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Loading State */}
             {loading && (
               <div className="flex items-center justify-center py-16">
@@ -343,47 +443,82 @@ const ShopPage: React.FC = () => {
 
             {/* Results Header */}
             {!loading && !error && (
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedCategory === 'all' ? 'All Products' : categories.find(c => c.id === selectedCategory)?.name}
-                  <span className="text-gray-500 font-normal ml-2">
-                    ({filteredProducts.length} products)
-                  </span>
-                </h2>
-              
-              {/* Cart Summary */}
-              {cartItems.length > 0 && (
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary-500 text-white px-4 py-2 rounded-xl flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5" />
-                    <span className="font-medium">{getTotalItems()} items</span>
-                    <span className="font-bold">₹{getTotalPrice().toLocaleString()}</span>
-                  </div>
-                  <button
-                    onClick={handleCheckout}
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl font-semibold transition-colors duration-200 shadow-medium hover:shadow-large"
-                  >
-                    Checkout
-                  </button>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedCategory === 'all' ? 'All Products' : categories.find(c => c.id === selectedCategory)?.name}
+                    <span className="text-gray-500 font-normal ml-2">
+                      ({filteredProducts.length} products)
+                    </span>
+                  </h2>
+                  {searchQuery && (
+                    <p className="text-gray-600 mt-1">
+                      Showing results for "{searchQuery}"
+                    </p>
+                  )}
                 </div>
-              )}
+              
+                {/* View Mode Toggle and Cart Summary */}
+                <div className="flex items-center gap-4">
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center bg-white rounded-xl shadow-soft p-1">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-lg transition-colors ${
+                        viewMode === 'grid' ? 'bg-primary-500 text-white' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Grid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-lg transition-colors ${
+                        viewMode === 'list' ? 'bg-primary-500 text-white' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Cart Summary */}
+                  {cartItems.length > 0 && (
+                    <div className="flex items-center gap-4">
+                      <div className="bg-primary-500 text-white px-4 py-2 rounded-xl flex items-center gap-2">
+                        <ShoppingCart className="w-5 h-5" />
+                        <span className="font-medium">{getTotalItems()} items</span>
+                        <span className="font-bold">₹{getTotalPrice().toLocaleString()}</span>
+                      </div>
+                      <button
+                        onClick={handleCheckout}
+                        className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl font-semibold transition-colors duration-200 shadow-medium hover:shadow-large"
+                      >
+                        Checkout
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {/* Products Grid */}
             {!loading && !error && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className={viewMode === 'grid' 
+                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" 
+                : "space-y-4"
+              }>
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden group"
+                  className={`bg-white rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden group ${
+                    viewMode === 'list' ? 'flex' : ''
+                  }`}
                 >
                   {/* Product Image */}
-                  <div className="relative overflow-hidden">
+                  <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}`}>
                     <img
                       src={product.images[0] || '/api/placeholder/300/300'}
                       alt={product.name}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                      className={`${viewMode === 'list' ? 'h-32' : 'h-64'} w-full object-cover group-hover:scale-105 transition-transform duration-300`}
                     />
                     
                     {/* Badges */}
@@ -405,23 +540,31 @@ const ShopPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Wishlist Button */}
-                    <button
-                      onClick={() => toggleWishlist(product.id)}
-                      className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-medium hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${
-                          wishlist.includes(product.id)
-                            ? 'text-red-500 fill-current'
-                            : 'text-gray-400'
-                        }`}
-                      />
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                      <button
+                        onClick={() => toggleWishlist(product.id)}
+                        className="p-2 bg-white rounded-full shadow-medium hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Heart
+                          className={`w-5 h-5 ${
+                            wishlist.includes(product.id)
+                              ? 'text-red-500 fill-current'
+                              : 'text-gray-400'
+                          }`}
+                        />
+                      </button>
+                      <button
+                        onClick={() => openQuickView(product)}
+                        className="p-2 bg-white rounded-full shadow-medium hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <Eye className="w-5 h-5 text-gray-400" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Product Info */}
-                  <div className="p-6">
+                  <div className={`p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
                       {product.name}
                     </h3>
@@ -517,6 +660,19 @@ const ShopPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Cart Button */}
+      <FloatingCartButton onClick={openMiniCart} />
+
+      {/* Mini Cart */}
+      <MiniCart isOpen={isMiniCartOpen} onClose={closeMiniCart} />
+
+      {/* Product Quick View */}
+      <ProductQuickView 
+        product={quickViewProduct} 
+        isOpen={!!quickViewProduct} 
+        onClose={closeQuickView} 
+      />
     </div>
   );
 };

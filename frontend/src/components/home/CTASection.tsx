@@ -73,7 +73,7 @@ const CTASection: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 group hover:text-white transition-colors duration-300">
             <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 group-hover:scale-110 transition-transform duration-300" />
-            <span>Instant Refunds</span>
+            <span>Zero Hidden Charges</span>
           </div>
           <div className="flex items-center gap-2 group hover:text-white transition-colors duration-300">
             <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 group-hover:scale-110 transition-transform duration-300" />

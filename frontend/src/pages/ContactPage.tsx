@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, Building2, Send, ArrowRight, Sparkles } from 'lucide-react';
+import { Mail, Phone, Building2, ArrowRight, Sparkles } from 'lucide-react';
 
 const ContactPage: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -14,8 +14,8 @@ const ContactPage: React.FC = () => {
       id: 'support',
       icon: Mail,
       title: 'Customer Support',
-      email: 'support@quantumapp.com',
-      phone: '+1 (555) 123-4567',
+      email: 'quantum@eipickleball.com ',
+      phone: '98765 43210',
       description: 'Get help with technical issues and general questions',
       gradient: 'from-blue-500 to-cyan-400'
     },
@@ -23,7 +23,7 @@ const ContactPage: React.FC = () => {
       id: 'business',
       icon: Building2,
       title: 'Business Inquiries',
-      email: 'business@quantumapp.com',
+      email: 'quantum@eipickleball.com ',
       description: 'Partnership opportunities and enterprise solutions',
       gradient: 'from-purple-500 to-pink-400'
     }
@@ -69,7 +69,7 @@ const ContactPage: React.FC = () => {
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 group-hover:transform group-hover:scale-105 group-hover:shadow-3xl">
                   {/* Gradient overlay */}
                   <div className={`absolute inset-0 bg-gradient-to-r ${item.gradient} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`}></div>
-                  
+
                   {/* Icon */}
                   <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r ${item.gradient} mb-6 transform transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110`}>
                     <Icon className="w-8 h-8 text-white" />
@@ -79,7 +79,7 @@ const ContactPage: React.FC = () => {
                   <h2 className="text-2xl font-bold mb-3 text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-400 group-hover:to-purple-400 transition-all duration-300">
                     {item.title}
                   </h2>
-                  
+
                   <p className="text-gray-400 mb-6 leading-relaxed">
                     {item.description}
                   </p>
@@ -89,7 +89,7 @@ const ContactPage: React.FC = () => {
                       <Mail className="w-5 h-5 text-gray-500 group-hover/email:text-blue-400 transition-colors duration-200" />
                       <span className="text-gray-300 group-hover/email:text-white transition-colors duration-200">{item.email}</span>
                     </div>
-                    
+
                     {item.phone && (
                       <div className="flex items-center gap-3 group/phone hover:gap-4 transition-all duration-200">
                         <Phone className="w-5 h-5 text-gray-500 group-hover/phone:text-green-400 transition-colors duration-200" />
@@ -109,7 +109,7 @@ const ContactPage: React.FC = () => {
         </div>
 
         {/* CTA Section */}
-        <div className={`text-center transform transition-all duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '600ms' }}>
+        {/* <div className={`text-center transform transition-all duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '600ms' }}>
           <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-600/30">
             <h3 className="text-2xl font-bold mb-4 text-white">
               Ready to get started?
@@ -124,7 +124,7 @@ const ContactPage: React.FC = () => {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Floating particles */}
         <div className="absolute top-20 left-10 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-75"></div>

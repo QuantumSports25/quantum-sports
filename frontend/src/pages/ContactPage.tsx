@@ -14,8 +14,8 @@ const ContactPage: React.FC = () => {
       id: 'support',
       icon: Mail,
       title: 'Customer Support',
-      email: 'support@quantumapp.com',
-      phone: '+1 (555) 123-4567',
+      email: 'quantum@eipickleball.com ',
+      phone: '98765 43210',
       description: 'Get help with technical issues and general questions',
       gradient: 'from-blue-500 to-cyan-400'
     },
@@ -23,7 +23,7 @@ const ContactPage: React.FC = () => {
       id: 'business',
       icon: Building2,
       title: 'Business Inquiries',
-      email: 'business@quantumapp.com',
+      email: 'quantum@eipickleball.com ',
       description: 'Partnership opportunities and enterprise solutions',
       gradient: 'from-purple-500 to-pink-400'
     }
@@ -109,7 +109,7 @@ const ContactPage: React.FC = () => {
         </div>
 
         {/* CTA Section */}
-        <div className={`text-center transform transition-all duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '600ms' }}>
+        {/* <div className={`text-center transform transition-all duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '600ms' }}>
           <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-600/30">
             <h3 className="text-2xl font-bold mb-4 text-white">
               Ready to get started?
@@ -124,7 +124,7 @@ const ContactPage: React.FC = () => {
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Floating particles */}
         <div className="absolute top-20 left-10 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-75"></div>

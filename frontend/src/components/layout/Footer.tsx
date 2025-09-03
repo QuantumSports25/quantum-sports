@@ -112,9 +112,10 @@ const Footer: React.FC = () => {
   ];
 
   const stats = [
-    { value: "1000+", label: "Venues", color: "text-blue-400" },
-    { value: "50K+", label: "Users", color: "text-green-400" },
-    { value: "25+", label: "Cities", color: "text-purple-400" },
+    { value: "0", label: "Hassle Guarantee", color: "text-blue-400" },
+    { value: "2K+", label: "Users", color: "text-green-400" },
+    { value: "100%", label: "Verified Venues", color: "text-purple-400" },
+    { value: "24/7", label: "Support", color: "text-orange-400" },
   ];
 
   return (
@@ -143,7 +144,7 @@ const Footer: React.FC = () => {
               </p>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-4 gap-4 mb-8">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
                     <div className={`text-2xl font-bold ${stat.color}`}>

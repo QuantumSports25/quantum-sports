@@ -31,7 +31,7 @@ const CTASection: React.FC = () => {
         {/* Badge */}
         <div className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white text-xs sm:text-sm font-medium mb-6 sm:mb-8 hover:bg-white/10 hover:border-white/20 transition-all duration-300 group">
           <Star className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-yellow-400 group-hover:animate-spin" />
-          Join 10,000+ Happy Users
+          Join 2000+ Happy Users
         </div>
         
         {/* Heading */}

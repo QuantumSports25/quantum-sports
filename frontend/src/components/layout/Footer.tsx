@@ -12,6 +12,7 @@ import {
   ArrowUp,
   Zap,
   Shield,
+  Youtube,
   // Award,
 } from "lucide-react";
 
@@ -44,11 +45,16 @@ const Footer: React.FC = () => {
       hoverColor:
         "hover:bg-gradient-to-r hover:from-pink-500 hover:to-orange-500 hover:border-pink-400",
     },
+    // {
+    //   href: "https://linkedin.com",
+    //   icon: Linkedin,
+    //   hoverColor: "hover:bg-blue-700 hover:border-blue-600",
+    // },
     {
-      href: "https://linkedin.com",
-      icon: Linkedin,
-      hoverColor: "hover:bg-blue-700 hover:border-blue-600",
-    },
+      href: "https://www.youtube.com/channel/UCB3oJfpIEbm0yYAe3uVj0ew",
+      icon: Youtube,
+      hoverColor: "hover:bg-red-600 hover:border-red-500",
+    }
   ];
 
   const footerSections = [

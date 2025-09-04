@@ -7,7 +7,7 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Linkedin,
+  // Linkedin,
   Heart,
   ArrowUp,
   Zap,

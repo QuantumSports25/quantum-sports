@@ -28,7 +28,6 @@ interface PaymentMethodModalProps {
   selectedSlots: Slot[];
   total: number;
   subtotal: number;
-  gst: number;
 }
 
 const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
@@ -41,7 +40,6 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   selectedSlots,
   total,
   subtotal,
-  gst,
 }) => {
   const { isAuthenticated, user } = useAuthStore();
   const { data: userWalletBalance = 0, refetch: refetchWalletBalance } =
@@ -200,14 +198,6 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
               {/* Price Breakdown */}
               <div className="border-t border-gray-200 pt-3">
                 <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (18%)</span>
-                    <span>₹{gst.toFixed(2)}</span>
-                  </div>
                   <div className="flex justify-between font-semibold text-lg border-t border-gray-200 pt-2">
                     <span>Total Amount</span>
                     <span>₹{total.toFixed(2)}</span>

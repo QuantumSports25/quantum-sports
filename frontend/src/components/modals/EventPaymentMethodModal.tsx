@@ -23,7 +23,6 @@ interface EventPaymentMethodModalProps {
   numberOfTickets: number;
   totalAmount: number;
   subtotal: number;
-  gst: number;
 }
 
 const EventPaymentMethodModal: React.FC<EventPaymentMethodModalProps> = ({
@@ -34,7 +33,6 @@ const EventPaymentMethodModal: React.FC<EventPaymentMethodModalProps> = ({
   numberOfTickets,
   totalAmount,
   subtotal,
-  gst,
 }) => {
   const { isAuthenticated, user } = useAuthStore();
   const formatDate = (date: Date | string) => {
@@ -193,14 +191,6 @@ const EventPaymentMethodModal: React.FC<EventPaymentMethodModalProps> = ({
               {/* Price Breakdown */}
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Ticket Price × {numberOfTickets}</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (18%)</span>
-                    <span>₹{gst.toFixed(2)}</span>
-                  </div>
                   <div className="flex justify-between font-semibold text-lg border-t border-gray-200 pt-2">
                     <span>Total Amount</span>
                     <span>₹{totalAmount.toFixed(2)}</span>

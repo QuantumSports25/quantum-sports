@@ -77,8 +77,7 @@ const EventDetailsPage: React.FC = () => {
 
   // Calculate pricing
   const subtotal = (event?.ticketPrice || 0) * numberOfTickets;
-  const gst = subtotal * 0.18;
-  const totalAmount = subtotal + gst;
+  const totalAmount = subtotal;
 
   // Free seats mutation (equivalent to unlockSlots for venues)
   const freeSeatsMutation = useMutation({
@@ -557,12 +556,6 @@ const EventDetailsPage: React.FC = () => {
                       ₹{subtotal.toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-sm mt-1">
-                    <span className="text-gray-400">GST (18%):</span>
-                    <span className="text-white font-medium">
-                      ₹{gst.toFixed(2)}
-                    </span>
-                  </div>
                   <div className="border-t border-gray-600 mt-2 pt-2">
                     <div className="flex justify-between items-center">
                       <span className="text-white font-semibold">
@@ -646,7 +639,6 @@ const EventDetailsPage: React.FC = () => {
             numberOfTickets={numberOfTickets}
             totalAmount={totalAmount}
             subtotal={subtotal}
-            gst={gst}
           />
 
           <EventPaymentLoadingModal

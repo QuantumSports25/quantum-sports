@@ -64,8 +64,7 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const subtotal = selectedSlots.reduce((sum, slot) => sum + slot.amount, 0);
-  const gst = subtotal * 0.18;
-  const total = subtotal + gst;
+  const total = subtotal;
   const [validating, setValidating] = useState(false);
   const [initiatingPayment, setInitiatingPayment] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -673,14 +672,6 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
       {/* Payment Summary */}
       <div className="border-t border-gray-200 pt-4">
         <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-sm">
-            <span>Subtotal</span>
-            <span>₹{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>GST (18%)</span>
-            <span>₹{gst.toFixed(2)}</span>
-          </div>
           <div className="flex justify-between font-semibold text-lg">
             <span>Total</span>
             <span>₹{total.toFixed(2)}</span>
@@ -723,7 +714,6 @@ const CheckoutCard: React.FC<CheckoutCardProps> = ({
         selectedSlots={selectedSlots}
         total={total}
         subtotal={subtotal}
-        gst={gst}
       />
 
       {/* Payment Loading Modal */}

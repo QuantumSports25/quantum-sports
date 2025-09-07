@@ -19,6 +19,7 @@ model User {
   role      String    @default("user") @db.VarChar(20)
   otp       String?   @db.VarChar(10)
   otpExpiry DateTime?
+  verified  Boolean   @default(false)
   shippingAddress Json? 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

@@ -476,6 +476,148 @@ export class AuthController {
     }
   }
 
+  static async forgetPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email is required" 
+        });
+      }
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format",
+        });
+      }
+
+      const result = await AuthService.sendForgetPasswordOTP(email);
+
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: result.message,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: result.error,
+        });
+      }
+
+    } catch (error) {
+      console.error("Forget Password Error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to process request", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  }
+
+  static async verifyForgetPasswordOTP(req: Request, res: Response) {
+    try {
+      const { email, otp } = req.body;
+
+      if (!email || !otp) {
+        return res.status(400).json({
+          success: false,
+          message: "Email and OTP are required",
+        });
+      }
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email format",
+        });
+      }
+
+      // OTP format validation
+      if (!/^\d{6}$/.test(otp)) {
+        return res.status(400).json({
+          success: false,
+          message: "OTP must be 6 digits",
+        });
+      }
+
+      const result = await AuthService.verifyForgetPasswordOTP(email, otp);
+
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: "OTP verified successfully",
+          data: {
+            resetToken: result.resetToken,
+          },
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: result.error,
+        });
+      }
+
+    } catch (error) {
+      console.error("Verify Forget Password OTP Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to verify OTP",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { resetToken, newPassword } = req.body;
+
+      if (!resetToken || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Reset token and new password are required",
+        });
+      }
+
+      // Password validation
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters long",
+        });
+      }
+
+      const result = await AuthService.resetPasswordWithToken(resetToken, newPassword);
+
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: result.message,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: result.error,
+        });
+      }
+
+    } catch (error) {
+      console.error("Reset Password Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to reset password",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
   static async changePassword(req: Request, res: Response) {
     try {
       const authReq = req as any;

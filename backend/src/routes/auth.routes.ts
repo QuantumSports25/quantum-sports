@@ -15,6 +15,11 @@ router.post('/partner-login', AuthController.partnerLogin);
 router.post('/admin-login', AuthController.adminLogin);
 router.post('/change-password', authMiddleware, AuthController.changePassword);
 
+// Forget Password Flow
+router.post('/forget-password', AuthController.forgetPassword);
+router.post('/verify-forget-password-otp', AuthController.verifyForgetPasswordOTP);
+router.post('/reset-password', AuthController.resetPassword);
+
 // Profile routes
 router.get('/users', UserController.getAllUsersByRole);
 router.get('/profile', authMiddleware, UserController.getProfile);

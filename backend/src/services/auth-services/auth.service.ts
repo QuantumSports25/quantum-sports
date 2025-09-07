@@ -1,7 +1,8 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { EmailService } from "./email.service";
+import { EmailService } from "../email-services/email.service";
+import { OTPService } from "../otp-services/otp.service";
 import { User, UserRole, MembershipSummary } from "../../models/user.model";
 import { ShoppingAddress } from "../../models/shop.model";
 
@@ -530,6 +531,188 @@ export class AuthService {
     } catch (error) {
       console.error("Add Address Error:", error);
       throw new Error("Failed to add address");
+    }
+  }
+
+  static async sendForgetPasswordOTP(email: string): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    try {
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          error: "No account found with this email address",
+        };
+      }
+
+      // Check OTP rate limiting
+      const otpStatus = await OTPService.getOTPStatus(email);
+      if (!otpStatus.canRequest) {
+        return {
+          success: false,
+          error: `Please wait ${otpStatus.timeUntilNextRequest} seconds before requesting another OTP`,
+        };
+      }
+
+      // Generate and store OTP
+      const otp = OTPService.generateOTP();
+      await OTPService.storeOTP(email, otp);
+
+      // Send OTP email
+      const emailSent = await EmailService.sendOTPEmail(email, otp, 'forgot-password');
+
+      if (!emailSent) {
+        return {
+          success: false,
+          error: "Failed to send OTP email. Please try again.",
+        };
+      }
+
+      return {
+        success: true,
+        message: "Password reset OTP sent to your email address",
+      };
+
+    } catch (error) {
+      console.error("Send Forget Password OTP Error:", error);
+      return {
+        success: false,
+        error: "Internal server error. Please try again later.",
+      };
+    }
+  }
+
+  static async verifyForgetPasswordOTP(email: string, otp: string): Promise<{
+    success: boolean;
+    resetToken?: string;
+    error?: string;
+  }> {
+    try {
+      // Verify OTP using OTPService
+      const otpResult = await OTPService.verifyOTP(email, otp);
+
+      if (!otpResult.success) {
+        return {
+          success: false,
+          error: otpResult.error || "Invalid or expired OTP",
+        };
+      }
+
+      // Check if user still exists
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          error: "User not found",
+        };
+      }
+
+      // Generate a temporary reset token (valid for 15 minutes)
+      const resetToken = jwt.sign(
+        { 
+          email, 
+          purpose: 'password-reset',
+          userId: user.id 
+        },
+        process.env['JWT_SECRET'] || "your-secret-key",
+        { expiresIn: "15m" }
+      );
+
+      return {
+        success: true,
+        resetToken,
+      };
+
+    } catch (error) {
+      console.error("Verify Forget Password OTP Error:", error);
+      return {
+        success: false,
+        error: "Internal server error. Please try again later.",
+      };
+    }
+  }
+
+  static async resetPasswordWithToken(
+    resetToken: string, 
+    newPassword: string
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    try {
+      // Verify reset token
+      let decoded: any;
+      try {
+        decoded = jwt.verify(resetToken, process.env['JWT_SECRET'] || "your-secret-key");
+      } catch (jwtError) {
+        return {
+          success: false,
+          error: "Invalid or expired reset token",
+        };
+      }
+
+      // Validate token purpose
+      if (decoded.purpose !== 'password-reset') {
+        return {
+          success: false,
+          error: "Invalid reset token",
+        };
+      }
+
+      // Validate new password
+      if (!newPassword || newPassword.length < 6) {
+        return {
+          success: false,
+          error: "Password must be at least 6 characters long",
+        };
+      }
+
+      // Check if user exists
+      const user = await prisma.user.findUnique({
+        where: { email: decoded.email },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          error: "User not found",
+        };
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      // Send confirmation email
+      await EmailService.sendPasswordResetSuccessEmail(user.email, user.name);
+
+      return {
+        success: true,
+        message: "Password reset successfully",
+      };
+
+    } catch (error) {
+      console.error("Reset Password Error:", error);
+      return {
+        success: false,
+        error: "Internal server error. Please try again later.",
+      };
     }
   }
 }

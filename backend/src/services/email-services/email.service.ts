@@ -11,13 +11,53 @@ interface EmailOptions {
 }
 
 export class EmailService {
-  private static transporter = nodemailer.createTransport({
-    service: 'gmail', // You can change this to other providers
-    auth: {
-      user: process.env['EMAIL_USER'],
-      pass: process.env['EMAIL_APP_PASSWORD'],
-    },
-  });
+  // Build transporter dynamically to support Gmail or custom SMTP
+  private static buildTransporter() {
+    const smtpEnabled = (process.env['SMTP_ENABLED'] || '').toLowerCase() === 'true';
+
+    // Prefer explicit SMTP config only if enabled
+    const smtpHost = process.env['SMTP_HOST'];
+    const smtpPort = process.env['SMTP_PORT'] ? Number(process.env['SMTP_PORT']) : undefined;
+    const smtpUser = process.env['SMTP_USER'] || process.env['EMAIL_USER'];
+    const smtpPass =
+      process.env['SMTP_PASS'] ||
+      process.env['EMAIL_APP_PASSWORD'] ||
+      process.env['EMAIL_PASSWORD'] ||
+      process.env['EMAIL_PASS'];
+
+    if (smtpEnabled && smtpHost && smtpPort && smtpUser && smtpPass) {
+      const secure = (process.env['SMTP_SECURE'] || '').toLowerCase() === 'true' || smtpPort === 465;
+      console.log('[EmailService] Using SMTP transport', {
+        host: smtpHost,
+        port: smtpPort,
+        secure,
+        userHint: smtpUser?.replace(/^(..).*(@.*)?$/, '$1***$2') || 'n/a',
+      });
+      return nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+      });
+    }
+
+    // Fallback to Gmail service using EMAIL_USER and password/app password
+    console.log('[EmailService] Using Gmail transport', {
+      userHint: (process.env['EMAIL_USER'] || '').replace(/^(..).*(@.*)?$/, '$1***$2'),
+    });
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env['EMAIL_USER'],
+        pass: smtpPass,
+      },
+    });
+  }
+
+  private static transporter = EmailService.buildTransporter();
 
   static generateOTP(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -28,7 +68,7 @@ export class EmailService {
       const mailOptions = {
         from: {
           name: 'Quantum Sports',
-          address: process.env['EMAIL_USER'] || 'noreply@quantumsports.com',
+          address: process.env['EMAIL_FROM'] || process.env['EMAIL_USER'] || 'noreply@quantumsports.com',
         },
         to,
         subject,

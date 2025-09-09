@@ -13,6 +13,7 @@ import {
   Zap,
   Shield,
   Youtube,
+Award,
   // Award,
 } from "lucide-react";
 
@@ -70,18 +71,18 @@ const Footer: React.FC = () => {
         { to: "/partner/register", label: "Become Partner" },
       ],
     },
-    // {
-    //   title: "Company",
-    //   icon: Award,
-    //   iconColor: "text-green-400",
-    //   dotColor: "bg-green-400",
-    //   links: [
-    //     { to: "/", label: "About Us" },
-    //     { to: "/", label: "Careers" },
-    //     { to: "/", label: "Blog" },
-    //     { to: "/", label: "Press Kit" },
-    //   ],
-    // },
+    {
+      title: "Bonus Socials",
+      icon: Award,
+      iconColor: "text-green-400",
+      dotColor: "bg-green-400",
+      links: [
+        { to: "https://www.threads.com/@quantumpickleballpro", label: "Threads" },
+        { to: "https://in.pinterest.com/quantumpickleball/", label: "Pinterest" },
+        { to: "https://www.hopp.bio/quantum-pickleball", label: "Hopp" },
+        // { to: "/", label: "Press Kit" },
+      ],
+    },
     {
       title: "Support",
       icon: Shield,

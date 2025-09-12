@@ -28,7 +28,7 @@ export class AuthService {
         userData.phone = data.phone;
       }
 
-      // Check if user already exists
+      // Check if user already exists (regardless of role)
       const existingUser = await prisma.user.findUnique({
         where: { email: data.email },
       });
@@ -36,7 +36,7 @@ export class AuthService {
       if (existingUser) {
         return {
           success: false,
-          error: "Email already exists",
+          error: "Email already exists. You cannot register as a user with an email that is already registered in our system.",
           details: { email: data.email },
         };
       }
@@ -128,7 +128,7 @@ export class AuthService {
     try {
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      // Check if user already exists
+      // Check if user already exists (regardless of role)
       const existingUser = await prisma.user.findUnique({
         where: { email: data.email },
       });
@@ -136,7 +136,7 @@ export class AuthService {
       if (existingUser) {
         return {
           success: false,
-          error: "Email already exists",
+          error: "Email already exists. You cannot register as a partner with an email that is already registered in our system.",
           details: { email: data.email },
         };
       }

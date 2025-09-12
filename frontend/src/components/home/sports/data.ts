@@ -2,6 +2,18 @@ import { SportCard } from './types';
 
 export const sportsData: SportCard[] = [
   {
+    id: 'Pickleball',
+    name: 'Pickleball',
+    image: '',
+    description: 'Fast-paced racquet sport with precision and agility',
+    color: 'from-green-500 to-emerald-600',
+    backgroundImage: '/pickel-ball.jpg',
+    features: ['Indoor Courts', 'Professional Flooring', 'Shuttlecocks Included', 'Tournament Hosting'],
+    venues: '200+',
+    players: '6K+',
+    rating: 4.6
+  },
+  {
     id: 'badminton',
     name: 'Badminton',
     image: '🏸',

@@ -229,13 +229,14 @@ const PartnerLoginPage: React.FC = () => {
               </div>
 
               <div className="text-sm">
-                <button
+                <a href="/forgot-password"><button
                   type="button"
                   className="font-semibold text-primary-600 hover:text-primary-700 
                   transition-colors duration-300 ease-in-out focus:outline-none focus:underline"
                 >
                   Forgot password?
-                </button>
+                </button></a>
+                
               </div>
             </div>
 

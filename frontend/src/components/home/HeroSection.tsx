@@ -131,6 +131,10 @@ const HeroSection: React.FC = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900">
+      {/* Interaction Shield while dropdown is open (blocks hover/selection behind) */}
+      {isDropdownOpen && (
+        <div className="absolute inset-0 z-40 pointer-events-auto" aria-hidden="true"></div>
+      )}
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -220,7 +224,7 @@ const HeroSection: React.FC = () => {
                   {/* Dropdown */}
                   {isDropdownOpen && (
                     <div
-                      className={`absolute top-full left-0 right-0 bg-white/95 backdrop-blur-xl border border-white/30 shadow-2xl z-50 max-h-60 overflow-y-auto transition-all duration-200 transform ${
+                      className={`absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-2xl z-50 max-h-60 overflow-y-auto transition-all duration-200 transform ${
                         isDropdownOpen
                           ? "rounded-b-lg sm:rounded-b-xl opacity-100 translate-y-0"
                           : "rounded-lg sm:rounded-xl mt-1 opacity-0 -translate-y-2"
@@ -231,7 +235,7 @@ const HeroSection: React.FC = () => {
                           {/* Show search results count */}
                           {searchFilters.city &&
                             filteredCities.length < CITIES.length && (
-                              <div className="px-4 py-2 text-xs text-gray-600 bg-white/50 border-b border-white/20">
+                              <div className="px-4 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
                                 {filteredCities.length}{" "}
                                 {filteredCities.length === 1
                                   ? "city"
@@ -250,13 +254,13 @@ const HeroSection: React.FC = () => {
                                 handleInputChange("city", cityName);
                                 setIsDropdownOpen(false);
                               }}
-                              className={`w-full text-left px-4 py-3 hover:bg-white/80 transition-colors duration-150 flex items-center group ${
+                              className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 flex items-center group ${
                                 index === filteredCities.length - 1
                                   ? "rounded-b-lg sm:rounded-b-xl"
                                   : ""
                               } ${
                                 searchFilters.city === cityName
-                                  ? "bg-white/60 text-blue-700"
+                                  ? "bg-gray-100 text-blue-700"
                                   : "text-gray-900"
                               }`}
                             >
@@ -301,7 +305,7 @@ const HeroSection: React.FC = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12 animate-fade-in-up delay-400">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12 animate-fade-in-up delay-400 select-none">
               <div className="text-center group hover:scale-105 transition-transform duration-300">
                 <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-blue-400 transition-colors duration-300">
                   0

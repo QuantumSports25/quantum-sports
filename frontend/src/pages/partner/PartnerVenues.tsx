@@ -49,7 +49,9 @@ const PartnerVenues: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
-  const isAuthorized = user && user.role === 'partner' && user.partnerDetails?.id;
+  // Consider a partner authorized if their role is 'partner'.
+  // Do not require partnerDetails to avoid false negatives before profile hydration.
+  const isAuthorized = !!(user && user.role === 'partner');
   const partnerId = user?.id;
 
   const {

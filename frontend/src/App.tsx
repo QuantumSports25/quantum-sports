@@ -246,10 +246,17 @@ function App() {
               }
             />
 
-            {/* Partner Routes - Nested dashboard routes */}
+            {/* Partner Routes - Protected with partner role */}
             <Route path="/partner/login" element={<PartnerLoginPage />} />
             <Route path="/partner/register" element={<PartnerRegisterPage />} />
-            <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+            <Route
+              path="/partner/dashboard"
+              element={
+                <ProtectedRoute requiredRole="partner" redirectTo="/partner/login">
+                  <PartnerDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/partner/dashboard/bookings"
               element={
@@ -260,15 +267,27 @@ function App() {
             />
             <Route
               path="/partner/dashboard/venues"
-              element={<PartnerVenues />}
+              element={
+                <ProtectedRoute requiredRole="partner" redirectTo="/partner/login">
+                  <PartnerVenues />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/partner/dashboard/analytics"
-              element={<PartnerDashboard />}
+              element={
+                <ProtectedRoute requiredRole="partner" redirectTo="/partner/login">
+                  <PartnerDashboard />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/partner/dashboard/settings"
-              element={<PartnerDashboard />}
+              element={
+                <ProtectedRoute requiredRole="partner" redirectTo="/partner/login">
+                  <PartnerDashboard />
+                </ProtectedRoute>
+              }
             />
 
             {/* Legacy Partner Routes for backward compatibility */}

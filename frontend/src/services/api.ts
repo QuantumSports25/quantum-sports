@@ -32,8 +32,19 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
+      const state = useAuthStore.getState();
+      const currentPath = window.location.pathname || '';
+      const role = state.user?.role;
+      state.logout();
+
+      // Redirect based on context/role for better UX
+      if (currentPath.startsWith('/partner') || role === 'partner') {
+        window.location.href = '/partner/login';
+      } else if (currentPath.startsWith('/admin') || role === 'admin') {
+        window.location.href = '/admin/login';
+      } else {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

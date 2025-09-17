@@ -92,7 +92,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
           >
             <LogOut className="h-5 w-5" />
-            <span>Logout</span>
+            <span>Back-to-HomePage</span>
           </button>
         </div>
       </div>

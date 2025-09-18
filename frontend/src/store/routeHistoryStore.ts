@@ -14,9 +14,17 @@ export const useRouteHistoryStore = create<RouteHistoryState>()(
       lastRoute: null,
       
       setLastRoute: (route: string) => {
-        // Only save meaningful routes (not login/register pages)
-        const ignoredRoutes = ['/login', '/register', '/login-otp', '/admin/login', '/partner/login'];
-        if (!ignoredRoutes.includes(route)) {
+        // Only save meaningful routes (not auth/utility pages)
+        const ignoredRoutes = [
+          '/login',
+          '/register',
+          '/login-otp',
+          '/admin/login',
+          '/partner/login',
+          '/forgot-password',
+        ];
+
+        if (!ignoredRoutes.some((ignoredRoute) => route.startsWith(ignoredRoute))) {
           set({ lastRoute: route });
         }
       },

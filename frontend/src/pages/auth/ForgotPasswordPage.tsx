@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import { useRouteHistoryStore } from "../../store/routeHistoryStore";
 import { useMutation } from "@tanstack/react-query";
 
 interface ForgotPasswordState {
@@ -27,6 +28,7 @@ type Step = "email" | "otp" | "password";
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const clearLastRoute = useRouteHistoryStore((state) => state.clearLastRoute);
   const [currentStep, setCurrentStep] = useState<Step>("email");
   const [formData, setFormData] = useState<ForgotPasswordState>({
     email: user?.email || "",
@@ -88,6 +90,7 @@ const ForgotPasswordPage: React.FC = () => {
     onSuccess: (data) => {
       if (data?.success) {
         toast.success("Password reset successfully");
+        clearLastRoute();
         navigate("/login");
       } else {
         toast.error(data?.message || "Failed to reset password");

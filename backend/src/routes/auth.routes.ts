@@ -14,6 +14,7 @@ router.post('/register-partner', AuthController.registerPartner);
 router.post('/partner-login', AuthController.partnerLogin);
 router.post('/admin-login', AuthController.adminLogin);
 router.post('/change-password', authMiddleware, AuthController.changePassword);
+router.post('/logout', authMiddleware, AuthController.logout);
 
 // Forget Password Flow
 router.post('/forget-password', AuthController.forgetPassword);

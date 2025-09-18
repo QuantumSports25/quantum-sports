@@ -175,7 +175,7 @@ const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-2 gap-6 ">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
               <div className="text-3xl font-bold text-yellow-400">2000+</div>
               <div className="text-sm text-gray-200">Active Users</div>

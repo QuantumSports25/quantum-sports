@@ -635,4 +635,29 @@ export class AuthController {
       return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Failed to change password" });
     }
   }
+
+  static async logout(req: Request, res: Response) {
+    try {
+      const authReq = req as any;
+      const userId = authReq.user?.userId;
+
+      if (userId) {
+        console.log("User logged out", { userId });
+      } else {
+        console.warn("Logout requested without authenticated user context");
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Logged out successfully",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to logout",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
 }

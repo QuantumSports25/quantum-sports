@@ -12,7 +12,10 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
-  const videoSourcesRef = useRef<string[]>(["/videos/video.mp4", "/videos/sign_up_2.mp4"]);
+  const videoSourcesRef = useRef<string[]>([
+    "/videos/video.mp4",
+    "/videos/sign_up_2.mp4",
+  ]);
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const navigate = useNavigate();
@@ -34,7 +37,10 @@ const LoginPage: React.FC = () => {
       { threshold: 0.1 }
     );
     observer.observe(container);
-    const fallbackTimer = window.setTimeout(() => setShouldLoadVideo(true), 2000);
+    const fallbackTimer = window.setTimeout(
+      () => setShouldLoadVideo(true),
+      2000
+    );
     return () => {
       observer.disconnect();
       window.clearTimeout(fallbackTimer);
@@ -62,7 +68,21 @@ const LoginPage: React.FC = () => {
   const fromLocationState = location.state?.from?.pathname;
   const loginIntent = location.state?.intent;
   const lastTrackedRoute = getLastRoute();
-  const redirectPath = fromLocationState || lastTrackedRoute || "/";
+
+  // Apply route overrides to lastTrackedRoute before using it
+  const getOverriddenRoute = (route: string | null) => {
+    if (!route) return null;
+
+    switch (route) {
+      case "/forgot-password":
+        return "/";
+      default:
+        return route;
+    }
+  };
+
+  const overriddenLastRoute = getOverriddenRoute(lastTrackedRoute);
+  const redirectPath = fromLocationState || overriddenLastRoute || "/";
 
   // Login mutation
   const loginMutation = useMutation({
@@ -87,7 +107,10 @@ const LoginPage: React.FC = () => {
             break;
           default:
             finalRedirectPath = redirectPath;
-            if (lastTrackedRoute) getAndClearRoute();
+            if (lastTrackedRoute) {
+              // Clear the route and apply overrides
+              getAndClearRoute();
+            }
             break;
         }
 
@@ -141,7 +164,10 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen flex pt-16">
       {/* Left Side - Video Background */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <div ref={videoContainerRef} className="absolute inset-0 w-full h-full overflow-hidden">
+        <div
+          ref={videoContainerRef}
+          className="absolute inset-0 w-full h-full overflow-hidden"
+        >
           <video
             className="absolute inset-0 w-full h-full object-cover"
             autoPlay
@@ -150,7 +176,11 @@ const LoginPage: React.FC = () => {
             playsInline
             preload={shouldLoadVideo ? "auto" : "none"}
             ref={videoRef}
-            src={shouldLoadVideo ? videoSourcesRef.current[activeSourceIndex] : undefined}
+            src={
+              shouldLoadVideo
+                ? videoSourcesRef.current[activeSourceIndex]
+                : undefined
+            }
             onError={() => {
               setActiveSourceIndex((idx) =>
                 idx + 1 < videoSourcesRef.current.length ? idx + 1 : idx

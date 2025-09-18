@@ -23,7 +23,20 @@ export const useLastRouteRedirect = () => {
 
   const getLastRoute = () => lastRoute;
   
-  const getAndClearRoute = () => getAndClearLastRoute();
+  const getAndClearRoute = () => {
+    const route = getAndClearLastRoute();
+    
+    // Handle route overrides using switch case
+    switch (route) {
+      case '/forgot-password':
+        // Redirect to home page instead of forgot-password
+        return '/';
+      
+      default:
+        // Return the original route for all other cases
+        return route;
+    }
+  };
 
   return {
     getLastRoute,

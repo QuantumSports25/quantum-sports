@@ -218,7 +218,7 @@ const HeroSection: React.FC = () => {
                 <div className="sm:col-span-1">
                   <input
                     type="text"
-                    placeholder="Type or Search directly "
+                    placeholder=" Search City"
                     value={searchFilters.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
                     onKeyDown={(e) => {

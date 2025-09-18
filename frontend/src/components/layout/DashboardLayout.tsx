@@ -19,7 +19,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRole })
     closeMobileMenu,
     handleMenuClick,
     handleLogout,
-  } = useSidebar();
+  } = useSidebar(userRole);
 
   const menuItems = getMenuItems(userRole);
 

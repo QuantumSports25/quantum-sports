@@ -37,20 +37,20 @@ const ShopCheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
   const { items: cartItems, clearCart } = useCartStore();
-  
+
   const [loading, setLoading] = useState(false);
   const [orderPlaced] = useState(false);
   const [orderSuccessDetails, setOrderSuccessDetails] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('razorpay');
   const [error, setError] = useState<string | null>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
-  const [backendSubtotal,setBackendSubtotal] = useState(0);
+  const [backendSubtotal, setBackendSubtotal] = useState(0);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<'contact' | 'shipping' | 'payment' | 'review' | 'success'>('contact');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [, setIsFormValid] = useState(false);
-  
+
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || '',
     firstName: user?.name ? user.name.split(' ')[0] : '',
@@ -95,11 +95,11 @@ const ShopCheckoutPage: React.FC = () => {
   });
 
   const verifyPaymentMutation = useMutation({
-    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: any }) => 
+    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: any }) =>
       shopService.verifyPaymentAndOrder(orderId, paymentData),
     onSuccess: (data, { orderId, paymentData }) => {
       setCurrentStep('success');
-      
+
       // Ensure all values are properly defined before setting order details
       const orderDetails = {
         orderId: orderId || 'N/A',
@@ -121,12 +121,12 @@ const ShopCheckoutPage: React.FC = () => {
         },
         orderDate: new Date(),
       };
-      
+
       setOrderSuccessDetails(orderDetails);
       console.log('Setting order success details:', orderDetails);
       clearCart();
       setCurrentOrderId(null);
-      
+
       // Show success toast
       toast.success('🎉 Order placed successfully!');
     },
@@ -188,9 +188,9 @@ const ShopCheckoutPage: React.FC = () => {
     }
 
     const calculatedSubtotal = cartItems.reduce(
-        (sum, item) => sum + (item.product.markedPrice * item.quantity),
-        0
-      );
+      (sum, item) => sum + (item.product.markedPrice * item.quantity),
+      0
+    );
 
     setBackendSubtotal(calculatedSubtotal);
   }, [cartItems, cartItems.length, navigate]);
@@ -240,13 +240,13 @@ const ShopCheckoutPage: React.FC = () => {
       postalCode: formData.zipCode,
       country: formData.country
     };
-    
+
     await addAddressMutation.mutateAsync(addressToSave);
   };
 
   const validateForm = (): string | null => {
     const errors: Record<string, string> = {};
-    
+
     if (!formData.firstName.trim()) errors.firstName = 'First name is required';
     if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
     if (!formData.email.trim()) errors.email = 'Email is required';
@@ -255,23 +255,23 @@ const ShopCheckoutPage: React.FC = () => {
     if (!formData.city.trim()) errors.city = 'City is required';
     if (!formData.country.trim()) errors.country = 'Country is required';
     if (!formData.zipCode.trim()) errors.zipCode = 'ZIP code is required';
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
-    
+
     // Basic phone validation (10 digits)
     const phoneRegex = /^\d{10}$/;
     if (formData.phone && !phoneRegex.test(formData.phone.replace(/\D/g, ''))) {
       errors.phone = 'Please enter a valid 10-digit phone number';
     }
-    
+
     setFormErrors(errors);
     const isValid = Object.keys(errors).length === 0;
     setIsFormValid(isValid);
-    
+
     return isValid ? null : Object.values(errors)[0];
   };
 
@@ -323,7 +323,7 @@ const ShopCheckoutPage: React.FC = () => {
       }));
       setSelectedAddressId(null);
     }
-    
+
     switch (currentStep) {
       case 'shipping':
         setCurrentStep('contact');
@@ -339,7 +339,7 @@ const ShopCheckoutPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isAuthenticated || !user) {
       navigate('/login', { state: { from: '/shop/checkout' } });
       return;
@@ -359,7 +359,7 @@ const ShopCheckoutPage: React.FC = () => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       // Prepare shipping address
       const shippingAddress: ShippingAddress = {
@@ -379,7 +379,7 @@ const ShopCheckoutPage: React.FC = () => {
 
       // Create order request
       const paymentMethodValue = selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Razorpay';
-      
+
 
       const orderRequest: CreateOrderRequest = {
         userId: user.id,
@@ -387,7 +387,7 @@ const ShopCheckoutPage: React.FC = () => {
         shippingAddress,
         totalAmount: backendSubtotal,
         totalItems: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-        sellerId: 'default-seller-id', 
+        sellerId: 'default-seller-id',
         paymentMethod: paymentMethodValue
       };
 
@@ -395,7 +395,7 @@ const ShopCheckoutPage: React.FC = () => {
       const created = await createOrderMutation.mutateAsync(orderRequest);
       const orderId = typeof created === 'string' ? created : created?.id;
       if (!orderId) throw new Error('Failed to create order');
-      
+
       setCurrentOrderId(orderId);
       console.log('Order created successfully:', orderId);
 
@@ -470,41 +470,41 @@ const ShopCheckoutPage: React.FC = () => {
       };
 
       const razorpay = new (window as any).Razorpay(razorpayOptions);
-      
-             razorpay.on('payment.failed', async (resp: any) => {
-         console.error('Razorpay payment failed:', resp);
-         // Unlock inventory on payment failure
-         if (orderId) {
-           await unlockInventoryMutation.mutateAsync(orderId);
-         }
-         const errorMessage = `Payment failed: ${resp.error?.description || 'Unknown error'}`;
-         setError(errorMessage);
-         toast.error(errorMessage);
-       });
 
-       // Handle modal close without payment
-       razorpay.on('payment.cancelled', async () => {
-         console.log('Payment cancelled by user');
-         // Unlock inventory on payment cancellation
-         if (orderId) {
-           await unlockInventoryMutation.mutateAsync(orderId);
-         }
-         const errorMessage = 'Payment was cancelled';
-         setError(errorMessage);
-         toast.error(errorMessage);
-       });
+      razorpay.on('payment.failed', async (resp: any) => {
+        console.error('Razorpay payment failed:', resp);
+        // Unlock inventory on payment failure
+        if (orderId) {
+          await unlockInventoryMutation.mutateAsync(orderId);
+        }
+        const errorMessage = `Payment failed: ${resp.error?.description || 'Unknown error'}`;
+        setError(errorMessage);
+        toast.error(errorMessage);
+      });
+
+      // Handle modal close without payment
+      razorpay.on('payment.cancelled', async () => {
+        console.log('Payment cancelled by user');
+        // Unlock inventory on payment cancellation
+        if (orderId) {
+          await unlockInventoryMutation.mutateAsync(orderId);
+        }
+        const errorMessage = 'Payment was cancelled';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      });
 
       razorpay.open();
-         } catch (err: any) {
-       console.error('Razorpay setup failed:', err);
-       // Unlock inventory if Razorpay setup fails
-       if (orderId) {
-         await unlockInventoryMutation.mutateAsync(orderId);
-       }
-       const errorMessage = err.message || 'Failed to initialize payment';
-       setError(errorMessage);
-       toast.error(errorMessage);
-     }
+    } catch (err: any) {
+      console.error('Razorpay setup failed:', err);
+      // Unlock inventory if Razorpay setup fails
+      if (orderId) {
+        await unlockInventoryMutation.mutateAsync(orderId);
+      }
+      const errorMessage = err.message || 'Failed to initialize payment';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
   // Cleanup function to unlock inventory if user navigates away
@@ -593,9 +593,8 @@ const ShopCheckoutPage: React.FC = () => {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                          formErrors.firstName ? 'border-red-300' : 'border-gray-200'
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.firstName ? 'border-red-300' : 'border-gray-200'
+                          }`}
                       />
                       {formErrors.firstName && (
                         <p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>
@@ -610,9 +609,8 @@ const ShopCheckoutPage: React.FC = () => {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                          formErrors.lastName ? 'border-red-300' : 'border-gray-200'
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.lastName ? 'border-red-300' : 'border-gray-200'
+                          }`}
                       />
                       {formErrors.lastName && (
                         <p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>
@@ -627,9 +625,8 @@ const ShopCheckoutPage: React.FC = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                          formErrors.email ? 'border-red-300' : 'border-gray-200'
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.email ? 'border-red-300' : 'border-gray-200'
+                          }`}
                       />
                       {formErrors.email && (
                         <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
@@ -644,9 +641,8 @@ const ShopCheckoutPage: React.FC = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                          formErrors.phone ? 'border-red-300' : 'border-gray-200'
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.phone ? 'border-red-300' : 'border-gray-200'
+                          }`}
                       />
                       {formErrors.phone && (
                         <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
@@ -681,7 +677,7 @@ const ShopCheckoutPage: React.FC = () => {
                     </div>
                     <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Shipping Address</h2>
                   </div>
-                  
+
                   {/* Saved Addresses */}
                   {savedAddresses?.data && savedAddresses.data.length > 0 && (
                     <div className="mb-6">
@@ -690,11 +686,10 @@ const ShopCheckoutPage: React.FC = () => {
                         {savedAddresses.data.map((address, index) => (
                           <div
                             key={index}
-                            className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
-                              selectedAddressId === `${address.addressLine1}-${address.city}-${address.postalCode}`
+                            className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${selectedAddressId === `${address.addressLine1}-${address.city}-${address.postalCode}`
                                 ? 'border-primary-500 bg-primary-50'
                                 : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                              }`}
                             onClick={() => handleAddressSelect(address)}
                           >
                             <div className="flex items-start justify-between">
@@ -760,9 +755,8 @@ const ShopCheckoutPage: React.FC = () => {
                           name="address"
                           value={formData.address}
                           onChange={handleInputChange}
-                          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                            formErrors.address ? 'border-red-300' : 'border-gray-200'
-                          }`}
+                          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.address ? 'border-red-300' : 'border-gray-200'
+                            }`}
                         />
                         {formErrors.address && (
                           <p className="text-red-500 text-sm mt-1">{formErrors.address}</p>
@@ -778,9 +772,8 @@ const ShopCheckoutPage: React.FC = () => {
                             name="city"
                             value={formData.city}
                             onChange={handleInputChange}
-                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                              formErrors.city ? 'border-red-300' : 'border-gray-200'
-                            }`}
+                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.city ? 'border-red-300' : 'border-gray-200'
+                              }`}
                           />
                           {formErrors.city && (
                             <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
@@ -795,9 +788,8 @@ const ShopCheckoutPage: React.FC = () => {
                             name="country"
                             value={formData.country}
                             onChange={handleInputChange}
-                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                              formErrors.country ? 'border-red-300' : 'border-gray-200'
-                            }`}
+                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.country ? 'border-red-300' : 'border-gray-200'
+                              }`}
                           />
                           {formErrors.country && (
                             <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>
@@ -812,16 +804,15 @@ const ShopCheckoutPage: React.FC = () => {
                             name="zipCode"
                             value={formData.zipCode}
                             onChange={handleInputChange}
-                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                              formErrors.zipCode ? 'border-red-300' : 'border-gray-200'
-                            }`}
+                            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.zipCode ? 'border-red-300' : 'border-gray-200'
+                              }`}
                           />
                           {formErrors.zipCode && (
                             <p className="text-red-500 text-sm mt-1">{formErrors.zipCode}</p>
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Save Address Button */}
                       <div className="flex gap-3">
                         <button
@@ -845,23 +836,23 @@ const ShopCheckoutPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  
-                                     <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
-                     <button
-                       type="button"
-                       onClick={prevStep}
-                       className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
-                     >
-                       Back
-                     </button>
-                     <button
-                       type="button"
-                       onClick={nextStep}
-                       className="w-full sm:w-auto bg-primary-500 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors duration-200"
-                     >
-                       Continue to Payment
-                     </button>
-                   </div>
+
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      className="w-full sm:w-auto bg-primary-500 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors duration-200"
+                    >
+                      Continue to Payment
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -893,379 +884,377 @@ const ShopCheckoutPage: React.FC = () => {
                       </label>
                     ))}
                   </div>
-                                     <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
-                     <button
-                       type="button"
-                       onClick={prevStep}
-                       className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
-                     >
-                       Back
-                     </button>
-                     <button
-                       type="button"
-                       onClick={nextStep}
-                       className="w-full sm:w-auto bg-primary-500 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors duration-200"
-                     >
-                       Review Order
-                     </button>
-                   </div>
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      className="w-full sm:w-auto bg-primary-500 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors duration-200"
+                    >
+                      Review Order
+                    </button>
+                  </div>
                 </div>
               )}
 
-                                             {/* Review Step */}
-                {currentStep === 'review' && (
-                  <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary-500 text-white rounded-full flex items-center justify-center text-sm sm:text-base">
-                        4
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Review Order</h2>
+              {/* Review Step */}
+              {currentStep === 'review' && (
+                <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-6">
+                  <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary-500 text-white rounded-full flex items-center justify-center text-sm sm:text-base">
+                      4
                     </div>
-                   
-                   {/* Order Summary */}
-                   <div className="space-y-4 mb-6">
-                     <h3 className="text-lg font-medium text-gray-900">Order Summary</h3>
-                     {cartItems.map((item) => (
-                       <div key={item.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                         <img
-                           src={item.product.images[0] || '/api/placeholder/300/300'}
-                           alt={item.product.name}
-                           className="w-16 h-16 object-cover rounded-lg"
-                         />
-                         <div className="flex-1">
-                           <h4 className="font-medium text-gray-900">{item.product.name}</h4>
-                           <div className="text-sm text-gray-600">Qty: {item.quantity}</div>
-                         </div>
-                         <div className="font-semibold text-gray-900">
-                           ₹{(item.product.discountPrice * item.quantity).toLocaleString()}
-                         </div>
-                       </div>
-                     ))}
-                   </div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Review Order</h2>
+                  </div>
 
-                   {/* Shipping Address */}
-                   <div className="mb-6">
-                     <h3 className="text-lg font-medium text-gray-900 mb-3">Shipping Address</h3>
-                     <div className="p-4 bg-gray-50 rounded-xl">
-                       <p className="font-medium text-gray-900">{formData.firstName} {formData.lastName}</p>
-                       <p className="text-gray-600">{formData.address}</p>
-                       <p className="text-gray-600">{formData.city}, {formData.zipCode}, {formData.country}</p>
-                       <p className="text-gray-600">{formData.phone}</p>
-                     </div>
-                   </div>
-
-                   {/* Payment Method */}
-                   <div className="mb-6">
-                     <h3 className="text-lg font-medium text-gray-900 mb-3">Payment Method</h3>
-                     <div className="p-4 bg-gray-50 rounded-xl">
-                       <div className="flex items-center gap-3">
-                         <CreditCard className="w-5 h-5 text-primary-500" />
-                         <span className="font-medium">
-                           {selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Credit/Debit Card'}
-                         </span>
-                       </div>
-                     </div>
-                   </div>
-
-                                       <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
-                      <button
-                        type="button"
-                        onClick={prevStep}
-                        className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
-                      >
-                        Back
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full sm:w-auto px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                          loading
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-primary-500 text-white hover:bg-primary-600 shadow-medium hover:shadow-large'
-                        }`}
-                      >
-                        {loading ? (
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Processing Payment...
-                          </div>
-                        ) : (
-                          `Place Order - ₹${(backendSubtotal || 0).toLocaleString()}`
-                        )}
-                      </button>
-                    </div>
-                 </div>
-               )}
-
-                               {/* Success Step */}
-                {currentStep === 'success' && orderSuccessDetails && (
-                  <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Order Confirmed!</h2>
-                    </div>
-                    
-                    {/* Success Message */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-green-200">
-                      <div className="text-center">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                          <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8" />
-                        </div>
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">🎉 Thank You!</h3>
-                        <p className="text-gray-600 text-base sm:text-lg">Your order has been placed successfully.</p>
-                      </div>
-                    </div>
-
-                                       {/* Order Details */}
-                    <div className="space-y-4 sm:space-y-6">
-                      {/* Order Summary */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-200">
-                        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-                          <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                          Order Summary
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                          <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
-                            <p className="text-xs text-gray-600 mb-1">Order ID</p>
-                            <p className="font-mono text-xs sm:text-sm font-semibold text-gray-900 break-all">{orderSuccessDetails.orderId}</p>
-                          </div>
-                          {orderSuccessDetails.paymentId && (
-                            <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
-                              <p className="text-xs text-gray-600 mb-1">Payment ID</p>
-                              <p className="font-mono text-xs sm:text-sm text-gray-900 break-all">{orderSuccessDetails.paymentId}</p>
-                            </div>
-                          )}
-                          <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
-                            <p className="text-xs text-gray-600 mb-1">Order Date</p>
-                            <p className="text-xs sm:text-sm text-gray-900">{orderSuccessDetails.orderDate.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                                           {/* Delivery Estimate */}
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-3 sm:p-4 border border-purple-200">
-                        <div className="flex items-center gap-3">
-                          <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                          <div>
-                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Estimated Delivery</h4>
-                            <p className="text-xs sm:text-sm text-gray-600">
-                              {new Date(orderSuccessDetails.orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                                           {/* Items */}
-                      <div className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
-                          <Package className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Ordered Items</h3>
-                          <span className="ml-auto bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
-                            {orderSuccessDetails.items?.length || 0} items
-                          </span>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                          {orderSuccessDetails.items && orderSuccessDetails.items.length > 0 ? (
-                            orderSuccessDetails.items.map((item: any, idx: number) => (
-                              <div key={idx} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                                <div className="flex-1">
-                                  <span className="font-medium text-gray-900 text-sm sm:text-base">{item.name}</span>
-                                </div>
-                                <div className="flex items-center gap-3 sm:gap-4">
-                                  <span className="text-gray-600 text-xs sm:text-sm">Qty: {item.quantity}</span>
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="px-4 sm:px-6 py-3 sm:py-4 text-gray-500 text-center text-sm">No items found</div>
-                          )}
-                        </div>
-                      </div>
-
-                                           {/* Payment Summary */}
-                      <div className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
-                          <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Payment Summary</h3>
-                        </div>
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600 text-sm">Payment Method</span>
-                            <span className="font-medium text-gray-900 flex items-center gap-2 text-sm">
-                              <CreditCard className="w-3 h-3 sm:w-4 sm:h-4" />
-                              {orderSuccessDetails.paymentMethod}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 text-sm">Subtotal</span>
-                            <span className="text-gray-900 text-sm">₹{orderSuccessDetails.subtotal.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 text-sm">Shipping</span>
-                            <span className="text-gray-900 text-sm">{orderSuccessDetails.subtotal > 2000 ? 'Free' : '₹99'}</span>
-                          </div>
-                          <div className="border-t border-gray-200 pt-3 flex justify-between text-base sm:text-lg font-bold text-gray-900">
-                            <span>Total Paid</span>
-                            <span className="text-green-600">₹{orderSuccessDetails.total.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                                           {/* Next Steps */}
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3 sm:p-4 border border-green-200">
-                        <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">What's Next?</h4>
-                        <ul className="text-xs sm:text-sm text-gray-600 space-y-1">
-                          <li>• You'll receive an email confirmation shortly</li>
-                          <li>• We'll send tracking updates as your order ships</li>
-                          <li>• Estimated delivery: {new Date(orderSuccessDetails.orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}</li>
-                        </ul>
-                      </div>
-
-                                           {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <button 
-                          onClick={() => navigate('/shop')} 
-                          className="flex-1 bg-green-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
-                        >
-                          <Home className="w-4 h-4 sm:w-5 sm:h-5" />
-                          Continue Shopping
-                        </button>
-                        <a 
-                          href="/orders" 
-                          className="flex-1 inline-flex items-center justify-center bg-gray-100 text-gray-800 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200 gap-2"
-                        >
-                          <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
-                          View My Orders
-                        </a>
-                      </div>
-
-                      {/* Footer */}
-                      <div className="text-center text-xs sm:text-sm text-gray-500 pt-3 sm:pt-4 border-t border-gray-200">
-                        <p>Need help? Contact our support team at support@quantumsports.com</p>
-                      </div>
-                   </div>
-                 </div>
-               )}
-
-                             {/* Error Display */}
-               {error && (
-                 <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-                   <div className="flex items-center">
-                     <AlertCircle className="w-6 h-6 text-red-600" />
-                     <div className="ml-3">
-                       <p className="text-red-800 font-medium">Payment Error</p>
-                       <p className="text-red-600 text-sm">{error}</p>
-                     </div>
-                   </div>
-                 </div>
-               )}
-             </form>
-           </div>
-
-                                  {/* Order Summary */}
-            {currentStep !== 'success' && (
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-6 sticky top-4">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Order Summary</h2>
-                  
-                  {/* Cart Items */}
-                  <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                  {/* Order Summary */}
+                  <div className="space-y-4 mb-6">
+                    <h3 className="text-lg font-medium text-gray-900">Order Summary</h3>
                     {cartItems.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3">
+                      <div key={item.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
                         <img
                           src={item.product.images[0] || '/api/placeholder/300/300'}
                           alt={item.product.name}
-                          className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
+                          className="w-16 h-16 object-cover rounded-lg"
                         />
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 text-xs sm:text-sm">{item.product.name}</h3>
-                          <div className="text-xs sm:text-sm text-gray-600">Qty: {item.quantity}</div>
+                          <h4 className="font-medium text-gray-900">{item.product.name}</h4>
+                          <div className="text-sm text-gray-600">Qty: {item.quantity}</div>
                         </div>
-                        <div className="font-semibold text-gray-900 text-sm">
+                        <div className="font-semibold text-gray-900">
                           ₹{(item.product.discountPrice * item.quantity).toLocaleString()}
                         </div>
                       </div>
                     ))}
                   </div>
 
-                                   {/* Price Breakdown */}
-                  <div className="border-t border-gray-200 pt-3 sm:pt-4 space-y-2 sm:space-y-3">
-                    <div className="flex justify-between text-xs sm:text-sm text-gray-600">
-                      <span>Subtotal</span>
-                      <span>₹{(backendSubtotal || 0).toLocaleString()}</span>
+                  {/* Shipping Address */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Shipping Address</h3>
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="font-medium text-gray-900">{formData.firstName} {formData.lastName}</p>
+                      <p className="text-gray-600">{formData.address}</p>
+                      <p className="text-gray-600">{formData.city}, {formData.zipCode}, {formData.country}</p>
+                      <p className="text-gray-600">{formData.phone}</p>
                     </div>
-                    <div className="flex justify-between text-xs sm:text-sm text-gray-600">
-                      <span>Shipping</span>
-                      <span>{(backendSubtotal || 0) > 2000 ? 'Free' : '₹99'}</span>
-                    </div>
-                    <div className="border-t border-gray-200 pt-2 sm:pt-3">
-                      <div className="flex justify-between text-base sm:text-lg font-bold text-gray-900">
-                        <span>Total</span>
-                        <span>₹{((backendSubtotal || 0) + ((backendSubtotal || 0) > 2000 ? 0 : 99)).toLocaleString()}</span>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Payment Method</h3>
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="w-5 h-5 text-primary-500" />
+                        <span className="font-medium">
+                          {selectedPaymentMethod === 'wallet' ? 'Wallet' : 'Credit/Debit Card'}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                                   {/* Security Features */}
-                  <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                      <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                      <span>Secure checkout</span>
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 sm:px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={`w-full sm:w-auto px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${loading
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-primary-500 text-white hover:bg-primary-600 shadow-medium hover:shadow-large'
+                        }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Processing Payment...
+                        </div>
+                      ) : (
+                        `Place Order - ₹${(backendSubtotal || 0).toLocaleString()}`
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Step */}
+              {currentStep === 'success' && orderSuccessDetails && (
+                <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-6">
+                  <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                      <Truck className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                      <span>Free shipping over ₹2,000</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                      <Info className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-                      <span>30-day return policy</span>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Order Confirmed!</h2>
+                  </div>
+
+                  {/* Success Message */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-green-200">
+                    <div className="text-center">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8" />
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">🎉 Thank You!</h3>
+                      <p className="text-gray-600 text-base sm:text-lg">Your order has been placed successfully.</p>
                     </div>
                   </div>
 
-                                   {/* Step-specific actions */}
-                  {currentStep === 'review' && (
-                    <div className="mt-4 sm:mt-6">
-                      <button
-                        type="submit"
-                        form="checkout-form"
-                        disabled={loading}
-                        className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold text-white transition-all duration-200 ${
-                          loading
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-primary-500 hover:bg-primary-600 shadow-medium hover:shadow-large'
-                        }`}
-                      >
-                        {loading ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                            Processing Payment...
+                  {/* Order Details */}
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Order Summary */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-200">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                        <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                        Order Summary
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                        <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
+                          <p className="text-xs text-gray-600 mb-1">Order ID</p>
+                          <p className="font-mono text-xs sm:text-sm font-semibold text-gray-900 break-all">{orderSuccessDetails.orderId}</p>
+                        </div>
+                        {orderSuccessDetails.paymentId && (
+                          <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
+                            <p className="text-xs text-gray-600 mb-1">Payment ID</p>
+                            <p className="font-mono text-xs sm:text-sm text-gray-900 break-all">{orderSuccessDetails.paymentId}</p>
                           </div>
-                        ) : (
-                          `Place Order - ₹${((backendSubtotal || 0) + ((backendSubtotal || 0) > 2000 ? 0 : 99)).toLocaleString()}`
                         )}
-                      </button>
+                        <div className="bg-white rounded-lg p-3 sm:p-4 border border-blue-100">
+                          <p className="text-xs text-gray-600 mb-1">Order Date</p>
+                          <p className="text-xs sm:text-sm text-gray-900">{orderSuccessDetails.orderDate.toLocaleString()}</p>
+                        </div>
+                      </div>
                     </div>
-                  )}
-               </div>
-             </div>
-           )}
-         </div>
-       </div>
-     </div>
-   );
- };
+
+                    {/* Delivery Estimate */}
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-3 sm:p-4 border border-purple-200">
+                      <div className="flex items-center gap-3">
+                        <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                        <div>
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Estimated Delivery</h4>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            {new Date(orderSuccessDetails.orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Items */}
+                    <div className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+                        <Package className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Ordered Items</h3>
+                        <span className="ml-auto bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
+                          {orderSuccessDetails.items?.length || 0} items
+                        </span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {orderSuccessDetails.items && orderSuccessDetails.items.length > 0 ? (
+                          orderSuccessDetails.items.map((item: any, idx: number) => (
+                            <div key={idx} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                              <div className="flex-1">
+                                <span className="font-medium text-gray-900 text-sm sm:text-base">{item.name}</span>
+                              </div>
+                              <div className="flex items-center gap-3 sm:gap-4">
+                                <span className="text-gray-600 text-xs sm:text-sm">Qty: {item.quantity}</span>
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 sm:px-6 py-3 sm:py-4 text-gray-500 text-center text-sm">No items found</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Payment Summary */}
+                    <div className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Payment Summary</h3>
+                      </div>
+                      <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 text-sm">Payment Method</span>
+                          <span className="font-medium text-gray-900 flex items-center gap-2 text-sm">
+                            <CreditCard className="w-3 h-3 sm:w-4 sm:h-4" />
+                            {orderSuccessDetails.paymentMethod}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 text-sm">Subtotal</span>
+                          <span className="text-gray-900 text-sm">₹{orderSuccessDetails.subtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 text-sm">Shipping</span>
+                          <span className="text-gray-900 text-sm">{orderSuccessDetails.subtotal > 2000 ? 'Free' : '₹99'}</span>
+                        </div>
+                        <div className="border-t border-gray-200 pt-3 flex justify-between text-base sm:text-lg font-bold text-gray-900">
+                          <span>Total Paid</span>
+                          <span className="text-green-600">₹{orderSuccessDetails.total.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Next Steps */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3 sm:p-4 border border-green-200">
+                      <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">What's Next?</h4>
+                      <ul className="text-xs sm:text-sm text-gray-600 space-y-1">
+                        <li>• You'll receive an email confirmation shortly</li>
+                        <li>• We'll send tracking updates as your order ships</li>
+                        <li>• Estimated delivery: {new Date(orderSuccessDetails.orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}</li>
+                      </ul>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => navigate('/shop')}
+                        className="flex-1 bg-green-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
+                      >
+                        <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                        Continue Shopping
+                      </button>
+                      <a
+                        href="/orders"
+                        className="flex-1 inline-flex items-center justify-center bg-gray-100 text-gray-800 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200 gap-2"
+                      >
+                        <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
+                        View My Orders
+                      </a>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="text-center text-xs sm:text-sm text-gray-500 pt-3 sm:pt-4 border-t border-gray-200">
+                      <p>Need help? Contact our support team at support@quantumsports.com</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+                  <div className="flex items-center">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                    <div className="ml-3">
+                      <p className="text-red-800 font-medium">Payment Error</p>
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+
+          {/* Order Summary */}
+          {currentStep !== 'success' && (
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-6 sticky top-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Order Summary</h2>
+
+                {/* Cart Items */}
+                <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3">
+                      <img
+                        src={item.product.images[0] || '/api/placeholder/300/300'}
+                        alt={item.product.name}
+                        className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 text-xs sm:text-sm">{item.product.name}</h3>
+                        <div className="text-xs sm:text-sm text-gray-600">Qty: {item.quantity}</div>
+                      </div>
+                      <div className="font-semibold text-gray-900 text-sm">
+                        ₹{(item.product.discountPrice * item.quantity).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Price Breakdown */}
+                <div className="border-t border-gray-200 pt-3 sm:pt-4 space-y-2 sm:space-y-3">
+                  <div className="flex justify-between text-xs sm:text-sm text-gray-600">
+                    <span>Subtotal</span>
+                    <span>₹{(backendSubtotal || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs sm:text-sm text-gray-600">
+                    <span>Shipping</span>
+                    <span>{(backendSubtotal || 0) > 2000 ? 'Free' : '₹99'}</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2 sm:pt-3">
+                    <div className="flex justify-between text-base sm:text-lg font-bold text-gray-900">
+                      <span>Total</span>
+                      <span>₹{((backendSubtotal || 0) + ((backendSubtotal || 0) > 2000 ? 0 : 99)).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Features */}
+                <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                    <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                    <span>Secure checkout</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                    <Truck className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                    <span>Free shipping over ₹2,000</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                    <Info className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                    <span>30-day return policy</span>
+                  </div>
+                </div>
+
+                {/* Step-specific actions */}
+                {currentStep === 'review' && (
+                  <div className="mt-4 sm:mt-6">
+                    <button
+                      type="submit"
+                      form="checkout-form"
+                      disabled={loading}
+                      className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-semibold text-white transition-all duration-200 ${loading
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-primary-500 hover:bg-primary-600 shadow-medium hover:shadow-large'
+                        }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                          Processing Payment...
+                        </div>
+                      ) : (
+                        `Place Order - ₹${((backendSubtotal || 0) + ((backendSubtotal || 0) > 2000 ? 0 : 99)).toLocaleString()}`
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default ShopCheckoutPage;

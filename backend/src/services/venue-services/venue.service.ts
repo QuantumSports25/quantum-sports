@@ -19,7 +19,7 @@ export class VenueService {
           images: venue.images || [],
           features: venue.features || [],
           approved: venue.approved || false,
-          rating: venue.rating || null,
+          rating: Number(venue.rating),
           totalReviews: venue.totalReviews || 0,
         },
       });
@@ -58,7 +58,7 @@ export class VenueService {
           images: venue.images || [],
           features: venue.features || [],
           approved: venue.approved || false,
-          rating: venue.rating || null,
+          rating: venue.rating ?? 0,
           totalReviews: venue.totalReviews || 0,
           createdAt: venue.createdAt,
           updatedAt: new Date(),

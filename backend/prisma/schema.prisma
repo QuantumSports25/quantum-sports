@@ -62,7 +62,7 @@ model Venue {
   approved             Boolean           @default(false)
   mapLocationLink      String?           @db.Text
   phone                String            @db.VarChar(20)
-  rating               Decimal?          @db.Decimal(2, 1)
+  rating               Int               @default(0)
   totalReviews         Int?              @default(0)
   partnerId            String            @db.VarChar(255)
   createdAt            DateTime          @default(now())

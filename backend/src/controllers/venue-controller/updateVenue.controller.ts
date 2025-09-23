@@ -12,11 +12,14 @@ export class UpdateVenueController {
       if (!id) {
         return res.status(400).json({ message: "Venue ID is required" });
       }
-      const venueData = await VenueService.getVenue(id);
+      const venueData = (await VenueService.getVenue(id)) as unknown as Venue;
       if (!venueData) {
         return res.status(404).json({ message: "Venue not found" });
       }
       const mergedVenueData = merge({}, venueData, req.body as Venue);
+
+      mergedVenueData.rating = (Number(req.body.rating) || 0) + (Number(venueData.rating) || 0);
+      mergedVenueData.totalReviews = (venueData.totalReviews ?? 0) + 1;
 
       const updatedVenue = await VenueService.updateVenue(id, mergedVenueData);
 

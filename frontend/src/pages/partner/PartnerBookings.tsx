@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Clock, Download } from 'lucide-react';
-import { format } from 'date-fns';
-import { BookingService, BookingData } from '../../services/booking.service';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import { useAuthStore } from '../../store/authStore';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Clock, Download } from "lucide-react";
+import { format } from "date-fns";
+import { BookingService, BookingData } from "../../services/booking.service";
+import DashboardLayout from "../../components/layout/DashboardLayout";
+import { useAuthStore } from "../../store/authStore";
 // import toast from 'react-hot-toast';
 
 const PartnerBookings: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { user } = useAuthStore();
   const partnerId = user?.id;
   const {
@@ -18,7 +18,7 @@ const PartnerBookings: React.FC = () => {
     isFetching,
     refetch,
   } = useQuery<BookingData[]>({
-    queryKey: ['partnerBookings', partnerId],
+    queryKey: ["partnerBookings", partnerId],
     queryFn: () => BookingService.getBookingsByPartner(partnerId!),
     enabled: !!partnerId,
     staleTime: 60 * 1000,
@@ -29,21 +29,31 @@ const PartnerBookings: React.FC = () => {
   const bookings: BookingData[] = Array.isArray(bookingsRaw)
     ? bookingsRaw
     : bookingsRaw && Array.isArray((bookingsRaw as any).bookings)
-      ? (bookingsRaw as any).bookings
-      : [];
+    ? (bookingsRaw as any).bookings
+    : [];
 
   const filteredBookings = bookings.filter((booking: BookingData) => {
     const matchesSearch =
-      (booking.customerDetails?.name || booking.customerDetails?.customerName || '')
+      (
+        booking.customerDetails?.name ||
+        booking.customerDetails?.customerName ||
+        ""
+      )
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (booking.customerDetails?.email || booking.customerDetails?.customerEmail || '')
+      (
+        booking.customerDetails?.email ||
+        booking.customerDetails?.customerEmail ||
+        ""
+      )
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (booking._id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (booking._id || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === 'all' || (booking.bookingStatus || '').toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === "all" ||
+      (booking.bookingStatus || "").toLowerCase() ===
+        statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
@@ -82,14 +92,18 @@ const PartnerBookings: React.FC = () => {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSearchTerm(e.target.value)
+                  }
                   placeholder="Search bookings..."
                   className="w-full bg-gray-700 text-white placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <select
                 value={statusFilter}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setStatusFilter(e.target.value)
+                }
                 className="bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
@@ -109,28 +123,52 @@ const PartnerBookings: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-700/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Booking ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Customer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Date & Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Payment</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Booking ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Date & Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Duration
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">
+                      Payment
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {filteredBookings.map((booking: BookingData) => (
                     <tr key={booking._id} className="hover:bg-gray-700/50">
-                      <td className="px-6 py-4 text-sm font-medium text-white">#{booking._id.slice(-8).toUpperCase()}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-white">
+                        #{booking._id.slice(-8).toUpperCase()}
+                      </td>
                       <td className="px-6 py-4">
                         <div>
-                          <div className="font-medium text-white">{booking.customerDetails?.name || booking.customerDetails?.customerName || '-'}</div>
-                          <div className="text-sm text-gray-400">{booking.customerDetails?.email || booking.customerDetails?.customerEmail || '-'}</div>
+                          <div className="font-medium text-white">
+                            {booking.customerDetails?.name ||
+                              booking.customerDetails?.customerName ||
+                              "-"}
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {booking.customerDetails?.email ||
+                              booking.customerDetails?.customerEmail ||
+                              "-"}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-300">
-                          {format(new Date(booking.bookedDate), 'MMM dd, yyyy')}
+                          {format(new Date(booking.bookedDate), "MMM dd, yyyy")}
                         </div>
                         <div className="text-sm text-gray-400">
                           {booking.startTime} - {booking.endTime}
@@ -144,23 +182,31 @@ const PartnerBookings: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center text-sm font-medium text-white">
-                          {/* <DollarSign className="h-4 w-4 mr-1" /> */}
-                          ₹{booking.amount}
+                          {/* <DollarSign className="h-4 w-4 mr-1" /> */}₹
+                          {booking.amount}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${booking.bookingStatus === 'Confirmed'
-                          ? 'bg-green-400/10 text-green-400'
-                          : booking.bookingStatus === 'Pending'
-                            ? 'bg-yellow-400/10 text-yellow-400'
-                            : 'bg-red-400/10 text-red-400'
-                          }`}>
-                          {booking.bookingStatus}
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            booking.bookingStatus === "Confirmed"
+                              ? "bg-green-400/10 text-green-400"
+                              : "bg-red-400/10 text-red-400"
+                          }`}
+                        >
+                          {booking.bookingStatus === "Pending"
+                            ? "Failed"
+                            : booking.bookingStatus}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${booking.paymentStatus === 'Completed' ? 'bg-green-400/10 text-green-400' : 'bg-yellow-400/10 text-yellow-400'
-                          }`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            booking.paymentStatus === "Completed"
+                              ? "bg-green-400/10 text-green-400"
+                              : "bg-yellow-400/10 text-yellow-400"
+                          }`}
+                        >
                           {booking.paymentStatus}
                         </span>
                       </td>

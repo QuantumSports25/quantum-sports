@@ -225,14 +225,14 @@ export class SlotService {
     }
   }
 
-  static async deleteSlot(id: string) {
+  static async deleteSlots(ids: string[]) {
     try {
-      const deletedSlot = await prisma.slot.delete({
-        where: { id },
+      const deletedSlots = await prisma.slot.deleteMany({
+        where: { id: { in: ids } },
       });
-      return deletedSlot;
+      return deletedSlots;
     } catch (error) {
-      console.error("Error deleting slot:", error);
+      console.error("Error deleting slots:", error);
       throw error;
     }
   }

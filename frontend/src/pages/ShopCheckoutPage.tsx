@@ -1197,10 +1197,6 @@ const ShopCheckoutPage: React.FC = () => {
                     <span>Subtotal</span>
                     <span>₹{(backendSubtotal || 0).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-xs sm:text-sm text-gray-600">
-                    <span>Shipping</span>
-                    <span>{(backendSubtotal || 0) > 2000 ? 'Free' : '₹99'}</span>
-                  </div>
                   <div className="border-t border-gray-200 pt-2 sm:pt-3">
                     <div className="flex justify-between text-base sm:text-lg font-bold text-gray-900">
                       <span>Total</span>

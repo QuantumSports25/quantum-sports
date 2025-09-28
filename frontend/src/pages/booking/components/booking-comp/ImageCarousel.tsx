@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const ImageCarousel: React.FC<{ images: string[] }> = ({ images }) => {
   const [currentImage, setCurrentImage] = useState(0);
@@ -14,11 +14,6 @@ const ImageCarousel: React.FC<{ images: string[] }> = ({ images }) => {
   const goToImage = (index: number) => {
     setCurrentImage(index);
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => setCurrentImage(0), 300);
-    return () => clearTimeout(timer);
-  }, [currentImage]);
 
   return (
     <div className="relative h-48 sm:h-56 overflow-hidden rounded-t-2xl">

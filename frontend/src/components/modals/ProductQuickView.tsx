@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, Heart, Plus, Minus, ShoppingCart, Truck, Shield, Check } from 'lucide-react';
+import { X, Star, Heart, Plus, Minus, ShoppingCart, Truck, Shield } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { Product } from '../../types';
 
@@ -134,10 +134,6 @@ const ProductQuickView: React.FC<ProductQuickViewProps> = ({ product, isOpen, on
 
               {/* Features */}
               <div className="space-y-2 mb-6">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span>Free shipping over ₹2,000</span>
-                </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Shield className="w-4 h-4 text-blue-500" />
                   <span>Secure payment</span>

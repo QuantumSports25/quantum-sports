@@ -23,6 +23,8 @@ export interface VenueFormData {
   lat: number | null;
   lang: number | null;
   images: string[];
+  features: string[];
+  cancellationPolicy: string;
 }
 
 const AddCart: React.FC<AddCartProps> = ({
@@ -35,21 +37,26 @@ const AddCart: React.FC<AddCartProps> = ({
   const partnerId = user?.id;
 
   // Initial form data using useCallback to fix dependency issue
-  const getInitialFormData = useCallback((): VenueFormData => ({
-    name: "",
-    highlight: "",
-    start_price_per_hour: null,
-    partnerId: partnerId || "",
-    city: "",
-    state: "",
-    country: "",
-    zip: "",
-    phone: "",
-    mapLocationLink: "",
-    lat: null,
-    lang: null,
-    images: [],
-  }), [partnerId]);
+  const getInitialFormData = useCallback(
+    (): VenueFormData => ({
+      name: "",
+      highlight: "",
+      start_price_per_hour: null,
+      partnerId: partnerId || "",
+      city: "",
+      state: "",
+      country: "",
+      zip: "",
+      phone: "",
+      mapLocationLink: "",
+      lat: null,
+      lang: null,
+      images: [],
+      features: [],
+      cancellationPolicy: "",
+    }),
+    [partnerId]
+  );
 
   const [formData, setFormData] = useState<VenueFormData>(getInitialFormData());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -58,6 +65,7 @@ const AddCart: React.FC<AddCartProps> = ({
   const [imageLink, setImageLink] = useState<string>("");
   const [imageMode, setImageMode] = useState<"upload" | "link">("upload");
   const [isDragOver, setIsDragOver] = useState(false);
+  const [newFeature, setNewFeature] = useState<string>("");
 
   // Reset form when modal opens or closes
   useEffect(() => {
@@ -70,6 +78,7 @@ const AddCart: React.FC<AddCartProps> = ({
       setImageLink("");
       setImageMode("upload");
       setIsDragOver(false);
+      setNewFeature("");
     }
   }, [isOpen, getInitialFormData]);
 
@@ -84,6 +93,10 @@ const AddCart: React.FC<AddCartProps> = ({
 
     if (!formData.highlight.trim()) {
       newErrors.highlight = "Highlight is required";
+    }
+
+    if (!formData.cancellationPolicy.trim()) {
+      newErrors.cancellationPolicy = "Cancellation policy is required";
     }
 
     if (
@@ -226,6 +239,24 @@ const AddCart: React.FC<AddCartProps> = ({
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleAddFeature = () => {
+    if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
+      const trimmedFeature = newFeature.trim();
+      setFormData((prev) => ({
+        ...prev,
+        features: [...prev.features, trimmedFeature],
+      }));
+      setNewFeature("");
+    }
+  };
+
+  const removeFeature = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index),
     }));
   };
 
@@ -432,8 +463,9 @@ const AddCart: React.FC<AddCartProps> = ({
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 maxLength={30}
                 disabled={isLoading}
-                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.name ? "border-red-500" : "border-gray-600"
-                  }`}
+                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                  errors.name ? "border-red-500" : "border-gray-600"
+                }`}
                 placeholder="Enter venue name (max 30 characters)"
               />
               {errors.name && (
@@ -453,8 +485,9 @@ const AddCart: React.FC<AddCartProps> = ({
                 value={formData.highlight}
                 onChange={(e) => handleInputChange("highlight", e.target.value)}
                 disabled={isLoading}
-                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.highlight ? "border-red-500" : "border-gray-600"
-                  }`}
+                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                  errors.highlight ? "border-red-500" : "border-gray-600"
+                }`}
                 placeholder="Brief highlight of the venue"
               />
               {errors.highlight && (
@@ -476,10 +509,11 @@ const AddCart: React.FC<AddCartProps> = ({
                 }}
                 min="0"
                 disabled={isLoading}
-                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.start_price_per_hour
+                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                  errors.start_price_per_hour
                     ? "border-red-500"
                     : "border-gray-600"
-                  }`}
+                }`}
                 placeholder="Enter price per hour"
               />
               {errors.start_price_per_hour && (
@@ -487,6 +521,35 @@ const AddCart: React.FC<AddCartProps> = ({
                   {errors.start_price_per_hour}
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Cancellation Policy <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={formData.cancellationPolicy}
+                onChange={(e) =>
+                  handleInputChange("cancellationPolicy", e.target.value)
+                }
+                disabled={isLoading}
+                rows={4}
+                className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 resize-none ${
+                  errors.cancellationPolicy
+                    ? "border-red-500"
+                    : "border-gray-600"
+                }`}
+                placeholder="Enter your cancellation policy details (e.g., Free cancellation up to 24 hours before booking, 50% refund for cancellations 12-24 hours before, No refund for cancellations within 12 hours)"
+              />
+              {errors.cancellationPolicy && (
+                <p className="text-red-400 text-sm mt-1">
+                  {errors.cancellationPolicy}
+                </p>
+              )}
+              <p className="text-gray-500 text-sm mt-1">
+                Specify your cancellation terms to help customers understand the
+                refund policy.
+              </p>
             </div>
           </div>
 
@@ -506,8 +569,9 @@ const AddCart: React.FC<AddCartProps> = ({
                   value={formData.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
                   disabled={isLoading}
-                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.city ? "border-red-500" : "border-gray-600"
-                    }`}
+                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.city ? "border-red-500" : "border-gray-600"
+                  }`}
                   placeholder="Enter city"
                 />
                 {errors.city && (
@@ -524,8 +588,9 @@ const AddCart: React.FC<AddCartProps> = ({
                   value={formData.state}
                   onChange={(e) => handleInputChange("state", e.target.value)}
                   disabled={isLoading}
-                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.state ? "border-red-500" : "border-gray-600"
-                    }`}
+                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.state ? "border-red-500" : "border-gray-600"
+                  }`}
                   placeholder="Enter state"
                 />
                 {errors.state && (
@@ -544,8 +609,9 @@ const AddCart: React.FC<AddCartProps> = ({
                   value={formData.country}
                   onChange={(e) => handleInputChange("country", e.target.value)}
                   disabled={isLoading}
-                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.country ? "border-red-500" : "border-gray-600"
-                    }`}
+                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.country ? "border-red-500" : "border-gray-600"
+                  }`}
                   placeholder="Enter country"
                 />
                 {errors.country && (
@@ -562,8 +628,9 @@ const AddCart: React.FC<AddCartProps> = ({
                   value={formData.zip}
                   onChange={(e) => handleInputChange("zip", e.target.value)}
                   disabled={isLoading}
-                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.zip ? "border-red-500" : "border-gray-600"
-                    }`}
+                  className={`w-full bg-gray-700 text-white border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.zip ? "border-red-500" : "border-gray-600"
+                  }`}
                   placeholder="Enter ZIP code"
                 />
                 {errors.zip && (
@@ -583,8 +650,9 @@ const AddCart: React.FC<AddCartProps> = ({
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   disabled={isLoading}
-                  className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.phone ? "border-red-500" : "border-gray-600"
-                    }`}
+                  className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.phone ? "border-red-500" : "border-gray-600"
+                  }`}
                   placeholder="Enter phone number"
                 />
               </div>
@@ -604,10 +672,11 @@ const AddCart: React.FC<AddCartProps> = ({
                   value={formData.mapLocationLink}
                   onChange={(e) => handleMapLinkChange(e.target.value)}
                   disabled={isLoading}
-                  className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.mapLocationLink
+                  className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                    errors.mapLocationLink
                       ? "border-red-500"
                       : "border-gray-600"
-                    }`}
+                  }`}
                   placeholder="Enter Google Maps link"
                 />
               </div>
@@ -639,8 +708,9 @@ const AddCart: React.FC<AddCartProps> = ({
                       handleInputChange("lat", Number(e.target.value) || null)
                     }
                     disabled={isLoading}
-                    className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.lat ? "border-red-500" : "border-gray-600"
-                      }`}
+                    className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                      errors.lat ? "border-red-500" : "border-gray-600"
+                    }`}
                     placeholder="Enter latitude"
                   />
                 </div>
@@ -663,8 +733,9 @@ const AddCart: React.FC<AddCartProps> = ({
                       handleInputChange("lang", Number(e.target.value) || null)
                     }
                     disabled={isLoading}
-                    className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${errors.lang ? "border-red-500" : "border-gray-600"
-                      }`}
+                    className={`w-full bg-gray-700 text-white border rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 ${
+                      errors.lang ? "border-red-500" : "border-gray-600"
+                    }`}
                     placeholder="Enter longitude"
                   />
                 </div>
@@ -672,6 +743,72 @@ const AddCart: React.FC<AddCartProps> = ({
                   <p className="text-red-400 text-sm mt-1">{errors.lang}</p>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="space-y-4">
+            <h3 className="block text-sm font-medium text-gray-300 mb-2">
+              Venue Features
+            </h3>
+
+            <div>
+              <div className="flex space-x-2 mb-3">
+                <input
+                  type="text"
+                  value={newFeature}
+                  onChange={(e) => setNewFeature(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddFeature();
+                    }
+                  }}
+                  disabled={isLoading}
+                  placeholder="Enter a feature (e.g., Parking, WiFi, Air Conditioning)"
+                  className="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddFeature}
+                  disabled={isLoading || !newFeature.trim()}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Features Display */}
+              {formData.features.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">
+                    Added Features ({formData.features.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-2 bg-blue-600/20 border border-blue-500/30 text-blue-300 px-3 py-1 rounded-full text-sm"
+                      >
+                        <span>{feature}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeFeature(index)}
+                          disabled={isLoading}
+                          className="text-blue-300 hover:text-white transition-colors disabled:opacity-50"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-gray-500 text-sm">
+                Add features like parking, WiFi, air conditioning, etc. to help
+                customers know what's available.
+              </p>
             </div>
           </div>
 
@@ -684,20 +821,22 @@ const AddCart: React.FC<AddCartProps> = ({
               <button
                 type="button"
                 onClick={() => handleImageModeChange("upload")}
-                className={`px-4 py-2 rounded-lg transition-colors ${imageMode === "upload"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  imageMode === "upload"
                     ? "bg-blue-600 text-white"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
+                }`}
               >
                 Upload Files
               </button>
               <button
                 type="button"
                 onClick={() => handleImageModeChange("link")}
-                className={`px-4 py-2 rounded-lg transition-colors ${imageMode === "link"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  imageMode === "link"
                     ? "bg-blue-600 text-white"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
+                }`}
               >
                 Add Image Links
               </button>
@@ -713,10 +852,11 @@ const AddCart: React.FC<AddCartProps> = ({
                   onDragEnter={handleDragEnter}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed border-gray-600 rounded-lg p-6 text-center transition-colors ${isDragOver
+                  className={`border-2 border-dashed border-gray-600 rounded-lg p-6 text-center transition-colors ${
+                    isDragOver
                       ? "border-blue-500 bg-blue-500/10"
                       : "border-gray-600"
-                    }`}
+                  }`}
                   style={{
                     minHeight: "120px",
                     display: "flex",
@@ -746,8 +886,9 @@ const AddCart: React.FC<AddCartProps> = ({
                   />
                   <label
                     htmlFor="image-upload"
-                    className={`bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                    className={`bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isLoading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
                     Choose Images
                   </label>

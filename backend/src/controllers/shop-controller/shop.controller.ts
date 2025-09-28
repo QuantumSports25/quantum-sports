@@ -152,6 +152,23 @@ export class ShopController {
     }
   }
 
+  static async getShopOrdersByUserId(req: Request, res: Response) {
+    try {
+      const { userId } = req.params;
+      const {page, pageSize} = req.query;
+
+      if (!userId) {
+        return res.status(400).json({ error: "Missing user ID" });
+      }
+
+      const orders = await ShopService.getShopOrdersByUserId(userId, Number(page), Number(pageSize));
+      return res.status(200).json(orders);
+    } catch (error) {
+      console.error("Error fetching shop orders:", error);
+      return res.status(500).json({ error: "Failed to fetch shop orders" });
+    }
+  }
+
   static async unlockInventoryByOrderId(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -348,6 +365,7 @@ export class ShopController {
         currency: Currency.INR,
         paymentMethod: shopOrder.paymentDetails.paymentMethod as PaymentMethod,
         userId: shopOrder.userId,
+        name: shopOrder.products[0]?.name || "Shop Order",
       });
 
       if (!transaction) {

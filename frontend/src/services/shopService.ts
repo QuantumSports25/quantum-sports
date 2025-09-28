@@ -179,9 +179,14 @@ export const shopService = {
     }
   },
 
-  // Get all shop orders for user
-  getAllShopOrders: async (page: number = 1, pageSize: number = 10): Promise<ShopOrder[]> => {
+   getAllShopOrders: async (page: number = 1, pageSize: number = 10): Promise<ShopOrder[]> => {
     const response = await api.get(`/shop/get-shop-orders?page=${page}&pageSize=${pageSize}`);
+    return response.data;
+  },
+
+  // Get all shop orders for user
+  getAllShopOrdersByUserId: async (userId: string, page: number = 1, pageSize: number = 10): Promise<ShopOrder[]> => {
+    const response = await api.get(`/shop/get-shop-orders-by-userId/${userId}?page=${page}&pageSize=${pageSize}`);
     return response.data;
   },
 

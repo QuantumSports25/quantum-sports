@@ -153,10 +153,11 @@ export const updateSlot = async (id: string, slot: Partial<SlotFormData>) => {
   }
 };
 
-export const deleteSlot = async (id: string) => {
+export const deleteSlots = async (ids: string[]) => {
   try {
-    const response = await axiosInstance.delete(
-      `/venue/slot/delete-slot/${id}`
+    const response = await axiosInstance.post(
+      `/venue/slot/delete-slots`,
+      { ids }
     );
     return response.data;
   } catch (error) {

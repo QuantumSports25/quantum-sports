@@ -210,6 +210,7 @@ export class GetVenueController {
           description: venue.description,
           highlight: venue.highlight,
           rating: venue.rating,
+          totalReviews: venue.totalReviews,
           images: venue.images,
           start_price_per_hour: venue.start_price_per_hour,
           createdAt: venue.createdAt,

@@ -41,7 +41,7 @@ export interface Venue {
   location: Location;
   start_price_per_hour: number;
   details:{},
-  cancellationPolicy:{};
+  cancellationPolicy:string;
   images?: string[];
   features?: string[];
   approved?: boolean;
@@ -101,7 +101,7 @@ export interface Booking {
   slot: TimeSlot;
   amountPaid: number;
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
-  bookingStatus: 'confirmed' | 'cancelled' | 'completed';
+  bookingStatus: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   paymentId?: string;
   createdAt: string;
   updatedAt: string;

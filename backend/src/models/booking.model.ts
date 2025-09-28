@@ -24,12 +24,14 @@ export enum BookingType {
 
 export interface EventBooking {
   type: BookingType.Event;
+  name: string;
   eventId: string;
   seats: number;
 }
 
 export interface VenueBooking {
   type: BookingType.Venue;
+  name: string;
   venueId: string;
   partnerId: string;
   facilityId: string;

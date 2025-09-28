@@ -1,6 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
-import { Plus, Edit3, Trash2, Calendar, DollarSign, Loader2, RotateCcw, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Calendar,
+  DollarSign,
+  Loader2,
+  RotateCcw,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Venue } from "../../../../types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
@@ -18,7 +29,7 @@ import {
   createMultipleSlots,
   getSlotsByVenue,
   updateSlot,
-  deleteSlot
+  deleteSlots,
 } from "../../../../services/partner-service/slotService";
 
 interface SlotModalFormData {
@@ -28,7 +39,7 @@ interface SlotModalFormData {
   startTime: string;
   endTime: string;
   amount: number;
-  availability: 'available' | 'not_available' | 'booked' | 'filling_fast';
+  availability: "available" | "not_available" | "booked" | "filling_fast";
 }
 
 interface SlotManagementProps {
@@ -41,25 +52,27 @@ const isValidThirtyMinuteInterval = (time: string): boolean => {
   const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
   if (!timeRegex.test(time)) return false;
 
-  const minutes = parseInt(time.split(':')[1], 10);
+  const minutes = parseInt(time.split(":")[1], 10);
   return minutes === 0 || minutes === 30;
 };
 
 // Helper function to round time to nearest 30-minute interval
 const roundToThirtyMinutes = (time: string): string => {
   if (!time) return time;
-  const [hours, minutes] = time.split(':').map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
   const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
   const adjustedHours = minutes >= 45 ? (hours + 1) % 24 : hours;
 
-  return `${adjustedHours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
+  return `${adjustedHours.toString().padStart(2, "0")}:${roundedMinutes
+    .toString()
+    .padStart(2, "0")}`;
 };
 
 // Helper function to convert time from HH:MM:SS to HH:MM format
 const convertTimeToHHMM = (time: string): string => {
   if (!time) return time;
 
-  const timeParts = time.split(':');
+  const timeParts = time.split(":");
 
   // If time already in HH:MM format, return as is
   if (timeParts.length === 2) {
@@ -70,13 +83,13 @@ const convertTimeToHHMM = (time: string): string => {
   if (timeParts.length === 3) {
     const [hours, minutes] = timeParts;
     // Ensure hours and minutes are properly padded
-    const paddedHours = hours.padStart(2, '0');
-    const paddedMinutes = minutes.padStart(2, '0');
+    const paddedHours = hours.padStart(2, "0");
+    const paddedMinutes = minutes.padStart(2, "0");
     return `${paddedHours}:${paddedMinutes}`;
   }
 
   // For any other format, return as is
-  console.warn('Unexpected time format:', time);
+  console.warn("Unexpected time format:", time);
   return time;
 };
 
@@ -85,17 +98,23 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
   const [isBulkCreateModalOpen, setIsBulkCreateModalOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedFacility, setSelectedFacility] = useState<string>('all');
+  const [selectedFacility, setSelectedFacility] = useState<string>("all");
   const [selectedDateRange, setSelectedDateRange] = useState({
-    start: new Date().toISOString().split('T')[0],
-    end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    start: new Date().toISOString().split("T")[0],
+    end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   });
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
   const queryClient = useQueryClient();
 
   // Toggle collapse state for a date section
   const toggleSectionCollapse = (date: string) => {
-    setCollapsedSections(prev => {
+    setCollapsedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(date)) {
         newSet.delete(date);
@@ -110,7 +129,7 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
   const formatTimeForBackend = (time: string): string => {
     if (!time) return time;
     // Convert HH:MM:SS to HH:MM by removing seconds
-    const timeParts = time.split(':');
+    const timeParts = time.split(":");
     if (timeParts.length === 3) {
       return `${timeParts[0]}:${timeParts[1]}`;
     }
@@ -118,40 +137,57 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
     return time;
   };
 
-
-
   // Fetch facilities from backend API
   const { data: facilities = [], isLoading: facilitiesLoading } = useQuery({
-    queryKey: ['facilities', venue.id],
-    queryFn: () => venue.id ? getFacilitiesByVenue(venue.id) : Promise.resolve([]),
+    queryKey: ["facilities", venue.id],
+    queryFn: () =>
+      venue.id ? getFacilitiesByVenue(venue.id) : Promise.resolve([]),
     enabled: !!venue.id,
   });
 
   // Fetch slots from backend API
-  const { data: slots = [], isLoading } = useQuery({
-    queryKey: ['slots', venue.id, selectedFacility, selectedDateRange],
+  const {
+    data: slots = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["slots", venue.id, selectedFacility, selectedDateRange],
     queryFn: () => {
       if (!venue.id) return Promise.resolve([]);
-      return getSlotsByVenue(venue.id, selectedDateRange.start, selectedDateRange.end);
+      return getSlotsByVenue(
+        venue.id,
+        selectedDateRange.start,
+        selectedDateRange.end
+      );
     },
     enabled: !!venue.id,
   });
 
   const createSlotMutation = useMutation({
     mutationFn: async (data: SlotModalFormData) => {
-      console.log('Original slot data for creation:', data);
+      console.log("Original slot data for creation:", data);
 
       // Validate required fields
-      if (!data.startDate || !data.facilityId || !data.startTime || !data.endTime || !data.amount) {
-        throw new Error('All fields are required');
+      if (
+        !data.startDate ||
+        !data.facilityId ||
+        !data.startTime ||
+        !data.endTime ||
+        !data.amount
+      ) {
+        throw new Error("All fields are required");
       }
 
       // Validate 30-minute intervals
       if (!isValidThirtyMinuteInterval(data.startTime)) {
-        throw new Error('Start time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)');
+        throw new Error(
+          "Start time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)"
+        );
       }
       if (!isValidThirtyMinuteInterval(data.endTime)) {
-        throw new Error('End time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)');
+        throw new Error(
+          "End time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)"
+        );
       }
 
       const slotData: SlotFormData = {
@@ -163,35 +199,49 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
         facilityId: data.facilityId,
       };
 
-      console.log('Formatted slot data being sent to backend for creation:', slotData);
+      console.log(
+        "Formatted slot data being sent to backend for creation:",
+        slotData
+      );
       return createSlot(slotData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['slots', venue.id] });
+      queryClient.invalidateQueries({ queryKey: ["slots", venue.id] });
       setIsAddModalOpen(false);
-      toast.success('Slot created successfully!');
+      toast.success("Slot created successfully!");
     },
     onError: (error: any) => {
-      console.error('Error creating slot:', error);
-      toast.error(error?.response?.data?.message || 'Failed to create slot');
-    }
+      console.error("Error creating slot:", error);
+      toast.error(error?.response?.data?.message || "Failed to create slot");
+    },
   });
 
   const createBulkSlotsMutation = useMutation({
     mutationFn: async (data: SlotModalFormData) => {
-      console.log('Original bulk slot data:', data);
+      console.log("Original bulk slot data:", data);
 
       // Validate required fields for bulk creation
-      if (!data.startDate || !data.endDate || !data.facilityId || !data.startTime || !data.endTime || !data.amount) {
-        throw new Error('All fields are required for bulk creation');
+      if (
+        !data.startDate ||
+        !data.endDate ||
+        !data.facilityId ||
+        !data.startTime ||
+        !data.endTime ||
+        !data.amount
+      ) {
+        throw new Error("All fields are required for bulk creation");
       }
 
       // Validate 30-minute intervals for bulk creation
       if (!isValidThirtyMinuteInterval(data.startTime)) {
-        throw new Error('Start time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)');
+        throw new Error(
+          "Start time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)"
+        );
       }
       if (!isValidThirtyMinuteInterval(data.endTime)) {
-        throw new Error('End time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)');
+        throw new Error(
+          "End time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)"
+        );
       }
 
       const bulkData: BulkSlotFormData = {
@@ -204,71 +254,87 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
         facilityId: data.facilityId,
       };
 
-      console.log('Formatted bulk creation data being sent to backend:', bulkData);
+      console.log(
+        "Formatted bulk creation data being sent to backend:",
+        bulkData
+      );
       return createMultipleSlots(data.facilityId, bulkData);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['slots', venue.id] });
+      queryClient.invalidateQueries({ queryKey: ["slots", venue.id] });
       setIsBulkCreateModalOpen(false);
-      toast.success(`Successfully created ${data?.data?.count || 'multiple'} slots!`);
+      toast.success(
+        `Successfully created ${data?.data?.count || "multiple"} slots!`
+      );
     },
     onError: (error: any) => {
-      console.error('Error creating bulk slots:', error);
-      toast.error(error?.response?.data?.message || 'Failed to create bulk slots');
-    }
+      console.error("Error creating bulk slots:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to create bulk slots"
+      );
+    },
   });
 
   const updateSlotMutation = useMutation({
-    mutationFn: async (data: { id: string; slot: Partial<SlotModalFormData> }) => {
-      console.log('Original slot data for update:', data.slot);
+    mutationFn: async (data: {
+      id: string;
+      slot: Partial<SlotModalFormData>;
+    }) => {
+      console.log("Original slot data for update:", data.slot);
 
       const slotData: Partial<SlotFormData> = {
         date: data.slot.startDate,
-        startTime: data.slot.startTime ? formatTimeForBackend(data.slot.startTime) : undefined,
-        endTime: data.slot.endTime ? formatTimeForBackend(data.slot.endTime) : undefined,
+        startTime: data.slot.startTime
+          ? formatTimeForBackend(data.slot.startTime)
+          : undefined,
+        endTime: data.slot.endTime
+          ? formatTimeForBackend(data.slot.endTime)
+          : undefined,
         amount: data.slot.amount,
         availability: data.slot.availability,
         facilityId: data.slot.facilityId, // This is required for update
       };
 
-      console.log('Formatted slot data being sent to backend:', slotData);
+      console.log("Formatted slot data being sent to backend:", slotData);
       return updateSlot(data.id, slotData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['slots', venue.id] });
+      queryClient.invalidateQueries({ queryKey: ["slots", venue.id] });
       setIsEditModalOpen(false);
       setEditingSlot(null);
-      toast.success('Slot updated successfully!');
+      toast.success("Slot updated successfully!");
     },
     onError: (error: any) => {
-      console.error('Error updating slot:', error);
-      toast.error(error?.response?.data?.message || 'Failed to update slot');
-    }
+      console.error("Error updating slot:", error);
+      toast.error(error?.response?.data?.message || "Failed to update slot");
+    },
   });
 
   const deleteSlotMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return deleteSlot(id);
+    mutationFn: async (ids: string[]) => {
+      return deleteSlots(ids);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['slots', venue.id] });
-      toast.success('Slot deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ["slots", venue.id] });
+      refetch();
+
+      toast.success("Slot deleted successfully!");
     },
     onError: (error: any) => {
-      console.error('Error deleting slot:', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete slot');
-    }
+      console.error("Error deleting slot:", error);
+      toast.error(error?.response?.data?.message || "Failed to delete slot");
+    },
   });
 
   const handleCreateSlot = (data: SlotModalFormData) => {
-    console.log('handleCreateSlot called with data:', data);
-    console.log('This should trigger single slot creation mutation');
+    console.log("handleCreateSlot called with data:", data);
+    console.log("This should trigger single slot creation mutation");
     createSlotMutation.mutate(data);
   };
 
   const handleCreateBulkSlots = (data: SlotModalFormData) => {
-    console.log('handleCreateBulkSlots called with data:', data);
-    console.log('This should trigger bulk creation mutation');
+    console.log("handleCreateBulkSlots called with data:", data);
+    console.log("This should trigger bulk creation mutation");
     createBulkSlotsMutation.mutate(data);
   };
 
@@ -280,44 +346,88 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
 
   const handleDeleteSlot = (id: string | undefined) => {
     if (!id) return;
-    if (window.confirm('Are you sure you want to delete this slot?')) {
-      deleteSlotMutation.mutate(id);
+    if (window.confirm("Are you sure you want to delete this slot?")) {
+      deleteSlotMutation.mutate([id]);
     }
   };
 
-  const getAvailabilityColor = (availability: Slot['availability']) => {
+  const handleBulkDelete = () => {
+    if (selectedSlots.size === 0) return;
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedSlots.size} selected slot(s)?`
+      )
+    ) {
+      deleteSlotMutation.mutate(Array.from(selectedSlots));
+      setSelectedSlots(new Set());
+      setIsSelectMode(false);
+    }
+  };
+
+  const toggleSlotSelection = (slotId: string) => {
+    setSelectedSlots((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(slotId)) {
+        newSet.delete(slotId);
+      } else {
+        newSet.add(slotId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllSlots = () => {
+    const allSlotIds = filteredSlots
+      .map((slot) => slot.id)
+      .filter(Boolean) as string[];
+    setSelectedSlots(new Set(allSlotIds));
+  };
+
+  const deselectAllSlots = () => {
+    setSelectedSlots(new Set());
+  };
+
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedSlots(new Set());
+    }
+  };
+
+  const getAvailabilityColor = (availability: Slot["availability"]) => {
     switch (availability) {
-      case 'available':
-        return 'bg-green-600/20 text-green-400';
-      case 'booked':
-        return 'bg-red-600/20 text-red-400';
-      case 'filling_fast':
-        return 'bg-yellow-600/20 text-yellow-400';
-      case 'not_available':
-        return 'bg-gray-600/20 text-gray-400';
+      case "available":
+        return "bg-green-600/20 text-green-400";
+      case "booked":
+        return "bg-red-600/20 text-red-400";
+      case "filling_fast":
+        return "bg-yellow-600/20 text-yellow-400";
+      case "not_available":
+        return "bg-gray-600/20 text-gray-400";
       default:
-        return 'bg-gray-600/20 text-gray-400';
+        return "bg-gray-600/20 text-gray-400";
     }
   };
 
-  const getAvailabilityText = (availability: Slot['availability']) => {
+  const getAvailabilityText = (availability: Slot["availability"]) => {
     switch (availability) {
-      case 'available':
-        return 'Available';
-      case 'booked':
-        return 'Booked';
-      case 'filling_fast':
-        return 'Filling Fast';
-      case 'not_available':
-        return 'Not Available';
+      case "available":
+        return "Available";
+      case "booked":
+        return "Booked";
+      case "filling_fast":
+        return "Filling Fast";
+      case "not_available":
+        return "Not Available";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
-  const filteredSlots = selectedFacility === 'all'
-    ? slots
-    : slots.filter(s => s.facilityId === selectedFacility);
+  const filteredSlots =
+    selectedFacility === "all"
+      ? slots
+      : slots.filter((s) => s.facilityId === selectedFacility);
 
   // Group slots by date for better display
   const slotsByDate = filteredSlots.reduce((acc, slot) => {
@@ -363,14 +473,21 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
           <input
             type="date"
             value={selectedDateRange.start}
-            onChange={(e) => setSelectedDateRange(prev => ({ ...prev, start: e.target.value }))}
+            onChange={(e) =>
+              setSelectedDateRange((prev) => ({
+                ...prev,
+                start: e.target.value,
+              }))
+            }
             className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
           />
 
           <input
             type="date"
             value={selectedDateRange.end}
-            onChange={(e) => setSelectedDateRange(prev => ({ ...prev, end: e.target.value }))}
+            onChange={(e) =>
+              setSelectedDateRange((prev) => ({ ...prev, end: e.target.value }))
+            }
             className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
           />
 
@@ -383,6 +500,17 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
           </button>
 
           <button
+            onClick={toggleSelectMode}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+              isSelectMode
+                ? "bg-gray-600 text-white hover:bg-gray-700"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+            }`}
+          >
+            <span>{isSelectMode ? "Cancel Select" : "Select Multiple"}</span>
+          </button>
+
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
           >
@@ -392,46 +520,92 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
         </div>
       </div>
 
-      {/* Collapse/Expand All Controls - Only show when there are slots */}
-      {Object.keys(slotsByDate).length > 1 && (
-        <div className="flex justify-end space-x-2">
-          <button
-            onClick={() => setCollapsedSections(new Set(Object.keys(slotsByDate)))}
-            className="text-gray-400 hover:text-white text-sm px-3 py-1 hover:bg-gray-700 rounded transition-colors"
-          >
-            Collapse All
-          </button>
-          <button
-            onClick={() => setCollapsedSections(new Set())}
-            className="text-gray-400 hover:text-white text-sm px-3 py-1 hover:bg-gray-700 rounded transition-colors"
-          >
-            Expand All
-          </button>
-        </div>
-      )}
+      {/* Selection and Collapse Controls */}
+      <div className="flex justify-between items-center">
+        {/* Selection Controls - Only show when in select mode */}
+        {isSelectMode && filteredSlots.length > 0 && (
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={selectAllSlots}
+                className="text-blue-400 hover:text-blue-300 text-sm px-3 py-1 hover:bg-gray-700 rounded transition-colors"
+              >
+                Select All ({filteredSlots.length})
+              </button>
+              <button
+                onClick={deselectAllSlots}
+                className="text-gray-400 hover:text-white text-sm px-3 py-1 hover:bg-gray-700 rounded transition-colors"
+              >
+                Deselect All
+              </button>
+            </div>
+
+            {selectedSlots.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={deleteSlotMutation.isPending}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+              >
+                {deleteSlotMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                <span>Delete Selected ({selectedSlots.size})</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Collapse/Expand All Controls - Only show when there are slots */}
+        {Object.keys(slotsByDate).length > 1 && (
+          <div className="flex space-x-2">
+            <button
+              onClick={() =>
+                setCollapsedSections(new Set(Object.keys(slotsByDate)))
+              }
+              className="text-gray-400 hover:text-white text-sm px-3 py-1 hover:bg-gray-700 rounded transition-colors"
+            >
+              Collapse All
+            </button>
+            <button
+              onClick={() => setCollapsedSections(new Set())}
+              className="text-gray-400 hover:text-white text-sm px-3 py-1 hover:bg-gray-700 rounded transition-colors"
+            >
+              Expand All
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Slots Display */}
       {Object.keys(slotsByDate).length === 0 ? (
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
           <Calendar className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No Slots Available</h3>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            No Slots Available
+          </h3>
           <p className="text-gray-400 mb-4">
-            Create time slots for your facilities to start accepting bookings.
+            {isSelectMode
+              ? "No slots available to select. Create some slots first."
+              : "Create time slots for your facilities to start accepting bookings."}
           </p>
-          <div className="flex justify-center space-x-3">
-            <button
-              onClick={() => setIsBulkCreateModalOpen(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Bulk Create Slots
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Add Individual Slot
-            </button>
-          </div>
+          {!isSelectMode && (
+            <div className="flex justify-center space-x-3">
+              <button
+                onClick={() => setIsBulkCreateModalOpen(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Bulk Create Slots
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add Individual Slot
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -440,22 +614,26 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
             .map(([date, dateSlots]) => {
               const isCollapsed = collapsedSections.has(date);
               return (
-                <div key={date} className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+                <div
+                  key={date}
+                  className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden"
+                >
                   <div
                     className="p-6 pb-4 flex items-center justify-between cursor-pointer hover:bg-gray-700/50 transition-colors border-b border-gray-700/50"
                     onClick={() => toggleSectionCollapse(date)}
                   >
                     <h3 className="text-lg font-semibold text-white">
-                      {new Date(date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
+                      {new Date(date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
                       })}
                     </h3>
                     <div className="flex items-center space-x-3">
                       <span className="text-sm text-gray-400">
-                        {dateSlots.length} slot{dateSlots.length !== 1 ? 's' : ''}
+                        {dateSlots.length} slot
+                        {dateSlots.length !== 1 ? "s" : ""}
                       </span>
                       {isCollapsed ? (
                         <ChevronDown className="h-5 w-5 text-gray-400" />
@@ -469,41 +647,62 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
                     <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-200">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {dateSlots
-                          .sort((a: Slot, b: Slot) => a.startTime.localeCompare(b.startTime))
+                          .sort((a: Slot, b: Slot) =>
+                            a.startTime.localeCompare(b.startTime)
+                          )
                           .map((slot: Slot) => (
                             <div
                               key={slot.id}
-                              className="bg-gray-700 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors"
+                              className={`bg-gray-700 border rounded-lg p-4 hover:border-gray-500 transition-colors ${
+                                isSelectMode && selectedSlots.has(slot.id || "")
+                                  ? "border-blue-500 bg-blue-900/20"
+                                  : "border-gray-600"
+                              }`}
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div>
-                                  <div className="text-white font-medium">
-                                    {convertTimeToHHMM(slot.startTime)} - {convertTimeToHHMM(slot.endTime)}
-                                  </div>
-                                  <div className="text-blue-400 text-sm">
-                                    {slot.facilityName}
-                                  </div>
-                                  <div className="text-gray-400 text-xs">
-                                    {slot.activityName}
+                                <div className="flex items-start space-x-3">
+                                  {isSelectMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedSlots.has(slot.id || "")}
+                                      onChange={() =>
+                                        toggleSlotSelection(slot.id || "")
+                                      }
+                                      className="mt-1 h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="text-white font-medium">
+                                      {convertTimeToHHMM(slot.startTime)} -{" "}
+                                      {convertTimeToHHMM(slot.endTime)}
+                                    </div>
+                                    <div className="text-blue-400 text-sm">
+                                      {slot.facilityName}
+                                    </div>
+                                    <div className="text-gray-400 text-xs">
+                                      {slot.activityName}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex space-x-1">
-                                  <button
-                                    onClick={() => {
-                                      setEditingSlot(slot);
-                                      setIsEditModalOpen(true);
-                                    }}
-                                    className="text-gray-400 hover:text-blue-400 transition-colors p-1"
-                                  >
-                                    <Edit3 className="h-3 w-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSlot(slot.id)}
-                                    className="text-gray-400 hover:text-red-400 transition-colors p-1"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                </div>
+                                {!isSelectMode && (
+                                  <div className="flex space-x-1">
+                                    <button
+                                      onClick={() => {
+                                        setEditingSlot(slot);
+                                        setIsEditModalOpen(true);
+                                      }}
+                                      className="text-gray-400 hover:text-blue-400 transition-colors p-1"
+                                    >
+                                      <Edit3 className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteSlot(slot.id)}
+                                      className="text-gray-400 hover:text-red-400 transition-colors p-1"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
 
                               <div className="space-y-2">
@@ -512,7 +711,11 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
                                     <DollarSign className="h-3 w-3 mr-1" />
                                     <span>₹{slot.amount}</span>
                                   </div>
-                                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(slot.availability)}`}>
+                                  <div
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(
+                                      slot.availability
+                                    )}`}
+                                  >
                                     {getAvailabilityText(slot.availability)}
                                   </div>
                                 </div>
@@ -560,20 +763,27 @@ const SlotManagement: React.FC<SlotManagementProps> = ({ venue }) => {
         onSubmit={(data) => handleUpdateSlot(data)}
         title="Edit Slot"
         facilities={facilities}
-        initialData={editingSlot ? (() => {
-          console.log('Creating initialData for editing slot:', editingSlot);
-          const initialData = {
-            facilityId: editingSlot.facilityId,
-            startDate: editingSlot.date,
-            endDate: editingSlot.date,
-            startTime: convertTimeToHHMM(editingSlot.startTime),
-            endTime: convertTimeToHHMM(editingSlot.endTime),
-            amount: editingSlot.amount,
-            availability: editingSlot.availability,
-          };
-          console.log('Processed initialData:', initialData);
-          return initialData;
-        })() : undefined}
+        initialData={
+          editingSlot
+            ? (() => {
+                console.log(
+                  "Creating initialData for editing slot:",
+                  editingSlot
+                );
+                const initialData = {
+                  facilityId: editingSlot.facilityId,
+                  startDate: editingSlot.date,
+                  endDate: editingSlot.date,
+                  startTime: convertTimeToHHMM(editingSlot.startTime),
+                  endTime: convertTimeToHHMM(editingSlot.endTime),
+                  amount: editingSlot.amount,
+                  availability: editingSlot.availability,
+                };
+                console.log("Processed initialData:", initialData);
+                return initialData;
+              })()
+            : undefined
+        }
         isLoading={updateSlotMutation.isPending}
         isBulk={false}
       />
@@ -605,19 +815,21 @@ const SlotModal: React.FC<SlotModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<SlotModalFormData>(
     initialData || {
-      facilityId: '',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      startTime: '09:00',
-      endTime: '10:00',
+      facilityId: "",
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+      startTime: "09:00",
+      endTime: "10:00",
       amount: 0,
-      availability: 'available',
+      availability: "available",
     }
   );
 
   React.useEffect(() => {
     if (initialData) {
-      console.log('SlotModal - Setting initial data:', initialData);
+      console.log("SlotModal - Setting initial data:", initialData);
       setFormData(initialData);
     }
   }, [initialData]);
@@ -625,56 +837,63 @@ const SlotModal: React.FC<SlotModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('SlotModal handleSubmit called');
-    console.log('isBulk:', isBulk);
-    console.log('Form data:', formData);
+    console.log("SlotModal handleSubmit called");
+    console.log("isBulk:", isBulk);
+    console.log("Form data:", formData);
 
     // Validate required fields
     if (!formData.facilityId) {
-      alert('Please select a facility');
+      alert("Please select a facility");
       return;
     }
     if (!formData.startDate) {
-      alert('Please select a start date');
+      alert("Please select a start date");
       return;
     }
     if (isBulk && !formData.endDate) {
-      alert('Please select an end date for bulk creation');
+      alert("Please select an end date for bulk creation");
       return;
     }
     if (isBulk && formData.startDate > formData.endDate) {
-      alert('End date must be after or equal to start date');
+      alert("End date must be after or equal to start date");
       return;
     }
     if (!formData.startTime || !formData.endTime) {
-      alert('Please select start and end times');
+      alert("Please select start and end times");
       return;
     }
     if (!isValidThirtyMinuteInterval(formData.startTime)) {
-      console.error('Start time validation failed for:', formData.startTime);
-      alert('Start time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)');
+      console.error("Start time validation failed for:", formData.startTime);
+      alert(
+        "Start time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)"
+      );
       return;
     }
     if (!isValidThirtyMinuteInterval(formData.endTime)) {
-      console.error('End time validation failed for:', formData.endTime);
-      alert('End time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)');
+      console.error("End time validation failed for:", formData.endTime);
+      alert(
+        "End time must be in 30-minute intervals (e.g., 09:00, 09:30, 10:00)"
+      );
       return;
     }
     if (formData.startTime >= formData.endTime) {
-      alert('End time must be after start time');
+      alert("End time must be after start time");
       return;
     }
     if (formData.amount <= 0) {
-      alert('Please enter a valid amount');
+      alert("Please enter a valid amount");
       return;
     }
 
-    console.log('Submitting form data:', { ...formData, isBulk });
-    console.log('About to call onSubmit with mode:', isBulk ? 'BULK' : 'SINGLE');
+    console.log("Submitting form data:", { ...formData, isBulk });
+    console.log(
+      "About to call onSubmit with mode:",
+      isBulk ? "BULK" : "SINGLE"
+    );
     onSubmit(formData);
   };
 
-  const selectedFacility = facilities.find(f => f.id === formData.facilityId);
+  const selectedFacility = facilities.find((f) => f.id === formData.facilityId);
 
   if (!isOpen) return null;
 
@@ -691,11 +910,13 @@ const SlotModal: React.FC<SlotModalProps> = ({
             <select
               value={formData.facilityId}
               onChange={(e) => {
-                const facility = facilities.find(f => f.id === e.target.value);
-                setFormData(prev => ({
+                const facility = facilities.find(
+                  (f) => f.id === e.target.value
+                );
+                setFormData((prev) => ({
                   ...prev,
                   facilityId: e.target.value,
-                  amount: facility?.start_price_per_hour || 0
+                  amount: facility?.start_price_per_hour || 0,
                 }));
               }}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -715,11 +936,14 @@ const SlotModal: React.FC<SlotModalProps> = ({
               <div className="flex items-start space-x-2">
                 <AlertCircle className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0" />
                 <div>
-                  <h4 className="text-blue-400 font-medium mb-1">Bulk Creation Mode</h4>
+                  <h4 className="text-blue-400 font-medium mb-1">
+                    Bulk Creation Mode
+                  </h4>
                   <p className="text-blue-300 text-sm">
-                    This will create 30-minute slots for all days between the selected date range
-                    during the specified time period. For example: 09:00-17:00 will create slots
-                    from 09:00-09:30, 09:30-10:00, 10:00-10:30, etc.
+                    This will create 30-minute slots for all days between the
+                    selected date range during the specified time period. For
+                    example: 09:00-17:00 will create slots from 09:00-09:30,
+                    09:30-10:00, 10:00-10:30, etc.
                   </p>
                 </div>
               </div>
@@ -729,12 +953,17 @@ const SlotModal: React.FC<SlotModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                {isBulk ? 'Start Date' : 'Date'}
+                {isBulk ? "Start Date" : "Date"}
               </label>
               <input
                 type="date"
                 value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               />
@@ -748,7 +977,12 @@ const SlotModal: React.FC<SlotModalProps> = ({
                 <input
                   type="date"
                   value={formData.endDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                   required
                 />
@@ -766,13 +1000,15 @@ const SlotModal: React.FC<SlotModalProps> = ({
                 value={formData.startTime}
                 onChange={(e) => {
                   const roundedTime = roundToThirtyMinutes(e.target.value);
-                  setFormData(prev => ({ ...prev, startTime: roundedTime }));
+                  setFormData((prev) => ({ ...prev, startTime: roundedTime }));
                 }}
                 step="1800"
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">Only 30-minute intervals (e.g., 09:00, 09:30)</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Only 30-minute intervals (e.g., 09:00, 09:30)
+              </p>
             </div>
 
             <div>
@@ -784,13 +1020,15 @@ const SlotModal: React.FC<SlotModalProps> = ({
                 value={formData.endTime}
                 onChange={(e) => {
                   const roundedTime = roundToThirtyMinutes(e.target.value);
-                  setFormData(prev => ({ ...prev, endTime: roundedTime }));
+                  setFormData((prev) => ({ ...prev, endTime: roundedTime }));
                 }}
                 step="1800"
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">Only 30-minute intervals (e.g., 09:00, 09:30)</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Only 30-minute intervals (e.g., 09:00, 09:30)
+              </p>
             </div>
           </div>
 
@@ -802,7 +1040,12 @@ const SlotModal: React.FC<SlotModalProps> = ({
               <input
                 type="number"
                 value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: parseInt(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    amount: parseInt(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 placeholder="399"
                 min="1"
@@ -816,7 +1059,13 @@ const SlotModal: React.FC<SlotModalProps> = ({
               </label>
               <select
                 value={formData.availability}
-                onChange={(e) => setFormData(prev => ({ ...prev, availability: e.target.value as SlotModalFormData['availability'] }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    availability: e.target
+                      .value as SlotModalFormData["availability"],
+                  }))
+                }
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
               >
@@ -831,8 +1080,13 @@ const SlotModal: React.FC<SlotModalProps> = ({
           {selectedFacility && (
             <div className="bg-gray-700/50 rounded-lg p-3">
               <div className="text-sm text-gray-300">
-                <div>Facility Hours: {selectedFacility.startTime} - {selectedFacility.endTime}</div>
-                <div>Base Price: ₹{selectedFacility.start_price_per_hour}/hour</div>
+                <div>
+                  Facility Hours: {selectedFacility.startTime} -{" "}
+                  {selectedFacility.endTime}
+                </div>
+                <div>
+                  Base Price: ₹{selectedFacility.start_price_per_hour}/hour
+                </div>
               </div>
             </div>
           )}
@@ -849,12 +1103,16 @@ const SlotModal: React.FC<SlotModalProps> = ({
             <button
               type="submit"
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-              disabled={isLoading || !formData.facilityId || formData.amount <= 0}
+              disabled={
+                isLoading || !formData.facilityId || formData.amount <= 0
+              }
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isBulk ? (
+                "Create Slots"
               ) : (
-                isBulk ? 'Create Slots' : 'Save Slot'
+                "Save Slot"
               )}
             </button>
           </div>

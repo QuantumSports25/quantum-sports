@@ -218,7 +218,15 @@ const EventsPage: React.FC = () => {
                   <div className="w-full h-full bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
                     <Calendar className="h-16 w-16 text-blue-400 opacity-50" />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent">
+                    {event.images.length > 0 && (
+                      <img
+                        src={event.images[0]}
+                        alt={event.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {/* Event Content */}

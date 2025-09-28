@@ -93,6 +93,7 @@ export class BookingService {
         const eventBookingData = booking.bookingData as unknown as EventBooking;
         bookingData = {
           type: BookingType.Event,
+          name: eventBookingData?.name ?? "",
           eventId: eventBookingData?.eventId ?? "",
           seats: eventBookingData?.seats ?? 1,
         };
@@ -100,6 +101,7 @@ export class BookingService {
         const venueBookingData = booking.bookingData as unknown as VenueBooking;
         bookingData = {
           type: BookingType.Venue,
+          name: venueBookingData?.name ?? "",
           venueId: venueBookingData?.venueId ?? "",
           partnerId: venueBookingData?.partnerId ?? "",
           facilityId: venueBookingData?.facilityId ?? "",
@@ -132,6 +134,26 @@ export class BookingService {
       return newBooking;
     } catch (error) {
       console.error("Error getting booking by id:", error);
+      throw error;
+    }
+  }
+
+  static async getAllBookings(page: number = 1, pageSize: number = 100) {
+    try {
+      // Ensure page and pageSize are valid numbers
+      const validPage = Math.max(1, isNaN(page) ? 1 : Math.floor(page));
+      const validPageSize = Math.max(1, Math.min(1000, isNaN(pageSize) ? 100 : Math.floor(pageSize)));
+      
+      const bookings = await prisma.booking.findMany({
+        skip: (validPage - 1) * validPageSize,
+        take: validPageSize,
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      return bookings;
+    } catch (error) {
+      console.error("Error getting all bookings:", error);
       throw error;
     }
   }

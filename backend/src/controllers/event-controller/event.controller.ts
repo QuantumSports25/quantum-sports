@@ -286,6 +286,7 @@ export class EventController {
         type: BookingType.Event,
         bookingData: {
           type: BookingType.Event,
+          name: event.title,
           eventId,
           seats,
         },

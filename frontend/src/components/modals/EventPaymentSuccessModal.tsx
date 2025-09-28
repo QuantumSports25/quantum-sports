@@ -291,7 +291,7 @@ const EventPaymentSuccessModal: React.FC<EventPaymentSuccessModalProps> = ({
               <div className="space-y-2 text-sm text-gray-700">
                 <p>Event Organizer: {event.organizerName || "Event Team"}</p>
                 <p>Customer Support: support@quantumsports.com</p>
-                <p>24/7 Helpline: +91 98765 43210</p>
+                <p>24/7 Helpline: +91 93309 16845</p>
               </div>
             </div>
 

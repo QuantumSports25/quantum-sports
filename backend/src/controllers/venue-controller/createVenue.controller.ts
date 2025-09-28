@@ -14,6 +14,7 @@ export class CreateVenueController {
         name,
         highlight,
         start_price_per_hour,
+        features,
         partnerId,
         city,
         state,
@@ -25,10 +26,12 @@ export class CreateVenueController {
         lat,
         lang,
         membershipId,
+        cancellationPolicy,
       } = req.body as {
         name: string;
         highlight: string;
         start_price_per_hour: number;
+        features?: string[];
         partnerId: string;
         city: string;
         images: string[];
@@ -40,6 +43,7 @@ export class CreateVenueController {
         lat: number;
         lang: number;
         membershipId?: string;
+        cancellationPolicy: string;
       };
 
       if (
@@ -81,10 +85,10 @@ export class CreateVenueController {
         phone,
         mapLocationLink,
         details: {},
-        cancellationPolicy: {},
+        cancellationPolicy: cancellationPolicy,
         images: images,
-        features: [],
-        approved: false,
+        features: features || [],
+        approved: true,
         rating: 0,
         totalReviews: 0,
         createdAt: new Date(),

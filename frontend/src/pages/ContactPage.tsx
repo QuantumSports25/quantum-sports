@@ -15,7 +15,7 @@ const ContactPage: React.FC = () => {
       icon: Mail,
       title: 'Customer Support',
       email: 'quantum@eipickleball.com ',
-      phone: '98765 43210',
+      phone: '93309 16845',
       description: 'Get help with technical issues and general questions',
       gradient: 'from-blue-500 to-cyan-400'
     },

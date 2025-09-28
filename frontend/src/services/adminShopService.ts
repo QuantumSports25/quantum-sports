@@ -146,6 +146,7 @@ export const adminShopService = {
   // Get available categories
   getCategories: (): string[] => {
     return [
+      'pickleball',
       'tennis',
       'football', 
       'basketball',

@@ -11,6 +11,7 @@ router.post('/verify-payment-and-booking/:id', authMiddleware, BookingController
 router.get('/get-booking/:id', authMiddleware, BookingController.getBookingById);
 router.get('/get-bookings-by-user/:userId', authMiddleware, BookingController.getBookingsByUser);
 router.put('/cancel-booking/:id', authMiddleware, BookingController.cancelBooking);
+router.get('/get-all-bookings', authMiddleware, BookingController.getAllBookings);
 router.get('/get-bookings-by-partner/:partnerId', authMiddleware, BookingController.getBookingsByPartner);
 
 export default router; 

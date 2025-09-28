@@ -4,6 +4,7 @@ import { validateTimeSlot } from "../../../utils/timeValidation";
 import { AppError } from "../../../types";
 import { SlotService } from "../../../services/venue-services/slot.service";
 
+
 export class SlotController {
   static async createSlot(req: Request, res: Response) {
     try {
@@ -198,17 +199,17 @@ export class SlotController {
     }
   }
 
-  static async deleteSlot(req: Request, res: Response) {
+  static async deleteSlots(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-      if (!id) {
-        return res.status(400).json({ message: "Slot ID is required" });
+      const { ids } = req.body as { ids: string[] };
+      if (!ids || ids.length === 0) {
+        return res.status(400).json({ message: "Slot IDs are required" });
       }
 
-      const deletedSlot = await SlotService.deleteSlot(id);
-      return res.status(200).json({ data: deletedSlot.id });
+      const deletedSlots = await SlotService.deleteSlots(ids);
+      return res.status(200).json({ count: deletedSlots.count });
     } catch (error) {
-      return res.status(500).json({ message: "Failed to delete slot" });
+      return res.status(500).json({ message: "Failed to delete slots" });
     }
   }
 

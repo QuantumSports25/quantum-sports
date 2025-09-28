@@ -105,7 +105,7 @@ const FacilitySelector: React.FC<FacilitySelectorProps> = ({
             <div className="relative h-full max-h-36 overflow-hidden rounded-t-2xl">
               <div className="flex transition-transform duration-300 ease-in-out">
                 <img
-                  src={selectedFacility?.images?.[0] || ""}
+                  src={selectedFacility?.images[0] ?? ""}
                   alt={`${selectedFacility?.name}`}
                   className="w-full h-full object-cover flex-shrink-0"
                 />

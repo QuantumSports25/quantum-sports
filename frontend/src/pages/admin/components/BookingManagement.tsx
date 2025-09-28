@@ -82,7 +82,7 @@ const BookingManagement: React.FC<AdminComponentProps> = () => {
         }
       } else {
         console.log(`🚀 Calling API endpoint: /booking/get-bookings-by-partner/${selectedPartnerId}`);
-        bookingsData = await adminService.getBookingsByPartner(selectedPartnerId);
+        bookingsData = await adminService.getAllBookings();
       }
 
       if (bookingsData.length > 0) {
@@ -123,12 +123,12 @@ const BookingManagement: React.FC<AdminComponentProps> = () => {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const getBookingStatus = (booking: AdminBooking): 'active' | 'pending' | 'blocked' => {
+  const getBookingStatus = (booking: AdminBooking): 'active' | 'failed' | 'blocked' => {
     switch (booking.bookingStatus) {
       case 'confirmed': return 'active';
-      case 'pending': return 'pending';
+      case 'pending': return 'failed';
       case 'cancelled': return 'blocked';
-      default: return 'pending';
+      default: return 'failed';
     }
   };
 
@@ -300,7 +300,7 @@ const BookingManagement: React.FC<AdminComponentProps> = () => {
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
                           <StatusIcon className="h-4 w-4" />
-                          <span className="capitalize">{booking.bookingStatus}</span>
+                          <span className="capitalize">{booking.bookingStatus === 'pending' ? 'Failed' : booking.bookingStatus}</span>
                         </span>
                       </td>
                       <td className="px-6 py-4">

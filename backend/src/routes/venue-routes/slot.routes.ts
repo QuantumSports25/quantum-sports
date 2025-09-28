@@ -9,7 +9,7 @@ router.post('/create-slot',authMiddleware, SlotController.createSlot);
 router.get('/get-slots-by-facility/:facilityId', SlotController.getSlotsByFacilityId);
 router.get('/get-slots-by-date-range-and-facility/:facilityId', SlotController.getSlotsByDateRangeAndFacilityId);
 router.put('/update-slot/:id',authMiddleware, SlotController.updateSlot);
-router.delete('/delete-slot/:id',authMiddleware, SlotController.deleteSlot);
+router.post('/delete-slots',authMiddleware, SlotController.deleteSlots);
 router.put('/update-slots/:facilityId',authMiddleware, SlotController.updateSlots);
 router.post('/create-multiple-slots/:facilityId',authMiddleware, SlotController.createSlots);
 router.put('/update-slots-with-different-data/:facilityId',authMiddleware, SlotController.updateSlotsWithDifferentData);

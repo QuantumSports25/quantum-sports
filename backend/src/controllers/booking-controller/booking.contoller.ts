@@ -85,11 +85,16 @@ export class BookingController {
           .json({ message: "slotIds must be a non-empty array" });
       }
 
-      const [allSlotsAvailable, partner, user] = await Promise.all([
+      const [venue, allSlotsAvailable, partner, user] = await Promise.all([
+        VenueService.getVenue(data.venueId),
         SlotService.areAllSlotsAvailable(data.slotIds),
         AuthService.getUserById(data.partnerId),
         AuthService.getUserById(data.userId),
       ]);
+
+      if (!venue) {
+        return res.status(404).json({ message: "Venue not found" });
+      }
 
       if (!allSlotsAvailable) {
         return res.status(400).json({
@@ -118,6 +123,7 @@ export class BookingController {
         type: BookingType.Venue,
         bookingData: {
           type: BookingType.Venue,
+          name: venue.name,
           facilityId: data.facilityId,
           slotIds: data.slotIds,
           activityId: data.activityId,
@@ -213,6 +219,16 @@ export class BookingController {
       if (!orderData) {
         throw new Error("Failed to create Razorpay order");
       }
+      
+      // Get name based on booking type
+      let bookingName = '';
+      if (booking.bookingData.type === BookingType.Event) {
+        const eventBookingData = booking.bookingData as unknown as EventBooking;
+        bookingName = eventBookingData.name;
+      } else if (booking.bookingData.type === BookingType.Venue) {
+        const venueBookingData = booking.bookingData as unknown as VenueBooking;
+        bookingName = venueBookingData.name;
+      }
 
       const transaction = await PaymentService.createTransaction({
         orderId: orderData.id,
@@ -221,6 +237,7 @@ export class BookingController {
         currency: Currency.INR,
         paymentMethod: booking.paymentDetails.paymentMethod as PaymentMethod,
         userId: booking.userId,
+        name: bookingName,
       });
 
       if (!transaction) {
@@ -392,6 +409,17 @@ export class BookingController {
         message: "Failed to get user bookings",
         error: error.message,
       });
+    }
+  }
+
+  static async getAllBookings(req: Request, res: Response) {
+    try {
+      const { page, pageSize } = req.query;
+      const bookings = await BookingService.getAllBookings(Number(page), Number(pageSize));
+      return res.status(200).json({ data: bookings, total: bookings.length });
+    } catch (error: any) {
+      console.error("Error getting all bookings:", error);
+      return res.status(500).json({ message: "Failed to get all bookings", error: error.message });
     }
   }
 

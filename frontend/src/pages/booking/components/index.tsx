@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import ActivitySelector, { Activity } from "./BookSlots/ActivitySelector";
 import FacilitySelector, { Facility } from "./BookSlots/FacilitySelector";
@@ -17,6 +17,11 @@ const BookSlots: React.FC<{ venue: Venue }> = ({ venue }) => {
     null
   );
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([]);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const handleActivitySelect = (activity: Activity) => {
     setSelectedActivity(activity);

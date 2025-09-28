@@ -22,7 +22,7 @@ export interface Venue {
   location: Location;
   start_price_per_hour: number;
   details: {};
-  cancellationPolicy: {};
+  cancellationPolicy: string;
   images?: string[];
   features?: string[];
   approved?: boolean;
@@ -629,24 +629,13 @@ const Details: React.FC<{ venue: Venue }> = ({ venue }) => (
       </div>
     </div>
 
-    {/* Additional Details */}
+    {/* Cancellation Policy */}
     <div className="space-y-4">
-      <h4 className="font-semibold text-gray-900">Additional Information</h4>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="text-sm text-gray-600">Partner ID</div>
-          <div className="font-medium text-gray-900">{venue.partnerId}</div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="text-sm text-gray-600">Status</div>
-          <div className="font-medium text-gray-900">
-            {venue.approved ? (
-              <span className="text-green-600">Approved</span>
-            ) : (
-              <span className="text-yellow-600">Pending Approval</span>
-            )}
-          </div>
-        </div>
+      <h4 className="font-semibold text-gray-900">Cancellation Policy</h4>
+      <div className="bg-gray-50 rounded-lg p-4">
+        <p className="text-gray-700 leading-relaxed">
+          {venue.cancellationPolicy || "No cancellation policy specified"}
+        </p>
       </div>
     </div>
   </div>

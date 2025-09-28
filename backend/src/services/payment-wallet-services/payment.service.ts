@@ -62,7 +62,8 @@ export class PaymentService {
     amount,
     currency = Currency.INR,
     paymentMethod = PaymentMethod.Razorpay,
-    userId
+    userId,
+    name
   }: {
     orderId: string;
     bookingId?: string;
@@ -72,6 +73,7 @@ export class PaymentService {
     currency: Currency;
     paymentMethod: PaymentMethod;
     userId: string;
+    name: string;
   }) {
     try {
       const transactionData: Payment = {
@@ -82,6 +84,7 @@ export class PaymentService {
         isRefunded: false,
         paymentDate: new Date(),
         userId: userId,
+        name: name
       };
 
       if (bookingId) {

@@ -400,9 +400,17 @@ const EventDetailsPage: React.FC = () => {
             <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl overflow-hidden border border-gray-700/50">
               {/* Event Image */}
               <div className="relative h-64 md:h-80 overflow-hidden">
-                <div className="w-full h-full bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
-                  <Calendar className="h-24 w-24 text-blue-400 opacity-50" />
-                </div>
+                {event?.images && event.images.length > 0 ? (
+                  <img
+                    src={event.images[0]}
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
+                    <Calendar className="h-24 w-24 text-blue-400 opacity-50" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent"></div>
                 {/* Featured Badge */}
                 {event?.featured && (

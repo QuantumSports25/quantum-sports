@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -11,12 +11,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
-  X
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import ConfirmDeleteModal from './ConfirmDeleteModal';
-import { AdminProduct, adminShopService, CreateProductRequest } from '../../../services/adminShopService';
-import { shopService, ShopOrder } from '../../../services/shopService';
+  X,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import {
+  AdminProduct,
+  adminShopService,
+  CreateProductRequest,
+} from "../../../services/adminShopService";
+import { shopService, ShopOrder } from "../../../services/shopService";
 
 interface ProductFormData {
   name: string;
@@ -29,22 +33,22 @@ interface ProductFormData {
 }
 
 const initialFormData: ProductFormData = {
-  name: '',
-  description: '',
-  price: '',
-  inventory: '',
+  name: "",
+  description: "",
+  price: "",
+  inventory: "",
   category: [],
   images: [],
-  sellerId: 'default-admin-seller'
+  sellerId: "default-admin-seller",
 };
 
 const ProductManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+  const [activeTab, setActiveTab] = useState<"products" | "orders">("products");
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -55,7 +59,9 @@ const ProductManagement: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [categories] = useState(adminShopService.getCategories());
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [productToDelete, setProductToDelete] = useState<AdminProduct | null>(null);
+  const [productToDelete, setProductToDelete] = useState<AdminProduct | null>(
+    null
+  );
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Orders state (Admin view)
@@ -66,7 +72,7 @@ const ProductManagement: React.FC = () => {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (activeTab === 'products') {
+      if (activeTab === "products") {
         fetchProducts();
       } else {
         fetchOrders();
@@ -78,7 +84,7 @@ const ProductManagement: React.FC = () => {
 
   // Separate effect for search query with debouncing
   useEffect(() => {
-    if (searchQuery === '') {
+    if (searchQuery === "") {
       fetchProducts();
       return;
     }
@@ -119,7 +125,7 @@ const ProductManagement: React.FC = () => {
       const resp = await shopService.getAllShopOrders(1, 50);
       setOrders(resp || []);
     } catch (err: any) {
-      setOrdersError(err.message || 'Failed to load orders');
+      setOrdersError(err.message || "Failed to load orders");
     } finally {
       setOrdersLoading(false);
     }
@@ -173,7 +179,7 @@ const ProductManagement: React.FC = () => {
       setProductToDelete(null);
       await fetchProducts();
     } catch (err: any) {
-      const message = err?.message || 'Failed to delete product';
+      const message = err?.message || "Failed to delete product";
       setError(message);
       toast.error(message);
     } finally {
@@ -181,32 +187,36 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = React.useCallback(async (productData: CreateProductRequest) => {
-    try {
-      setFormLoading(true);
-      setError(null);
+  const handleFormSubmit = React.useCallback(
+    async (productData: CreateProductRequest) => {
+      try {
+        setFormLoading(true);
+        setError(null);
 
-      if (showEditModal) {
-        if (!editingProductId) throw new Error('Missing product ID to update');
-        await adminShopService.updateProduct(editingProductId, productData);
-        toast.success('Product updated');
-      } else {
-        await adminShopService.createProduct(productData);
-        toast.success('Product created');
+        if (showEditModal) {
+          if (!editingProductId)
+            throw new Error("Missing product ID to update");
+          await adminShopService.updateProduct(editingProductId, productData);
+          toast.success("Product updated");
+        } else {
+          await adminShopService.createProduct(productData);
+          toast.success("Product created");
+        }
+
+        setShowCreateModal(false);
+        setShowEditModal(false);
+        setEditingProductId(null);
+        await fetchProducts();
+      } catch (err: any) {
+        const message = err?.message || "Failed to save product";
+        setError(message);
+        toast.error(message);
+      } finally {
+        setFormLoading(false);
       }
-
-      setShowCreateModal(false);
-      setShowEditModal(false);
-      setEditingProductId(null);
-      await fetchProducts();
-    } catch (err: any) {
-      const message = err?.message || 'Failed to save product';
-      setError(message);
-      toast.error(message);
-    } finally {
-      setFormLoading(false);
-    }
-  }, [editingProductId, showEditModal, fetchProducts]);
+    },
+    [editingProductId, showEditModal, fetchProducts]
+  );
 
   // const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
   //   const { name, value } = e.target;
@@ -244,62 +254,68 @@ const ProductManagement: React.FC = () => {
 
   const ProductForm: React.FC<{ isEdit?: boolean }> = ({ isEdit = false }) => {
     const [localName, setLocalName] = useState(formData.name);
-    const [localDescription, setLocalDescription] = useState(formData.description);
+    const [localDescription, setLocalDescription] = useState(
+      formData.description
+    );
     const [localPrice, setLocalPrice] = useState(formData.price);
     const [localInventory, setLocalInventory] = useState(formData.inventory);
-    const [localCategory, setLocalCategory] = useState<string[]>(formData.category);
+    const [localCategory, setLocalCategory] = useState<string[]>(
+      formData.category
+    );
     const [localImages, setLocalImages] = useState<string[]>(formData.images);
 
     const toggleLocalCategory = (category: string) => {
-      setLocalCategory(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
+      setLocalCategory((prev) =>
+        prev.includes(category)
+          ? prev.filter((c) => c !== category)
+          : [...prev, category]
+      );
     };
 
     const removeLocalImage = (index: number) => {
-      setLocalImages(prev => prev.filter((_, i) => i !== index));
+      setLocalImages((prev) => prev.filter((_, i) => i !== index));
     };
 
     const addLocalImage = () => {
-      const imageUrl = prompt('Enter image URL:');
-      if (imageUrl) setLocalImages(prev => [...prev, imageUrl]);
+      const imageUrl = prompt("Enter image URL:");
+      if (imageUrl) setLocalImages((prev) => [...prev, imageUrl]);
     };
 
-    const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFilesSelected = async (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
       const input = e.target as HTMLInputElement;
       const files = Array.from(input.files || []);
       if (!files.length) return;
 
-      const MAX = 5 * 1024; // 5KB
-      const tooLarge = files.filter((f) => f.size > MAX);
-      if (tooLarge.length) {
-        setError(`These files exceed 5KB and were skipped: ${tooLarge.map(f => f.name).join(', ')}`);
-      }
-      const okFiles = files.filter((f) => f.size <= MAX);
+      const okFiles = files;
       if (!okFiles.length) {
-        if (input) input.value = '';
+        if (input) input.value = "";
         return;
       }
 
-      const readAsDataURL = (file: File) => new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsDataURL(file);
-      });
+      const readAsDataURL = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsDataURL(file);
+        });
 
       try {
         const dataUrls = await Promise.all(okFiles.map(readAsDataURL));
         setLocalImages((prev) => [...prev, ...dataUrls]);
       } catch (err) {
-        setError('Failed to read one or more files');
+        setError("Failed to read one or more files");
       } finally {
-        if (input) input.value = '';
+        if (input) input.value = "";
       }
     };
 
     const onSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!localName.trim() || !localDescription.trim() || !localPrice) {
-        setError('Please fill in all required fields');
+        setError("Please fill in all required fields");
         return;
       }
       const productData: CreateProductRequest = {
@@ -319,7 +335,7 @@ const ProductManagement: React.FC = () => {
         <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">
-              {isEdit ? 'Edit Product' : 'Create New Product'}
+              {isEdit ? "Edit Product" : "Create New Product"}
             </h2>
             <button
               onClick={() => {
@@ -410,14 +426,19 @@ const ProductManagement: React.FC = () => {
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {categories.map((category) => (
-                  <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                  <label
+                    key={category}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
                     <input
                       type="checkbox"
                       checked={localCategory.includes(category)}
                       onChange={() => toggleLocalCategory(category)}
                       className="text-blue-500 focus:ring-blue-500"
                     />
-                    <span className="text-gray-300 text-sm capitalize">{category}</span>
+                    <span className="text-gray-300 text-sm capitalize">
+                      {category}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -429,9 +450,18 @@ const ProductManagement: React.FC = () => {
               </label>
               <div className="space-y-2">
                 {localImages.map((image, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-gray-700 p-2 rounded">
-                    <img src={image} alt={`Preview ${index + 1}`} className="w-12 h-12 object-cover rounded" />
-                    <span className="text-gray-300 text-sm flex-1 truncate">{image}</span>
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-gray-700 p-2 rounded"
+                  >
+                    <img
+                      src={image}
+                      alt={`Preview ${index + 1}`}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    <span className="text-gray-300 text-sm flex-1 truncate">
+                      {image}
+                    </span>
                     <button
                       type="button"
                       onClick={() => removeLocalImage(index)}
@@ -461,7 +491,7 @@ const ProductManagement: React.FC = () => {
                   htmlFor="product-image-input"
                   className="mt-2 block w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors text-center cursor-pointer"
                 >
-                  Upload from device (≤5KB)
+                  Upload from device
                 </label>
               </div>
             </div>
@@ -483,7 +513,11 @@ const ProductManagement: React.FC = () => {
                 disabled={formLoading}
                 className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                {formLoading ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
+                {formLoading
+                  ? "Saving..."
+                  : isEdit
+                  ? "Update Product"
+                  : "Create Product"}
               </button>
             </div>
           </form>
@@ -500,7 +534,7 @@ const ProductManagement: React.FC = () => {
           <h2 className="text-2xl font-bold text-white">Shop Management</h2>
           <p className="text-gray-400 mt-1">Manage products and view orders</p>
         </div>
-        {activeTab === 'products' && (
+        {activeTab === "products" && (
           <button
             onClick={handleCreateProduct}
             className="mt-4 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -514,26 +548,36 @@ const ProductManagement: React.FC = () => {
       {/* Tabs */}
       <div className="flex gap-2 w-full">
         <button
-          onClick={() => setActiveTab('products')}
-          className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'products' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+          onClick={() => setActiveTab("products")}
+          className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${
+            activeTab === "products"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-700 text-gray-200"
+          }`}
         >
           Products
         </button>
         <button
-          onClick={() => setActiveTab('orders')}
-          className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'orders' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}
+          onClick={() => setActiveTab("orders")}
+          className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${
+            activeTab === "orders"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-700 text-gray-200"
+          }`}
         >
           Orders
         </button>
       </div>
 
       {/* Stats Cards - only for Products tab */}
-      {activeTab === 'products' && (
+      {activeTab === "products" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-400">Total Products</p>
+                <p className="text-sm font-medium text-gray-400">
+                  Total Products
+                </p>
                 <p className="text-2xl font-bold text-white">{totalCount}</p>
               </div>
               <Package className="h-8 w-8 text-blue-400" />
@@ -545,7 +589,7 @@ const ProductManagement: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-400">In Stock</p>
                 <p className="text-2xl font-bold text-white">
-                  {products.filter(p => p.inventory > 0).length}
+                  {products.filter((p) => p.inventory > 0).length}
                 </p>
               </div>
               <Eye className="h-8 w-8 text-green-400" />
@@ -555,9 +599,11 @@ const ProductManagement: React.FC = () => {
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-400">Out of Stock</p>
+                <p className="text-sm font-medium text-gray-400">
+                  Out of Stock
+                </p>
                 <p className="text-2xl font-bold text-white">
-                  {products.filter(p => p.inventory === 0).length}
+                  {products.filter((p) => p.inventory === 0).length}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-red-400" />
@@ -567,9 +613,12 @@ const ProductManagement: React.FC = () => {
       )}
 
       {/* Filters (Products tab only) */}
-      {activeTab === 'products' && (
+      {activeTab === "products" && (
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-col sm:flex-row gap-4"
+          >
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -594,7 +643,11 @@ const ProductManagement: React.FC = () => {
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
-                  <option key={category} value={category} className="capitalize">
+                  <option
+                    key={category}
+                    value={category}
+                    className="capitalize"
+                  >
                     {category}
                   </option>
                 ))}
@@ -626,7 +679,7 @@ const ProductManagement: React.FC = () => {
       )}
 
       {/* Products Table */}
-      {activeTab === 'products' && (
+      {activeTab === "products" && (
         <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
@@ -636,8 +689,12 @@ const ProductManagement: React.FC = () => {
           ) : products.length === 0 ? (
             <div className="p-8 text-center">
               <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">No products found</h3>
-              <p className="text-gray-500">Get started by creating your first product.</p>
+              <h3 className="text-lg font-medium text-gray-400 mb-2">
+                No products found
+              </h3>
+              <p className="text-gray-500">
+                Get started by creating your first product.
+              </p>
             </div>
           ) : (
             <>
@@ -667,11 +724,16 @@ const ProductManagement: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-700">
                     {products.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
+                      <tr
+                        key={product.id}
+                        className="hover:bg-gray-700/50 transition-colors"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <img
-                              src={product.images[0] || '/api/placeholder/40/40'}
+                              src={
+                                product.images[0] || "/api/placeholder/40/40"
+                              }
                               alt={product.name}
                               className="w-10 h-10 rounded-lg object-cover mr-3"
                             />
@@ -689,17 +751,25 @@ const ProductManagement: React.FC = () => {
                           ₹{product.price.toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${product.inventory > 0
-                            ? 'bg-green-900/20 text-green-400'
-                            : 'bg-red-900/20 text-red-400'
-                            }`}>
-                            {product.inventory > 0 ? `${product.inventory} in stock` : 'Out of stock'}
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              product.inventory > 0
+                                ? "bg-green-900/20 text-green-400"
+                                : "bg-red-900/20 text-red-400"
+                            }`}
+                          >
+                            {product.inventory > 0
+                              ? `${product.inventory} in stock`
+                              : "Out of stock"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                           <div className="flex flex-wrap gap-1">
                             {product.category.slice(0, 2).map((cat) => (
-                              <span key={cat} className="bg-gray-700 px-2 py-1 rounded text-xs capitalize">
+                              <span
+                                key={cat}
+                                className="bg-gray-700 px-2 py-1 rounded text-xs capitalize"
+                              >
                                 {cat}
                               </span>
                             ))}
@@ -711,7 +781,9 @@ const ProductManagement: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                          {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : 'N/A'}
+                          {product.createdAt
+                            ? new Date(product.createdAt).toLocaleDateString()
+                            : "N/A"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
@@ -742,14 +814,18 @@ const ProductManagement: React.FC = () => {
                 <div className="bg-gray-900 px-6 py-3 flex items-center justify-between border-t border-gray-700">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                       className="relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
                     >
                       Previous
                     </button>
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                       className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-400 bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
                     >
@@ -759,15 +835,24 @@ const ProductManagement: React.FC = () => {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-400">
-                        Showing <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{' '}
-                        <span className="font-medium">{Math.min(currentPage * 10, totalCount)}</span> of{' '}
-                        <span className="font-medium">{totalCount}</span> results
+                        Showing{" "}
+                        <span className="font-medium">
+                          {(currentPage - 1) * 10 + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(currentPage * 10, totalCount)}
+                        </span>{" "}
+                        of <span className="font-medium">{totalCount}</span>{" "}
+                        results
                       </p>
                     </div>
                     <div>
                       <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                         <button
-                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                          }
                           disabled={currentPage === 1}
                           className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
                         >
@@ -775,24 +860,35 @@ const ProductManagement: React.FC = () => {
                         </button>
 
                         {/* Page numbers */}
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
-                          return (
-                            <button
-                              key={pageNumber}
-                              onClick={() => setCurrentPage(pageNumber)}
-                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
-                                ? 'z-10 bg-blue-600 border-blue-500 text-white'
-                                : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            const pageNumber = Math.max(
+                              1,
+                              Math.min(currentPage - 2 + i, totalPages - 4 + i)
+                            );
+                            return (
+                              <button
+                                key={pageNumber}
+                                onClick={() => setCurrentPage(pageNumber)}
+                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                  currentPage === pageNumber
+                                    ? "z-10 bg-blue-600 border-blue-500 text-white"
+                                    : "bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700"
                                 }`}
-                            >
-                              {pageNumber}
-                            </button>
-                          );
-                        })}
+                              >
+                                {pageNumber}
+                              </button>
+                            );
+                          }
+                        )}
 
                         <button
-                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(prev + 1, totalPages)
+                            )
+                          }
                           disabled={currentPage === totalPages}
                           className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50"
                         >
@@ -809,7 +905,7 @@ const ProductManagement: React.FC = () => {
       )}
 
       {/* Orders List */}
-      {activeTab === 'orders' && (
+      {activeTab === "orders" && (
         <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
           {ordersLoading ? (
             <div className="p-8 text-center">
@@ -825,31 +921,63 @@ const ProductManagement: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Order ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Items</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Payment</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Order ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Items
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Payment
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {orders.map((o) => (
                     <React.Fragment key={o.id}>
                       <tr className="hover:bg-gray-700/50 transition-colors">
-                        <td className="px-6 py-3 font-mono text-sm text-white">{o.id}</td>
-                        <td className="px-6 py-3 text-sm text-gray-300">{o.customerDetails?.customerName || o.userId}</td>
-                        <td className="px-6 py-3 text-sm text-gray-300">{o.totalItems}</td>
-                        <td className="px-6 py-3 text-sm text-white">₹{o.totalAmount?.toLocaleString?.() ?? o.totalAmount}</td>
-                        <td className="px-6 py-3 text-sm text-gray-300">{o.paymentStatus}</td>
-                        <td className="px-6 py-3 text-sm text-gray-300">{o.orderStatus}</td>
+                        <td className="px-6 py-3 font-mono text-sm text-white">
+                          {o.id}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-300">
+                          {o.customerDetails?.customerName || o.userId}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-300">
+                          {o.totalItems}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-white">
+                          ₹{o.totalAmount?.toLocaleString?.() ?? o.totalAmount}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-300">
+                          {o.paymentStatus === "pending" ? "failed" : o.paymentStatus}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-300">
+                          {o.orderStatus === "pending" ? "failed" : o.orderStatus}
+                        </td>
                         <td className="px-6 py-3 text-right text-sm">
                           <button
-                            onClick={() => setExpandedOrderId(expandedOrderId === o.id ? null : (o.id as string))}
+                            onClick={() =>
+                              setExpandedOrderId(
+                                expandedOrderId === o.id
+                                  ? null
+                                  : (o.id as string)
+                              )
+                            }
                             className="text-blue-400 hover:text-blue-300"
                           >
-                            {expandedOrderId === o.id ? 'Hide' : 'View'}
+                            {expandedOrderId === o.id ? "Hide" : "View"}
                           </button>
                         </td>
                       </tr>
@@ -858,46 +986,121 @@ const ProductManagement: React.FC = () => {
                           <td className="px-6 py-4" colSpan={7}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                               <div>
-                                <h4 className="font-semibold text-white mb-2">Customer Details</h4>
+                                <h4 className="font-semibold text-white mb-2">
+                                  Customer Details
+                                </h4>
                                 <div className="text-gray-300 space-y-1">
-                                  <p>Name: {o.customerDetails?.customerName || '-'}</p>
-                                  <p>Email: {o.customerDetails?.customerEmail || '-'}</p>
-                                  <p>Phone: {o.customerDetails?.customerPhone || '-'}</p>
+                                  <p>
+                                    Name:{" "}
+                                    {o.customerDetails?.customerName || "-"}
+                                  </p>
+                                  <p>
+                                    Email:{" "}
+                                    {o.customerDetails?.customerEmail || "-"}
+                                  </p>
+                                  <p>
+                                    Phone:{" "}
+                                    {o.customerDetails?.customerPhone || "-"}
+                                  </p>
                                   <p>User ID: {o.userId}</p>
                                 </div>
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-2">Shipping Address</h4>
+                                <h4 className="font-semibold text-white mb-2">
+                                  Shipping Address
+                                </h4>
                                 <div className="text-gray-300 space-y-1">
                                   <p>{o.shippingAddress.addressLine1}</p>
-                                  {o.shippingAddress.addressLine2 && <p>{o.shippingAddress.addressLine2}</p>}
-                                  <p>{o.shippingAddress.city} - {o.shippingAddress.postalCode}</p>
+                                  {o.shippingAddress.addressLine2 && (
+                                    <p>{o.shippingAddress.addressLine2}</p>
+                                  )}
+                                  <p>
+                                    {o.shippingAddress.city} -{" "}
+                                    {o.shippingAddress.postalCode}
+                                  </p>
                                   <p>{o.shippingAddress.country}</p>
                                 </div>
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-2">Products</h4>
+                                <h4 className="font-semibold text-white mb-2">
+                                  Products
+                                </h4>
                                 <ul className="text-gray-300 list-disc list-inside space-y-1">
                                   {o.products.map((p) => (
-                                    <li key={p.productId}>{p.name} × {p.quantity}</li>
+                                    <li key={p.productId}>
+                                      {p.name} × {p.quantity}
+                                    </li>
                                   ))}
                                 </ul>
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-2">Payment</h4>
+                                <h4 className="font-semibold text-white mb-2">
+                                  Payment
+                                </h4>
                                 <div className="text-gray-300 space-y-1">
-                                  <p>Method: {o.paymentDetails?.paymentMethod || '-'}</p>
-                                  <p>Amount: ₹{(o.paymentDetails?.paymentAmount ?? o.totalAmount).toLocaleString?.() ?? o.totalAmount}</p>
-                                  {((o as any).paymentDetails?.razorpayOrderId) && <p>Rz Order ID: {(o as any).paymentDetails.razorpayOrderId}</p>}
-                                  {((o as any).paymentDetails?.razorpayPaymentId) && <p>Rz Payment ID: {(o as any).paymentDetails.razorpayPaymentId}</p>}
-                                  {((o as any).paymentDetails?.paymentDate) && <p>Date: {new Date((o as any).paymentDetails.paymentDate).toLocaleString()}</p>}
+                                  <p>
+                                    Method:{" "}
+                                    {o.paymentDetails?.paymentMethod || "-"}
+                                  </p>
+                                  <p>
+                                    Amount: ₹
+                                    {(
+                                      o.paymentDetails?.paymentAmount ??
+                                      o.totalAmount
+                                    ).toLocaleString?.() ?? o.totalAmount}
+                                  </p>
+                                  {(o as any).paymentDetails
+                                    ?.razorpayOrderId && (
+                                    <p>
+                                      Rz Order ID:{" "}
+                                      {
+                                        (o as any).paymentDetails
+                                          .razorpayOrderId
+                                      }
+                                    </p>
+                                  )}
+                                  {(o as any).paymentDetails
+                                    ?.razorpayPaymentId && (
+                                    <p>
+                                      Rz Payment ID:{" "}
+                                      {
+                                        (o as any).paymentDetails
+                                          .razorpayPaymentId
+                                      }
+                                    </p>
+                                  )}
+                                  {(o as any).paymentDetails?.paymentDate && (
+                                    <p>
+                                      Date:{" "}
+                                      {new Date(
+                                        (o as any).paymentDetails.paymentDate
+                                      ).toLocaleString()}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </div>
                             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300">
-                              <p><span className="text-gray-400">Order Status:</span> {o.orderStatus}</p>
-                              <p><span className="text-gray-400">Payment Status:</span> {o.paymentStatus}</p>
-                              <p><span className="text-gray-400">Created:</span> {new Date(o.createdAt as any).toLocaleString()}</p>
+                              <p>
+                                <span className="text-gray-400">
+                                  Order Status:
+                                </span>{" "}
+                                {o.orderStatus === "pending"
+                                  ? "failed"
+                                  : o.orderStatus}
+                              </p>
+                              <p>
+                                <span className="text-gray-400">
+                                  Payment Status:
+                                </span>{" "}
+                                {o.paymentStatus === "pending"
+                                  ? "failed"
+                                  : o.paymentStatus}
+                              </p>
+                              <p>
+                                <span className="text-gray-400">Created:</span>{" "}
+                                {new Date(o.createdAt as any).toLocaleString()}
+                              </p>
                             </div>
                           </td>
                         </tr>
@@ -917,10 +1120,17 @@ const ProductManagement: React.FC = () => {
       <ConfirmDeleteModal
         open={Boolean(showDeleteModal && productToDelete)}
         title="Delete Product"
-        description={productToDelete ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.` : ''}
+        description={
+          productToDelete
+            ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.`
+            : ""
+        }
         loading={deleteLoading}
         onConfirm={confirmDeleteProduct}
-        onClose={() => { setShowDeleteModal(false); setProductToDelete(null); }}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setProductToDelete(null);
+        }}
         confirmText="Delete"
         cancelText="Cancel"
       />

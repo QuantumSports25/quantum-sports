@@ -1,6 +1,7 @@
 import { MapPin, Star, Tag } from "lucide-react";
 import ImageCarousel from "./ImageCarousel";
 import { Venue } from "../../BookingPage";
+import { useNavigate } from "react-router-dom";
 
 const VenueCardSkeleton: React.FC = () => {
   return (
@@ -98,10 +99,10 @@ const VenueCard: React.FC<{
   isLoading: boolean;
   error: Error | null;
 }> = ({ venue, isLoading, error }) => {
+  const navigate = useNavigate();
   const handleCardClick = () => {
-    // Placeholder for navigation to venue detail page
     if (venue) {
-      console.log(`Navigating to venue: ${venue.name}`);
+      navigate(`/booking/${venue.id}`);
     }
   };
 
@@ -122,15 +123,12 @@ const VenueCard: React.FC<{
 
   // Show actual venue card
   return (
-    <div
-      onClick={handleCardClick}
-      className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02] group"
-    >
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02] group">
       {/* Image Carousel */}
       <ImageCarousel images={venue.images || []} />
 
       {/* Card Content */}
-      <div className="p-4 sm:p-6">
+      <div onClick={handleCardClick} className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -144,13 +142,13 @@ const VenueCard: React.FC<{
           </div>
           <div className="flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
             <Star className="w-3 h-3 mr-1 fill-current" />
-            {venue.rating || 0}
+            {venue.totalReviews > 0 ? (venue.rating / venue.totalReviews).toFixed(1) : 0}
           </div>
         </div>
 
         {/* Headline */}
         <p className="text-gray-700 text-sm mb-4 line-clamp-2">
-          {venue.headline || "No description available"}
+          {venue.highlight || "No description available"}
         </p>
 
         {/* Price and Offer */}

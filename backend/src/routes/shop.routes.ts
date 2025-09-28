@@ -8,6 +8,7 @@ const router = Router();
 router.post('/create-product', authMiddleware, ShopController.createProducts);
 router.put('/update-product/:id', authMiddleware, ShopController.updateProduct);
 router.get('/get-shop-orders', authMiddleware, ShopController.getAllShopOrders);
+router.get('/get-shop-orders-by-userId/:userId', authMiddleware, ShopController.getShopOrdersByUserId);
 router.get('/get-shop-order/:id', authMiddleware, ShopController.getShopOrderById);
 router.get('/get-products', ShopController.getAllProducts);
 router.post('/get-product-by-ids', ShopController.getProductsById);

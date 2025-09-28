@@ -15,11 +15,6 @@ const ImageCarousel: React.FC<{ images: string[] }> = ({ images }) => {
     setCurrentImage(index);
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => setCurrentImage(0), 300);
-    return () => clearTimeout(timer);
-  }, [currentImage]);
-
   return (
     <div className="relative h-48 sm:h-56 overflow-hidden rounded-t-2xl">
       {/* Image Container with Sliding Effect */}

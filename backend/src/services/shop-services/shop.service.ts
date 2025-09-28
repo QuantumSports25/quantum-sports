@@ -218,6 +218,36 @@ export class ShopService {
     }
   }
 
+  static async getShopOrdersByUserId(userId: string, page: number = 1, pageSize: number = 20) {
+    try {
+      const orders = await prisma.shopOrder.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+      return orders.map((order) => ({
+        id: order.id,
+        userId: order.userId,
+        totalAmount: order.totalAmount,
+        sellerId: order.sellerId,
+        totalItems: order.totalItems,
+        products: order.products as unknown as ShopProduct[],
+        shippingAddress: order.shippingAddress as unknown as ShoppingAddress,
+        orderStatus: order.orderStatus as unknown as BookingStatus,
+        paymentStatus: order.paymentStatus as unknown as PaymentStatus,
+        paymentDetails: order.paymentDetails as unknown as PaymentDetails,
+        customerDetails: order.customerDetails as unknown as CustomerDetails,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      }));
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      throw error;
+    }
+  }
+
   static async handleShopOrder({
     success,
     shopOrderId,

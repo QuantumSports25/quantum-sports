@@ -289,7 +289,7 @@ const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
               <div className="space-y-2 text-sm text-gray-700">
                 <p>Venue Contact: {venue.phone || "+91 12345 67890"}</p>
                 <p>Customer Support: support@quantumsports.com</p>
-                <p>24/7 Helpline: +91 98765 43210</p>
+                <p>24/7 Helpline: +91 93309 16845</p>
               </div>
             </div>
 

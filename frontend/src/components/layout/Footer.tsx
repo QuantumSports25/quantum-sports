@@ -13,7 +13,7 @@ import {
   Zap,
   Shield,
   Youtube,
-Award,
+  Award,
   // Award,
 } from "lucide-react";
 
@@ -55,7 +55,7 @@ const Footer: React.FC = () => {
       href: "https://www.youtube.com/channel/UCB3oJfpIEbm0yYAe3uVj0ew",
       icon: Youtube,
       hoverColor: "hover:bg-red-600 hover:border-red-500",
-    }
+    },
   ];
 
   const footerSections = [
@@ -77,8 +77,14 @@ const Footer: React.FC = () => {
       iconColor: "text-green-400",
       dotColor: "bg-green-400",
       links: [
-        { to: "https://www.threads.com/@quantumpickleballpro", label: "Threads" },
-        { to: "https://in.pinterest.com/quantumpickleball/", label: "Pinterest" },
+        {
+          to: "https://www.threads.com/@quantumpickleballpro",
+          label: "Threads",
+        },
+        {
+          to: "https://in.pinterest.com/quantumpickleball/",
+          label: "Pinterest",
+        },
         { to: "https://www.hopp.bio/quantum-pickleball", label: "Hopp" },
         // { to: "/", label: "Press Kit" },
       ],
@@ -108,7 +114,7 @@ const Footer: React.FC = () => {
       icon: Phone,
       iconColor: "text-green-400",
       label: "Phone",
-      value: "+91 98765 43210",
+      value: "+91 93309 16845",
     },
     {
       icon: Mail,
@@ -140,8 +146,11 @@ const Footer: React.FC = () => {
             {/* Brand Section */}
             <div className="lg:col-span-5">
               <div className="flex items-center space-x-3 mb-6">
-
-                <img src="/with_bg.PNG" className="w-24 h-24 sm:w-24 sm:h-24" alt="Quantum" />
+                <img
+                  src="/with_bg.PNG"
+                  className="w-24 h-24 sm:w-24 sm:h-24"
+                  alt="Quantum"
+                />
               </div>
 
               <p className="text-gray-300 text-lg leading-relaxed mb-8 max-w-lg">

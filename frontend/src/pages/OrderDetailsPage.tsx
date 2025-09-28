@@ -35,7 +35,7 @@ const OrderDetailsPage: React.FC = () => {
         {order && (
           <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <h1 className="text-2xl font-bold mb-2">Order #{order.id}</h1>
-            <div className="text-sm text-gray-600 mb-4">Status: {order.orderStatus} • Payment: {order.paymentStatus}</div>
+            <div className="text-sm text-gray-600 mb-4">Status: {order.orderStatus === "pending" ? "failed" : order.orderStatus} • Payment: {order.paymentStatus === "pending" ? "failed" :   order.paymentStatus}</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h2 className="font-semibold mb-2">Items</h2>

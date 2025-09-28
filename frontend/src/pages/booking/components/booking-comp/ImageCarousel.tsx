@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const ImageCarousel: React.FC<{ images: string[] }> = ({ images }) => {
   const [currentImage, setCurrentImage] = useState(0);

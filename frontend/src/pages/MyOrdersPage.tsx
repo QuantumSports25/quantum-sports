@@ -27,7 +27,7 @@ const MyOrdersPage: React.FC = () => {
       }
     };
     if (isAuthenticated) load();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   if (!isAuthenticated) {
     return (
@@ -76,8 +76,14 @@ const MyOrdersPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-2 text-sm text-gray-600 flex gap-4">
-                <span>Status: {o.orderStatus === "pending" ? "failed" : o.orderStatus}</span>
-                <span>Payment: {o.paymentStatus === "pending" ? "failed" : o.paymentStatus}</span>
+                <span>
+                  Status:{" "}
+                  {o.orderStatus === "pending" ? "failed" : o.orderStatus}
+                </span>
+                <span>
+                  Payment:{" "}
+                  {o.paymentStatus === "pending" ? "failed" : o.paymentStatus}
+                </span>
               </div>
             </Link>
           ))}

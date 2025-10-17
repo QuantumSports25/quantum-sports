@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import React, { useMemo, useState, useRef } from 'react';
+import { Plus, X, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventService } from '../../../services/eventService';
 import { AdminComponentProps } from '../types/adminTypes';
@@ -70,6 +70,7 @@ const EventManagement: React.FC<AdminComponentProps> = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openEdit = async (id: string) => {
     try {
@@ -175,6 +176,48 @@ const EventManagement: React.FC<AdminComponentProps> = () => {
 
   const removeFromList = (kind: 'images' | 'tags', item: string) => {
     setForm((prev) => ({ ...prev, [kind]: (prev[kind] as string[]).filter((v) => v !== item) }));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    // Filter only image files
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      toast.error('Please select valid image files');
+      return;
+    }
+
+    try {
+      // Convert each file to base64 data URL
+      const readAsDataURL = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+
+      const dataUrls = await Promise.all(imageFiles.map(readAsDataURL));
+      
+      // Add all converted images to the form
+      setForm((prev) => ({
+        ...prev,
+        images: Array.from(new Set([...prev.images, ...dataUrls]))
+      }));
+
+      toast.success(`${imageFiles.length} image(s) uploaded successfully`);
+    } catch (err) {
+      toast.error('Failed to upload one or more images');
+      console.error(err);
+    } finally {
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const [submitting, setSubmitting] = useState(false);
@@ -361,20 +404,57 @@ const EventManagement: React.FC<AdminComponentProps> = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Images</label>
+              
+              {/* File Upload Button */}
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center justify-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Images
+                </button>
+              </div>
+
+              {/* URL Input (Optional) */}
               <div className="flex gap-2">
-                <input value={imageInput} onChange={(e) => setImageInput(e.target.value)} placeholder="Image URL" className={inputClass} />
+                <input value={imageInput} onChange={(e) => setImageInput(e.target.value)} placeholder="Or paste image URL" className={inputClass} />
                 <button type="button" onClick={() => addToList('images')} className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1">
                   <Plus className="h-4 w-4" /> Add
                 </button>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {form.images.map((img) => (
-                  <span key={img} className={chipClass}>
-                    <span className="truncate max-w-[200px]">{img}</span>
-                    <button type="button" className="ml-2 hover:text-red-300" onClick={() => removeFromList('images', img)}>
-                      <X className="h-3 w-3" />
+
+              {/* Image Previews */}
+              <div className="mt-3 space-y-2">
+                {form.images.map((img, idx) => (
+                  <div key={`${img}-${idx}`} className="flex items-center gap-2 bg-gray-700/50 p-2 rounded-lg border border-gray-600">
+                    <img
+                      src={img}
+                      alt={`Preview ${idx + 1}`}
+                      className="h-16 w-16 object-cover rounded"
+                      onError={(e) => {
+                        // If image fails to load, show placeholder
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect fill="%23374151" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239CA3AF" font-family="sans-serif" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                    <span className="flex-1 text-xs text-gray-300 truncate">{img.substring(0, 50)}...</span>
+                    <button
+                      type="button"
+                      className="text-red-400 hover:text-red-300 p-1"
+                      onClick={() => removeFromList('images', img)}
+                    >
+                      <X className="h-4 w-4" />
                     </button>
-                  </span>
+                  </div>
                 ))}
               </div>
             </div>

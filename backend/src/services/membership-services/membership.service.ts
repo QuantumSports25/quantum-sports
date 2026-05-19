@@ -168,6 +168,12 @@ export class MembershipService {
               },
             });
 
+            // Set user as member
+            await tx.user.update({
+              where: { id: membership.userId },
+              data: { isMember: true },
+            });
+
             // Update completed - wallet will be updated outside transaction
             console.log(`Membership activated for user ${membership.userId}`);
 
@@ -239,6 +245,12 @@ export class MembershipService {
                 isRefunded: false,
               },
             },
+          });
+
+          // Set user as member
+          await tx.user.update({
+            where: { id: membership.userId },
+            data: { isMember: true },
           });
         });
       }, 3);

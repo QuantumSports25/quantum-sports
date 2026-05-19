@@ -114,7 +114,7 @@ const Footer: React.FC = () => {
       icon: Phone,
       iconColor: "text-green-400",
       label: "Phone",
-      value: "+91 93309 16845",
+      value: "+91 9330916845",
     },
     {
       icon: Mail,

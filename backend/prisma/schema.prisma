@@ -20,6 +20,7 @@ model User {
   otp       String?   @db.VarChar(10)
   otpExpiry DateTime?
   verified  Boolean   @default(false)
+  isMember  Boolean   @default(false)
   shippingAddress Json? 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

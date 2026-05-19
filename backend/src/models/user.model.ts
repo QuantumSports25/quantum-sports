@@ -7,6 +7,7 @@ export interface User {
   password?: string;
   role: UserRole;
   phone?: string;
+  isMember?: boolean;
   partnerDetails?: partnerDetails;
   membership?: MembershipSummary;
   shippingAddress: ShoppingAddress[];
